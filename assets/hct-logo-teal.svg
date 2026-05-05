@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-labelledby="title desc">
+  <title id="title">HCT teal logo</title>
+  <desc id="desc">Circular teal HCT mark with white bubble paths.</desc>
+  <circle cx="200" cy="200" r="194" fill="#43c0c4"/>
+  <g fill="#fff">
+    <circle cx="63" cy="323" r="8"/><circle cx="78" cy="303" r="12"/><circle cx="96" cy="286" r="16"/><circle cx="119" cy="272" r="10"/><circle cx="139" cy="257" r="13"/><circle cx="158" cy="241" r="17"/><circle cx="183" cy="224" r="12"/><circle cx="204" cy="207" r="19"/><circle cx="226" cy="188" r="11"/><circle cx="244" cy="169" r="17"/><circle cx="266" cy="149" r="21"/><circle cx="287" cy="126" r="13"/><circle cx="306" cy="102" r="15"/><circle cx="323" cy="77" r="9"/>
+    <circle cx="196" cy="55" r="8"/><circle cx="210" cy="74" r="11"/><circle cx="222" cy="96" r="17"/><circle cx="223" cy="123" r="13"/><circle cx="213" cy="148" r="15"/><circle cx="198" cy="169" r="10"/><circle cx="184" cy="190" r="14"/><circle cx="196" cy="219" r="20"/><circle cx="216" cy="241" r="12"/><circle cx="230" cy="264" r="17"/><circle cx="231" cy="291" r="12"/><circle cx="220" cy="317" r="17"/><circle cx="211" cy="346" r="10"/><circle cx="206" cy="372" r="8"/>
+    <circle cx="333" cy="92" r="6"/><circle cx="344" cy="108" r="8"/><circle cx="350" cy="128" r="11"/><circle cx="350" cy="150" r="9"/><circle cx="343" cy="171" r="12"/><circle cx="329" cy="190" r="13"/><circle cx="310" cy="205" r="9"/><circle cx="289" cy="216" r="14"/><circle cx="266" cy="225" r="10"/><circle cx="244" cy="235" r="8"/>
+    <circle cx="176" cy="75" r="7"/><circle cx="164" cy="96" r="10"/><circle cx="155" cy="119" r="16"/><circle cx="156" cy="146" r="11"/><circle cx="166" cy="170" r="9"/><circle cx="175" cy="195" r="11"/>
+    <circle cx="83" cy="342" r="14"/><circle cx="113" cy="336" r="12"/><circle cx="143" cy="329" r="9"/><circle cx="174" cy="325" r="11"/><circle cx="204" cy="326" r="16"/><circle cx="235" cy="333" r="9"/><circle cx="259" cy="347" r="12"/>
+  </g>
+</svg>
