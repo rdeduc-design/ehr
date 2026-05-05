@@ -3,869 +3,651 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sandra Garces — HEG EHR Simulation</title>
+<title>HCT Student EHR Simulation</title>
 <style>
 :root {
-  --color-background-primary: #ffffff;
-  --color-background-secondary: #f7f6f3;
-  --color-background-tertiary: #f1efe8;
-  --color-background-info: #E6F1FB;
-  --color-background-danger: #FCEBEB;
-  --color-background-success: #EAF3DE;
-  --color-background-warning: #FAEEDA;
-  --color-text-primary: #2c2c2a;
-  --color-text-secondary: #5f5e5a;
-  --color-text-tertiary: #888780;
-  --color-text-info: #185FA5;
-  --color-text-danger: #A32D2D;
-  --color-text-success: #3B6D11;
-  --color-text-warning: #854F0B;
-  --color-border-primary: rgba(0,0,0,0.4);
-  --color-border-secondary: rgba(0,0,0,0.3);
-  --color-border-tertiary: rgba(0,0,0,0.15);
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-serif: Georgia, "Times New Roman", serif;
-  --font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
-  --border-radius-xl: 16px;
+  --hct-teal: #43c0c4;
+  --hct-teal-dark: #15858a;
+  --hct-navy: #172946;
+  --hct-navy-soft: #233b61;
+  --paper: #ffffff;
+  --surface: #f7f9fb;
+  --surface-2: #eef4f6;
+  --line: rgba(23, 41, 70, 0.16);
+  --line-strong: rgba(23, 41, 70, 0.28);
+  --text: #1f2937;
+  --muted: #617085;
+  --subtle: #8b98aa;
+  --danger: #a33131;
+  --danger-bg: #fbeaea;
+  --warning: #8a560f;
+  --warning-bg: #fff2d7;
+  --success: #31691f;
+  --success-bg: #e8f5e3;
+  --info: #175f9e;
+  --info-bg: #e8f3ff;
+  --shadow: 0 18px 50px rgba(23, 41, 70, 0.14);
+  --radius: 8px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-background-primary: #1a1a1a;
-    --color-background-secondary: #242422;
-    --color-background-tertiary: #2c2c2a;
-    --color-text-primary: #f1efe8;
-    --color-text-secondary: #b4b2a9;
-    --color-text-tertiary: #888780;
-    --color-border-primary: rgba(255,255,255,0.4);
-    --color-border-secondary: rgba(255,255,255,0.25);
-    --color-border-tertiary: rgba(255,255,255,0.12);
+    --paper: #151b24;
+    --surface: #1d2530;
+    --surface-2: #243140;
+    --line: rgba(255,255,255,0.14);
+    --line-strong: rgba(255,255,255,0.28);
+    --text: #edf4f7;
+    --muted: #b3c0cc;
+    --subtle: #8492a4;
+    --shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
   }
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-html, body {
-  height: 100%;
-  font-family: var(--font-sans);
-  background: var(--color-background-tertiary);
-  color: var(--color-text-primary);
-  overflow: hidden;
-}
-
+* { box-sizing: border-box; }
+html, body { min-height: 100%; margin: 0; }
 body {
-  display: flex;
-  flex-direction: column;
+  font-family: var(--font);
+  background: linear-gradient(135deg, #eff8f8 0%, #f6f7fb 48%, #eef2f7 100%);
+  color: var(--text);
   padding: 16px;
 }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.app-shell { max-width: 1440px; min-height: calc(100vh - 32px); margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 
-.page-header {
+.topbar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0 4px 12px;
-  flex-shrink: 0;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 72px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.84);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
 }
-
-.page-header h1 {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-
-.page-header .meta {
-  font-size: 12px;
-  color: var(--color-text-tertiary);
-}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.logo { width: 48px; height: 48px; object-fit: contain; flex: 0 0 auto; }
+.logo.small { width: 34px; height: 34px; }
+.brand h1 { margin: 0; font-size: 18px; line-height: 1.2; color: var(--hct-navy); font-weight: 700; }
+.brand p { margin: 3px 0 0; font-size: 12px; color: var(--muted); }
+.top-meta { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; text-align: right; }
 
 .ehr {
-  display: flex;
   flex: 1;
-  min-height: 0;
-  border: 0.5px solid var(--color-border-secondary);
-  border-radius: var(--border-radius-lg);
+  min-height: 720px;
+  display: grid;
+  grid-template-columns: 286px minmax(0, 1fr);
   overflow: hidden;
-  background: var(--color-background-primary);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: var(--shadow);
 }
+.sidebar { display: flex; flex-direction: column; min-height: 0; background: var(--surface); border-right: 1px solid var(--line); }
+.patient-card { padding: 14px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, rgba(67,192,196,0.12), transparent); }
+.label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--subtle); font-weight: 700; }
+.patient-name { margin-top: 4px; font-size: 18px; color: var(--hct-navy); font-weight: 750; line-height: 1.2; }
+.patient-line { margin-top: 3px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+.badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.badge { display: inline-flex; align-items: center; min-height: 20px; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; line-height: 1; }
+.badge.red { color: var(--danger); background: var(--danger-bg); }
+.badge.gold { color: var(--warning); background: var(--warning-bg); }
+.badge.green { color: var(--success); background: var(--success-bg); }
+.badge.blue { color: var(--info); background: var(--info-bg); }
+.badge.navy { color: #fff; background: var(--hct-navy); }
+.badge.teal { color: #063f41; background: rgba(67,192,196,0.35); }
 
-.sb { width: 220px; min-width: 220px; background: var(--color-background-secondary); border-right: 0.5px solid var(--color-border-tertiary); display: flex; flex-direction: column; overflow: hidden; }
-.sb-h { padding: 14px; border-bottom: 0.5px solid var(--color-border-tertiary); }
-.sb-h .lbl { font-size: 10px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; }
-.sb-h .nm { font-size: 14px; font-weight: 500; color: var(--color-text-primary); margin-top: 3px; }
-.sb-h .sub { font-size: 11px; color: var(--color-text-secondary); margin-top: 1px; }
-.sb-h .ch { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
+.patient-tools { padding: 12px 14px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
+.patient-tools select { width: 100%; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); padding: 8px 9px; font-size: 12px; }
+.quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.nav { overflow-y: auto; padding: 8px 0; }
+.group { padding: 14px 14px 5px; color: var(--subtle); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; }
+.nav-btn { width: 100%; display: flex; align-items: center; gap: 9px; border: 0; border-left: 3px solid transparent; background: transparent; color: var(--muted); padding: 9px 14px 9px 11px; text-align: left; font-size: 13px; transition: background 0.16s, color 0.16s, border-color 0.16s; }
+.nav-btn:hover { background: var(--paper); color: var(--text); }
+.nav-btn.active { background: var(--paper); color: var(--hct-navy); border-left-color: var(--hct-teal); font-weight: 750; }
+.nav-ic { width: 22px; min-width: 22px; height: 22px; display: inline-grid; place-items: center; border-radius: 6px; background: rgba(23,41,70,0.07); color: var(--hct-navy); font-size: 10px; font-weight: 800; }
+.sidebar-foot { margin-top: auto; padding: 12px 14px; border-top: 1px solid var(--line); color: var(--subtle); font-size: 10px; line-height: 1.5; }
 
-.b { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 500; }
-.b-w { background: #FAEEDA; color: #854F0B; }
-.b-i { background: #E6F1FB; color: #185FA5; }
-.b-r { background: #FCEBEB; color: #A32D2D; }
-.b-g { background: #EAF3DE; color: #3B6D11; }
+.main { min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+.toolbar { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--paper); }
+.toolbar-title { flex: 1; min-width: 0; }
+.toolbar-title h2 { margin: 0; font-size: 17px; color: var(--hct-navy); }
+.toolbar-title p { margin: 2px 0 0; font-size: 11px; color: var(--muted); }
+.content { flex: 1; overflow: auto; padding: 16px; background: linear-gradient(180deg, var(--paper), var(--surface)); }
 
-.sb-nav { flex: 1; overflow-y: auto; }
-.gp { font-size: 10px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; padding: 14px 14px 4px; font-weight: 500; }
+.btn { min-height: 32px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--paper); color: var(--hct-navy); padding: 6px 11px; font-size: 12px; font-weight: 700; transition: background 0.15s, transform 0.1s, border-color 0.15s; }
+.btn:hover { background: var(--surface-2); border-color: var(--hct-teal); }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--hct-teal); color: #062f31; border-color: var(--hct-teal); }
+.btn.primary:hover { background: #6fd3d6; }
+.btn.navy { background: var(--hct-navy); color: #fff; border-color: var(--hct-navy); }
+.btn.danger { color: var(--danger); border-color: rgba(163,49,49,0.35); }
+.btn.small { min-height: 26px; padding: 4px 8px; font-size: 11px; }
+.btn.ghost { background: transparent; }
 
-.ni { display: flex; align-items: center; gap: 9px; padding: 8px 14px; cursor: pointer; font-size: 13px; color: var(--color-text-secondary); border-left: 2px solid transparent; transition: background 0.15s, color 0.15s, border-color 0.15s; }
-.ni:hover { background: var(--color-background-primary); color: var(--color-text-primary); }
-.ni.act { background: var(--color-background-primary); color: var(--color-text-primary); font-weight: 500; border-left-color: #1D9E75; }
-.ni .ic { width: 14px; text-align: center; font-size: 12px; }
+.card { margin-bottom: 14px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--paper); }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.card-head h3 { margin: 0; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.card-body { padding: 14px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.field { min-width: 0; }
+.field .k { display: block; font-size: 10px; color: var(--subtle); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 750; }
+.field .v { display: block; margin-top: 3px; font-size: 13px; color: var(--text); line-height: 1.45; }
+.field .v.alert { color: var(--danger); font-weight: 750; }
+.text-block { margin: 0; color: var(--text); font-size: 13px; line-height: 1.65; }
+.notice { display: flex; gap: 9px; align-items: flex-start; margin-bottom: 12px; padding: 10px 12px; border-radius: 6px; border: 1px solid #efc36a; background: var(--warning-bg); color: #65410e; font-size: 12px; line-height: 1.45; }
+.notice.info { border-color: #93bee8; background: var(--info-bg); color: #0f4d82; }
+.notice.danger { border-color: #e9a0a0; background: var(--danger-bg); color: #7a2020; }
+.notice.success { border-color: #aad7a0; background: var(--success-bg); color: #245417; }
+.notice .mark { font-weight: 850; flex: 0 0 auto; }
 
-.mn { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
-.tb { display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-bottom: 0.5px solid var(--color-border-tertiary); background: var(--color-background-primary); flex-shrink: 0; }
-.tb-t { font-size: 15px; font-weight: 500; flex: 1; color: var(--color-text-primary); }
-.tb-meta { font-size: 11px; color: var(--color-text-tertiary); }
-.cn { flex: 1; overflow-y: auto; padding: 16px; animation: fadeIn 0.2s ease; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { text-align: left; padding: 0 9px 7px 0; border-bottom: 1px solid var(--line); color: var(--subtle); text-transform: uppercase; letter-spacing: 0.05em; font-size: 10px; }
+td { padding: 8px 9px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; line-height: 1.45; }
+tr:last-child td { border-bottom: 0; }
+.status { display: inline-flex; align-items: center; min-height: 20px; border-radius: 999px; padding: 2px 8px; font-size: 10px; font-weight: 800; }
+.status.active, .status.given, .status.done { color: var(--success); background: var(--success-bg); }
+.status.pending, .status.hold { color: var(--warning); background: var(--warning-bg); }
+.status.critical, .status.not_given { color: var(--danger); background: var(--danger-bg); }
+.status.normal { color: var(--info); background: var(--info-bg); }
 
-@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.form-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.form-row { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 12px; align-items: start; margin-bottom: 10px; }
+.form-row label, .input-label { display: block; color: var(--muted); font-size: 12px; font-weight: 750; padding-top: 7px; }
+input, select, textarea { width: 100%; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); padding: 8px 9px; font-size: 13px; }
+textarea { min-height: 86px; resize: vertical; line-height: 1.45; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--hct-teal); box-shadow: 0 0 0 3px rgba(67,192,196,0.18); }
+.actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 12px; }
 
-.cd { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; margin-bottom: 14px; }
-.ch2 { padding: 10px 14px; background: var(--color-background-secondary); border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 10px; }
-.ch2 h3 { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
-.cb { padding: 14px; }
-
-.gr2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.gr3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-.fld { display: flex; flex-direction: column; gap: 2px; }
-.fl { font-size: 10px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
-.fv { font-size: 13px; color: var(--color-text-primary); }
-.fv.abn { color: #A32D2D; font-weight: 500; }
-.fv.lo { color: #854F0B; font-weight: 500; }
-
-.tbl { width: 100%; font-size: 12px; border-collapse: collapse; }
-.tbl th { text-align: left; font-size: 10px; font-weight: 500; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; padding: 0 8px 6px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
-.tbl td { padding: 7px 8px 7px 0; border-bottom: 0.5px solid var(--color-border-tertiary); vertical-align: top; color: var(--color-text-primary); }
-.tbl tr:last-child td { border-bottom: none; }
-.tbl input, .tbl select, .tbl textarea { font-size: 12px; padding: 4px 6px; width: 100%; border: 0.5px solid var(--color-border-tertiary); border-radius: 4px; background: transparent; font-family: inherit; color: var(--color-text-primary); }
-.tbl input:focus, .tbl select:focus, .tbl textarea:focus { outline: none; border-color: #1D9E75; box-shadow: 0 0 0 2px rgba(29,158,117,0.15); }
-
-.btn { font-size: 12px; padding: 6px 12px; border: 0.5px solid var(--color-border-secondary); border-radius: 6px; background: transparent; cursor: pointer; color: var(--color-text-primary); font-family: inherit; transition: background 0.15s, transform 0.1s; }
-.btn:hover { background: var(--color-background-secondary); }
-.btn:active { transform: scale(0.97); }
-.btn-p { background: #1D9E75; color: #fff; border-color: #1D9E75; }
-.btn-p:hover { background: #0F6E56; }
-.btn-d { color: #A32D2D; border-color: rgba(163,45,45,0.3); }
-.btn-d:hover { background: #FCEBEB; }
-.btn-sm { font-size: 11px; padding: 3px 8px; }
-
-.bn { background: #FAEEDA; border: 0.5px solid #EF9F27; border-radius: 6px; padding: 9px 12px; font-size: 12px; color: #633806; display: flex; gap: 8px; align-items: flex-start; margin-bottom: 12px; }
-.bn-i { background: #E6F1FB; border-color: #378ADD; color: #0C447C; }
-.bn-r { background: #FCEBEB; border-color: #E24B4A; color: #791F1F; }
-.bn .ic { flex-shrink: 0; font-weight: 600; }
-
-.med-row { display: grid; grid-template-columns: 1.5fr 1.6fr 1fr 1.2fr 1fr; gap: 8px; padding: 9px 0; border-bottom: 0.5px solid var(--color-border-tertiary); align-items: center; font-size: 12px; }
-.med-row:last-child { border-bottom: none; }
-.med-name { font-weight: 500; color: var(--color-text-primary); }
-.med-name .sub { font-size: 11px; font-weight: 400; color: var(--color-text-secondary); display: block; margin-top: 1px; }
-.med-tag { display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 3px; font-weight: 500; margin-left: 4px; }
-.tag-stat { background: #FCEBEB; color: #A32D2D; }
-.tag-sch { background: #E6F1FB; color: #185FA5; }
-.tag-prn { background: #FAEEDA; color: #854F0B; }
-.tag-home { background: #F1EFE8; color: #5F5E5A; }
-
-.st-pill { font-size: 10px; padding: 2px 7px; border-radius: 20px; text-align: center; font-weight: 500; display: inline-block; }
-.st-given { background: #EAF3DE; color: #3B6D11; }
-.st-held { background: #FAEEDA; color: #854F0B; }
-.st-ng { background: #FCEBEB; color: #A32D2D; }
-.st-pend { background: #F1EFE8; color: #5F5E5A; }
-
-.med-actions { display: flex; gap: 3px; flex-wrap: wrap; }
-.med-actions button { font-size: 10px; padding: 3px 6px; border: 0.5px solid var(--color-border-tertiary); background: transparent; border-radius: 4px; cursor: pointer; color: var(--color-text-secondary); font-family: inherit; transition: all 0.15s; }
-.med-actions button:hover { background: var(--color-background-secondary); }
-.med-actions button.act-given.sel { background: #1D9E75; color: #fff; border-color: #1D9E75; }
-.med-actions button.act-held.sel { background: #EF9F27; color: #fff; border-color: #EF9F27; }
-.med-actions button.act-ng.sel { background: #E24B4A; color: #fff; border-color: #E24B4A; }
-
-.note { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: 8px; padding: 11px; margin-bottom: 10px; }
-.note-h { display: flex; justify-content: space-between; font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 6px; }
-.note-typ { font-weight: 500; color: var(--color-text-secondary); }
-.note-b { font-size: 13px; color: var(--color-text-primary); line-height: 1.6; white-space: pre-wrap; }
-
-.sbar-tag { display: inline-block; font-size: 10px; font-weight: 500; padding: 1px 5px; border-radius: 3px; margin-right: 4px; }
-.sb-s { background: #EEEDFE; color: #3C3489; }
-.sb-b { background: #E6F1FB; color: #0C447C; }
-.sb-a { background: #FCEBEB; color: #791F1F; }
-.sb-r { background: #EAF3DE; color: #27500A; }
-
-input, select, textarea { font-family: inherit; color: var(--color-text-primary); }
-
-.fm-rw { display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-items: start; margin-bottom: 10px; }
-.fm-l { font-size: 12px; color: var(--color-text-secondary); padding-top: 6px; font-weight: 500; }
-.fm-i input, .fm-i select, .fm-i textarea { width: 100%; padding: 7px 9px; border: 0.5px solid var(--color-border-tertiary); border-radius: 6px; font-size: 13px; background: transparent; font-family: inherit; color: var(--color-text-primary); transition: border-color 0.15s, box-shadow 0.15s; }
-.fm-i textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
-.fm-i input:focus, .fm-i select:focus, .fm-i textarea:focus { outline: none; border-color: #1D9E75; box-shadow: 0 0 0 2px rgba(29,158,117,0.15); }
-
-.fm-rw3 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
-.fm-rw3 > div > label { display: block; margin-bottom: 4px; }
-.fm-rw3 > div > input, .fm-rw3 > div > select { width: 100%; padding: 7px 9px; border: 0.5px solid var(--color-border-tertiary); border-radius: 6px; font-size: 13px; background: transparent; font-family: inherit; color: var(--color-text-primary); }
-.fm-rw3 > div > input:focus, .fm-rw3 > div > select:focus { outline: none; border-color: #1D9E75; box-shadow: 0 0 0 2px rgba(29,158,117,0.15); }
-
-.io-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
-.io-card { background: var(--color-background-secondary); border-radius: 6px; padding: 9px; text-align: center; }
-.io-card .v { font-size: 18px; font-weight: 500; }
-.io-card .l { font-size: 10px; color: var(--color-text-tertiary); text-transform: uppercase; margin-top: 2px; }
-
-.toast { position: fixed; bottom: 20px; right: 20px; background: #1D9E75; color: #fff; padding: 9px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s; transform: translateY(8px); }
+.metric-row { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.metric { border: 1px solid var(--line); background: var(--paper); border-radius: var(--radius); padding: 10px; }
+.metric .num { font-size: 22px; color: var(--hct-navy); font-weight: 800; line-height: 1.1; }
+.metric .lbl { margin-top: 3px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--subtle); font-weight: 800; }
+.note { padding: 11px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); margin-bottom: 10px; }
+.note-head { display: flex; justify-content: space-between; gap: 10px; color: var(--subtle); font-size: 11px; margin-bottom: 6px; }
+.note-type { color: var(--muted); font-weight: 800; }
+.note-body { white-space: pre-wrap; font-size: 13px; line-height: 1.6; }
+.scenario-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.scenario-card { display: flex; flex-direction: column; min-height: 270px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); overflow: hidden; }
+.scenario-card .top { min-height: 8px; background: linear-gradient(90deg, var(--hct-teal), var(--hct-navy)); }
+.scenario-card .body { display: flex; flex-direction: column; gap: 8px; padding: 13px; flex: 1; }
+.scenario-card h3 { margin: 0; font-size: 15px; color: var(--hct-navy); }
+.scenario-card p { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.skill-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; }
+.check-row { display: grid; grid-template-columns: 22px 1.2fr 1fr 1.8fr; gap: 9px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.check-row:last-child { border-bottom: 0; }
+.vital-chart { width: 100%; height: 180px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+.toast { position: fixed; right: 24px; bottom: 24px; z-index: 20; transform: translateY(8px); opacity: 0; transition: opacity 0.2s, transform 0.2s; background: var(--hct-navy); color: #fff; padding: 10px 14px; border-radius: 6px; font-size: 12px; font-weight: 800; box-shadow: var(--shadow); pointer-events: none; }
 .toast.show { opacity: 1; transform: translateY(0); }
 
-.shdr { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin: 14px 0 8px; padding-bottom: 5px; border-bottom: 0.5px solid var(--color-border-tertiary); }
-.alergy { background: #FCEBEB; border: 0.5px solid #F09595; color: #791F1F; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; display: inline-block; }
+@media print {
+  body { padding: 0; background: #fff; }
+  .topbar, .sidebar, .toolbar .btn { box-shadow: none; }
+  .ehr { display: block; border: 0; box-shadow: none; min-height: auto; }
+  .sidebar, .toolbar button, .patient-tools { display: none; }
+  .content { overflow: visible; padding: 12px; }
+  .card { break-inside: avoid; }
+}
 
-.assess-grid { display: grid; grid-template-columns: 160px 1fr; gap: 8px; font-size: 12px; margin-bottom: 8px; align-items: center; }
-.assess-grid .l { color: var(--color-text-secondary); }
-.assess-grid select, .assess-grid input { padding: 6px 9px; border: 0.5px solid var(--color-border-tertiary); border-radius: 5px; background: transparent; font-size: 12px; font-family: inherit; color: var(--color-text-primary); }
-.assess-grid select:focus, .assess-grid input:focus { outline: none; border-color: #1D9E75; box-shadow: 0 0 0 2px rgba(29,158,117,0.15); }
+@media (max-width: 1020px) {
+  body { padding: 8px; }
+  .app-shell { min-height: calc(100vh - 16px); }
+  .topbar { align-items: flex-start; }
+  .top-meta { display: none; }
+  .ehr { grid-template-columns: 1fr; min-height: auto; overflow: visible; }
+  .sidebar { border-right: 0; border-bottom: 1px solid var(--line); max-height: none; }
+  .nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; padding-bottom: 10px; }
+  .group { grid-column: 1 / -1; }
+  .main { min-height: 680px; }
+  .grid-3, .grid-4, .scenario-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .form-grid, .metric-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
-.sb-foot { padding: 10px 14px; border-top: 0.5px solid var(--color-border-tertiary); font-size: 10px; color: var(--color-text-tertiary); }
+@media (max-width: 640px) {
+  .topbar, .toolbar { align-items: stretch; flex-direction: column; }
+  .toolbar { min-height: auto; }
+  .grid-2, .grid-3, .grid-4, .form-grid, .metric-row, .scenario-grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; gap: 4px; }
+  .form-row label { padding-top: 0; }
+  .nav { grid-template-columns: 1fr; }
+  .check-row { grid-template-columns: 22px 1fr; }
+  .check-row > :nth-child(3), .check-row > :nth-child(4) { grid-column: 2; }
+}
 </style>
 </head>
 <body>
-<div class="page-header">
-  <h1>Sandra Garces &mdash; Hyperemesis Gravidarum EHR Simulation</h1>
-  <span class="meta">UbiSim Scenario 5173 &bull; HCT Simulation Program</span>
-</div>
-
-<div class="ehr">
-  <div class="sb">
-    <div class="sb-h">
-      <div class="lbl">Active patient</div>
-      <div class="nm">Garces, Sandra</div>
-      <div class="sub">F &bull; 30y &bull; DOB 8/19 &bull; MRN 102847</div>
-      <div class="sub" style="margin-top:2px;">G2P1 &bull; 16w gestation</div>
-      <div class="ch">
-        <span class="b b-r">HEG</span>
-        <span class="b b-w">NPO</span>
-        <span class="b b-i">Full Code</span>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand">
+      <img class="logo" src="assets/hct-logo-teal.svg" alt="HCT logo teal">
+      <div>
+        <h1>HCT Student EHR Simulation</h1>
+        <p>Structured chart review, documentation, medication safety, and clinical judgment practice</p>
       </div>
-      <div style="margin-top:8px;"><span class="alergy">&#9888; NKDA</span></div>
     </div>
-    <div class="sb-nav">
-      <div class="gp">Chart review</div>
-      <div class="ni act" data-tab="summary"><span class="ic">&#9673;</span> Patient summary</div>
-      <div class="ni" data-tab="orders"><span class="ic">&#10022;</span> Provider orders</div>
-      <div class="ni" data-tab="labs"><span class="ic">&#9879;</span> Lab results</div>
-      <div class="gp">Documentation</div>
-      <div class="ni" data-tab="vitals"><span class="ic">&#9829;</span> Vital signs</div>
-      <div class="ni" data-tab="assess"><span class="ic">&#9681;</span> Focused assessment</div>
-      <div class="ni" data-tab="meds"><span class="ic">&#9672;</span> MAR</div>
-      <div class="ni" data-tab="io"><span class="ic">&#9132;</span> Intake / output</div>
-      <div class="ni" data-tab="notes"><span class="ic">&equiv;</span> Nursing notes</div>
-      <div class="ni" data-tab="sbar"><span class="ic">&#9742;</span> SBAR / handoff</div>
+    <div class="top-meta">
+      <div>
+        <strong>HCT Simulation Program</strong><br>
+        Local student workspace with autosave
+      </div>
+      <img class="logo small" src="assets/hct-logo-navy.svg" alt="HCT logo navy">
     </div>
-    <div class="sb-foot">User: Maria Santos, RN<br>ED Bay 4 &bull; Today 1100</div>
-  </div>
+  </header>
 
-  <div class="mn">
-    <div class="tb">
-      <div class="tb-t" id="ttl">Patient summary</div>
-      <span class="tb-meta">UbiSim Scenario 5173</span>
-      <button class="btn btn-sm" id="autosave-btn">Auto-save: on</button>
-    </div>
-    <div class="cn" id="cnt"></div>
+  <div class="ehr">
+    <aside class="sidebar">
+      <div id="patient-card" class="patient-card"></div>
+      <div class="patient-tools">
+        <label class="label" for="patient-select">Patient workspace</label>
+        <select id="patient-select"></select>
+        <div class="quick-actions">
+          <button class="btn small primary" id="new-patient-shortcut">New patient</button>
+          <button class="btn small" id="sample-shortcut">Samples</button>
+        </div>
+      </div>
+      <nav class="nav" aria-label="EHR sections">
+        <div class="group">Chart review</div>
+        <button class="nav-btn active" data-tab="summary"><span class="nav-ic">PS</span>Patient summary</button>
+        <button class="nav-btn" data-tab="orders"><span class="nav-ic">PO</span>Provider orders</button>
+        <button class="nav-btn" data-tab="labs"><span class="nav-ic">LR</span>Labs / diagnostics</button>
+        <div class="group">Documentation</div>
+        <button class="nav-btn" data-tab="vitals"><span class="nav-ic">VS</span>Vital signs</button>
+        <button class="nav-btn" data-tab="assessment"><span class="nav-ic">FA</span>Focused assessment</button>
+        <button class="nav-btn" data-tab="meds"><span class="nav-ic">MR</span>MAR</button>
+        <button class="nav-btn" data-tab="io"><span class="nav-ic">IO</span>Intake / output</button>
+        <button class="nav-btn" data-tab="notes"><span class="nav-ic">NN</span>Nursing notes</button>
+        <button class="nav-btn" data-tab="careplan"><span class="nav-ic">CP</span>Care plan</button>
+        <button class="nav-btn" data-tab="education"><span class="nav-ic">ED</span>Education</button>
+        <button class="nav-btn" data-tab="sbar"><span class="nav-ic">SB</span>SBAR / handoff</button>
+        <div class="group">Student tools</div>
+        <button class="nav-btn" data-tab="scenarios"><span class="nav-ic">SC</span>Sample scenarios</button>
+        <button class="nav-btn" data-tab="newpatient"><span class="nav-ic">NP</span>Add patient</button>
+      </nav>
+      <div class="sidebar-foot">User: Student Nurse<br>Role: HCT learner<br>Mode: Practice EHR</div>
+    </aside>
+
+    <main class="main">
+      <div class="toolbar">
+        <div class="toolbar-title">
+          <h2 id="toolbar-heading">Patient summary</h2>
+          <p id="toolbar-subtitle">Autosave is on</p>
+        </div>
+        <button class="btn small" id="print-btn">Print</button>
+        <button class="btn small danger" id="reset-btn">Reset local work</button>
+      </div>
+      <section class="content" id="content"></section>
+    </main>
   </div>
 </div>
-
-<div class="toast" id="tst">Saved</div>
+<div class="toast" id="toast">Saved</div>
 
 <script>
-const state = {
-  vitals: [
-    {t:'10:50',hr:100,bps:102,bpd:60,rr:18,tmp:98.8,spo2:98,fhr:150,note:'Triage VS',by:'Triage RN'}
-  ],
-  io: [
-    {t:'10:50',type:'Emesis',amt:0,route:'',by:'Triage RN'}
-  ],
-  meds: {
-    lr_mvi: {st:'pending',time:'',note:''},
-    thiamine: {st:'pending',time:'',note:''},
-    d5_kcl: {st:'pending',time:'',note:''},
-    ondansetron: {st:'pending',time:'',note:''},
-    prenatal: {st:'held',time:'',note:'NPO — held'},
-    doxy: {st:'held',time:'',note:'NPO — held'}
-  },
-  notes: [],
-  assess: {
-    loc:'',gen:'',cv:'',resp:'',gi:'',gu:'',skin:'',mucous:'',crt:'',fhr:'',fundal:'',pain:'',psych:''
-  },
-  sbar: {s:'',b:'',a:'',r:''},
-  curTab:'summary'
-};
+const STORAGE_KEY = 'hct_ehr_complete_v2';
 
-// Persist state in localStorage so the user's work survives page reloads
-const STORAGE_KEY = 'heg_ehr_v1';
+function clone(value){ return JSON.parse(JSON.stringify(value)); }
+function uid(prefix){ return prefix + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7); }
+function esc(value){ return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function lines(value){ return esc(value || '').replace(/\n/g,'<br>'); }
+function nowTime(){ return new Date().toTimeString().slice(0,5); }
+function badgeClass(text){
+  const s = String(text || '').toLowerCase();
+  if(s.includes('allergy') || s.includes('fall') || s.includes('critical') || s.includes('stat')) return 'red';
+  if(s.includes('npo') || s.includes('risk') || s.includes('watch') || s.includes('caution')) return 'gold';
+  if(s.includes('stable') || s.includes('full code') || s.includes('complete')) return 'green';
+  if(s.includes('hct')) return 'teal';
+  return 'blue';
+}
+
+const scenarioLibrary = [
+  {
+    id: 'heg',
+    name: 'Hyperemesis Gravidarum',
+    focus: 'OB / Emergency',
+    level: 'Intermediate',
+    summary: 'Pregnant patient at 16 weeks with persistent vomiting, ketonuria, weight loss, dehydration risk, and medication sequencing priorities.',
+    skills: ['IV fluids', 'Thiamine before dextrose', 'Fetal check', 'SBAR'],
+    patient: {
+      id: 'heg-default', scenarioId: 'heg', firstName: 'Sandra', lastName: 'Garces', age: '30', sex: 'Female', dob: 'Aug 19', mrn: '102847',
+      location: 'ED Bay 4', encounter: 'Emergency visit', diagnosis: 'Hyperemesis Gravidarum', acuity: 'Urgent', codeStatus: 'Full Code', allergies: 'NKDA', attending: 'Kline, MD', nurse: 'Student Nurse',
+      specialty: 'OB / ED', admitTime: 'Today 1100', tags: ['HEG', 'NPO', 'Fall risk', 'HCT'], gestation: 'G2P1, 16 weeks', height: '177.8 cm', weight: '63.6 kg', isolation: 'Standard', fallRisk: 'Moderate',
+      diet: 'NPO', activity: 'Bedrest with assistance', lines: '20g peripheral IV, left wrist', monitoring: 'Continuous ECG, SpO2, q1h vital signs', chiefComplaint: 'Persistent nausea and vomiting',
+      hpi: 'Reports nausea and vomiting since 8 weeks gestation, progressively worse. Vomits 5-10 times/day despite scheduled doxylamine-pyridoxine. Reports 9 lb weight loss in 2 weeks and difficulty keeping fluids down.',
+      background: 'Bedside ultrasound confirmed viable singleton pregnancy with fetal heart rate 150 bpm. Husband Kevin at bedside and supportive.',
+      pastHistory: 'No chronic medical conditions. Prior term vaginal birth without complications. Current home medications: prenatal vitamin and doxylamine-pyridoxine.',
+      social: 'Married, one 3-year-old child. Denies tobacco, alcohol, and recreational drugs.', familyContact: 'Kevin Garces, spouse, at bedside',
+      team: 'ED physician Kline, MD; OB hospitalist consulted; primary RN student learner.',
+      objectives: ['Prioritize dehydration assessment and fetal wellbeing check.', 'Administer thiamine before dextrose-containing fluids.', 'Document intake/output and response to antiemetic therapy.', 'Communicate abnormal findings using SBAR.'],
+      orders: [
+        {category:'General', order:'Full Code', details:'Maintain standard precautions', status:'Active'},
+        {category:'Diet', order:'NPO', details:'Nothing by mouth until nausea controlled', status:'Active'},
+        {category:'Nursing', order:'Vital signs with SpO2 q1h', details:'Notify provider for HR > 120, SBP < 90, SpO2 < 92%', status:'Active'},
+        {category:'Nursing', order:'Strict intake and output', details:'Notify provider if urine output < 120 mL in 4 hr', status:'Active'},
+        {category:'Nursing', order:'Daily weight', details:'Use same scale when possible', status:'Active'},
+        {category:'OB', order:'Doppler fetal heart rate x1', details:'Document rate, rhythm, and maternal response', status:'Complete'},
+        {category:'IV Fluids', order:'Thiamine 100 mg IV push once', details:'Give before dextrose-containing fluids', status:'STAT'},
+        {category:'IV Fluids', order:'LR with MVI 1 L IV bolus', details:'Infuse at 500 mL/hr after thiamine', status:'Active'},
+        {category:'IV Fluids', order:'D5 0.45% NaCl + 20 mEq KCl', details:'150 mL/hr after bolus complete', status:'Pending'},
+        {category:'Medication', order:'Ondansetron 4 mg IV push q8h PRN', details:'For nausea/vomiting', status:'Active'}
+      ],
+      labs: [
+        {time:'10:45', test:'UA ketones', result:'Moderate', range:'Negative', flag:'High', note:'Starvation ketosis'},
+        {time:'10:45', test:'UA protein', result:'3+', range:'Negative/trace', flag:'High', note:'Concentrated urine'},
+        {time:'11:15', test:'Sodium', result:'134 mmol/L', range:'135-145', flag:'Low', note:'Mild hyponatremia'},
+        {time:'11:15', test:'Potassium', result:'3.3 mmol/L', range:'3.5-5.0', flag:'Low', note:'Replacement in fluids ordered'},
+        {time:'11:15', test:'BUN', result:'24 mg/dL', range:'7-20', flag:'High', note:'Dehydration cue'},
+        {time:'11:15', test:'Creatinine', result:'0.9 mg/dL', range:'0.5-1.1', flag:'Normal', note:''},
+        {time:'11:20', test:'FHR Doppler', result:'150 bpm', range:'110-160', flag:'Normal', note:'Regular rhythm'}
+      ],
+      diagnostics: ['Bedside ultrasound: viable singleton intrauterine pregnancy, fetal movement present.', 'Weight trend: 68.2 kg pre-pregnancy to 63.6 kg today.'],
+      vitals: [{time:'10:50', hr:100, bps:102, bpd:60, rr:18, temp:'98.8', spo2:98, pain:'3', fetal:'150', note:'Triage vital signs', by:'Triage RN'}],
+      meds: [
+        {id:'thiamine', name:'Thiamine', dose:'100 mg', route:'IV push', freq:'Once', priority:'STAT', status:'pending', time:'', note:'Give before dextrose', warn:'Give before any dextrose-containing fluid.'},
+        {id:'lr_mvi', name:"Lactated Ringer's with MVI", dose:'1 L', route:'IV', freq:'Bolus at 500 mL/hr', priority:'STAT', status:'pending', time:'', note:'', warn:''},
+        {id:'d5_kcl', name:'D5 0.45% NaCl + 20 mEq KCl', dose:'150 mL/hr', route:'IV', freq:'Continuous', priority:'Scheduled', status:'pending', time:'', note:'After bolus complete', warn:'Verify thiamine was administered first.'},
+        {id:'ondansetron', name:'Ondansetron', dose:'4 mg', route:'IV push', freq:'q8h PRN', priority:'PRN', status:'pending', time:'', note:'For nausea/vomiting', warn:''},
+        {id:'prenatal', name:'Prenatal vitamin', dose:'1 tab', route:'PO', freq:'Daily', priority:'Home', status:'hold', time:'', note:'NPO', warn:''}
+      ],
+      io: [{time:'10:50', type:'Emesis', amount:60, direction:'out', note:'Clear thin emesis', by:'Triage RN'}],
+      notes: [],
+      assessment: {neuro:'Alert and oriented x4', resp:'Clear bilaterally', cardiac:'Tachycardic, regular', gi:'Active vomiting, abdomen soft', gu:'Dark concentrated urine', skin:'Dry mucous membranes', safety:'Bedrest, call light in reach', pain:'3/10 epigastric discomfort', fetal:'FHR 150 bpm', psychosocial:'Anxious, spouse supportive', narrative:''},
+      carePlan: [{dx:'Deficient fluid volume related to persistent vomiting', goal:'Patient will show improved hydration after ordered fluids.', interventions:'Monitor VS, strict I/O, administer thiamine and fluids as ordered, reassess mucous membranes and urine output.', evaluation:'Pending'}],
+      education: [{topic:'Diagnosis and plan of care', status:'Not started', response:''}, {topic:'Medication purpose and sequencing', status:'Not started', response:''}, {topic:'When to notify staff', status:'Not started', response:''}],
+      sbar: {s:'', b:'', a:'', r:''}
+    }
+  },
+  {
+    id: 'pph', name: 'Postpartum Hemorrhage', focus: 'Maternal / OB', level: 'Advanced', summary: 'Postpartum patient with heavy bleeding, boggy fundus, falling blood pressure, and urgent uterotonic priorities.', skills: ['Fundal massage', 'Quantified blood loss', 'Uterotonics', 'Rapid escalation'],
+    patient: {
+      id:'pph-default', scenarioId:'pph', firstName:'Leah', lastName:'Mendoza', age:'28', sex:'Female', dob:'Feb 6', mrn:'221603', location:'LDR 2', encounter:'Postpartum admission', diagnosis:'Postpartum Hemorrhage', acuity:'Critical', codeStatus:'Full Code', allergies:'Shellfish - hives', attending:'Ramos, MD', nurse:'Student Nurse', specialty:'OB', admitTime:'Today 1440', tags:['PPH','Critical','QBL','HCT'], gestation:'G3P3, delivered 30 min ago', height:'162 cm', weight:'72 kg', isolation:'Standard', fallRisk:'High', diet:'NPO during instability', activity:'Bedrest', lines:'18g IV right forearm, 18g IV left hand', monitoring:'q5 min VS, continuous pulse oximetry', chiefComplaint:'Heavy postpartum bleeding', hpi:'Thirty minutes after vaginal delivery, patient reports dizziness and increased bleeding. Fundus is boggy and above umbilicus.', background:'Delivery complicated by prolonged second stage. Placenta delivered intact per provider note.', pastHistory:'Prior postpartum hemorrhage with second pregnancy. No surgical history.', social:'Partner at bedside. Prefers clear explanations before procedures when possible.', familyContact:'Miguel Mendoza, spouse', team:'OB provider Ramos, MD; charge nurse notified; blood bank pending.', objectives:['Recognize hemorrhage cues rapidly.', 'Perform fundal massage and quantify blood loss.', 'Administer ordered uterotonics safely.', 'Escalate using concise SBAR.'],
+      orders:[{category:'Nursing',order:'Fundal massage now',details:'Continue until firm; call provider if remains boggy',status:'STAT'},{category:'Nursing',order:'Quantify blood loss',details:'Weigh pads and linens',status:'STAT'},{category:'IV Fluids',order:'LR 1 L bolus',details:'Pressure bag if available',status:'STAT'},{category:'Medication',order:'Oxytocin 30 units in 500 mL LR',details:'125 mL/hr after bolus started',status:'STAT'},{category:'Medication',order:'Methylergonovine 0.2 mg IM once',details:'Hold for hypertension',status:'Pending'},{category:'Lab',order:'CBC, PT/INR, fibrinogen, type and crossmatch',details:'Draw now',status:'STAT'}],
+      labs:[{time:'14:40',test:'Hemoglobin',result:'10.2 g/dL',range:'12-16',flag:'Low',note:'Pre-delivery 11.4'},{time:'14:40',test:'Platelets',result:'168 K/uL',range:'150-400',flag:'Normal',note:''},{time:'14:40',test:'Fibrinogen',result:'280 mg/dL',range:'200-400',flag:'Normal',note:'Watch trend'}], diagnostics:['QBL currently 850 mL and rising.', 'Fundus boggy, deviated right.'], vitals:[{time:'14:38',hr:118,bps:92,bpd:54,rr:22,temp:'99.0',spo2:97,pain:'5',fetal:'N/A',note:'Dizzy, pale',by:'LDR RN'}],
+      meds:[{id:'oxytocin',name:'Oxytocin',dose:'30 units/500 mL LR',route:'IV',freq:'Continuous',priority:'STAT',status:'pending',time:'',note:'',warn:''},{id:'methergine',name:'Methylergonovine',dose:'0.2 mg',route:'IM',freq:'Once',priority:'STAT',status:'pending',time:'',note:'Check BP before giving',warn:'Hold if hypertensive.'},{id:'lrbolus',name:'Lactated Ringer\'s',dose:'1 L',route:'IV',freq:'Bolus',priority:'STAT',status:'pending',time:'',note:'',warn:''}], io:[{time:'14:38',type:'Blood loss',amount:850,direction:'out',note:'QBL, pads and chux',by:'LDR RN'}], notes:[], assessment:{neuro:'Alert, dizzy',resp:'Clear bilaterally',cardiac:'Tachycardic',gi:'Nauseated',gu:'Bladder possibly distended',skin:'Pale, cool',safety:'Bedrest, high fall risk',pain:'5/10 uterine cramping',fetal:'Postpartum',psychosocial:'Anxious, partner at bedside',narrative:''}, carePlan:[{dx:'Risk for shock related to acute blood loss',goal:'Bleeding controlled and perfusion maintained.',interventions:'Fundal massage, QBL, administer fluids/uterotonics, monitor VS q5 min, escalate for ongoing bleeding.',evaluation:'Pending'}], education:[{topic:'Need for fundal massage and medications',status:'Not started',response:''},{topic:'Safety/fall precautions',status:'Not started',response:''}], sbar:{s:'',b:'',a:'',r:''}
+    }
+  },
+  {
+    id:'sepsis', name:'Sepsis From Pneumonia', focus:'Adult / Emergency', level:'Advanced', summary:'Adult patient with fever, tachycardia, hypotension, elevated lactate, and time-sensitive sepsis bundle care.', skills:['Sepsis bundle','Cultures before antibiotics','Fluid bolus','Trend lactate'],
+    patient:{id:'sepsis-default',scenarioId:'sepsis',firstName:'Robert',lastName:'Chen',age:'64',sex:'Male',dob:'Nov 2',mrn:'304419',location:'ED Bay 7',encounter:'Emergency visit',diagnosis:'Sepsis secondary to pneumonia',acuity:'Critical',codeStatus:'Full Code',allergies:'Penicillin - rash',attending:'Patel, MD',nurse:'Student Nurse',specialty:'ED / Medical',admitTime:'Today 0830',tags:['Sepsis','Fall risk','O2','HCT'],gestation:'N/A',height:'170 cm',weight:'82 kg',isolation:'Droplet pending viral panel',fallRisk:'High',diet:'NPO pending swallow screen',activity:'Bedrest',lines:'18g IV right AC',monitoring:'Continuous ECG and pulse oximetry',chiefComplaint:'Shortness of breath and fever',hpi:'Two days of productive cough, fever, chills, and increasing shortness of breath. Family reports confusion this morning.',background:'Chest x-ray shows right lower lobe infiltrate.',pastHistory:'Type 2 diabetes, hypertension. Home meds include metformin and lisinopril.',social:'Lives with daughter. Former smoker.',familyContact:'Daughter Mei Chen, phone on chart',team:'ED provider Patel, MD; respiratory therapy notified.',objectives:['Recognize sepsis criteria and organ perfusion cues.','Obtain cultures before antibiotic administration when feasible.','Start ordered fluids and antibiotics promptly.','Communicate lactate and blood pressure trends.'],orders:[{category:'Sepsis',order:'Activate sepsis pathway',details:'Document time zero and bundle elements',status:'Active'},{category:'Lab',order:'Blood cultures x2, CBC, CMP, lactate',details:'Before antibiotics if this does not delay care',status:'STAT'},{category:'IV Fluids',order:'NS bolus 30 mL/kg',details:'Reassess lungs and perfusion during bolus',status:'STAT'},{category:'Medication',order:'Ceftriaxone 1 g IV',details:'Verify allergy details; provider aware of rash only',status:'STAT'},{category:'Medication',order:'Azithromycin 500 mg IV',details:'Infuse per policy',status:'STAT'},{category:'Respiratory',order:'Oxygen 2-6 L NC',details:'Titrate SpO2 > 92%',status:'Active'}],labs:[{time:'08:35',test:'Lactate',result:'3.8 mmol/L',range:'0.5-2.0',flag:'High',note:'Repeat in 2 hr'},{time:'08:35',test:'WBC',result:'18.4 K/uL',range:'4.5-11',flag:'High',note:''},{time:'08:35',test:'Glucose',result:'244 mg/dL',range:'70-110',flag:'High',note:''},{time:'08:40',test:'CXR',result:'RLL infiltrate',range:'',flag:'High',note:'Consistent with pneumonia'}],diagnostics:['ECG: sinus tachycardia.', 'CXR: right lower lobe infiltrate.'],vitals:[{time:'08:30',hr:126,bps:88,bpd:52,rr:28,temp:'102.4',spo2:89,pain:'2',fetal:'N/A',note:'Room air, confused',by:'Triage RN'}],meds:[{id:'nsbolus',name:'Normal saline',dose:'2460 mL',route:'IV',freq:'Bolus',priority:'STAT',status:'pending',time:'',note:'30 mL/kg',warn:'Monitor lung sounds.'},{id:'ceftriaxone',name:'Ceftriaxone',dose:'1 g',route:'IV',freq:'Once',priority:'STAT',status:'pending',time:'',note:'',warn:'Review allergy history.'},{id:'azithro',name:'Azithromycin',dose:'500 mg',route:'IV',freq:'Once',priority:'STAT',status:'pending',time:'',note:'',warn:''}],io:[],notes:[],assessment:{neuro:'Confused to date',resp:'Crackles RLL, labored',cardiac:'Sinus tachycardia',gi:'Soft, denies nausea',gu:'No void since arrival',skin:'Warm, flushed',safety:'Bed low, high fall risk',pain:'2/10 chest soreness with cough',fetal:'N/A',psychosocial:'Daughter worried at bedside',narrative:''},carePlan:[{dx:'Ineffective tissue perfusion related to sepsis',goal:'MAP and mentation improve after bundle care.',interventions:'Monitor VS, administer fluids/antibiotics, trend lactate, reassess respiratory status.',evaluation:'Pending'}],education:[{topic:'Sepsis treatment plan',status:'Not started',response:''},{topic:'Oxygen and fall precautions',status:'Not started',response:''}],sbar:{s:'',b:'',a:'',r:''}}
+  },
+  {
+    id:'asthma', name:'Pediatric Asthma Exacerbation', focus:'Pediatrics / Respiratory', level:'Intermediate', summary:'School-age patient with wheezing, increased work of breathing, low oxygen saturation, and bronchodilator response assessment.', skills:['Respiratory assessment','Nebulized meds','Family teaching','Peak flow'],
+    patient:{id:'asthma-default',scenarioId:'asthma',firstName:'Maya',lastName:'Reyes',age:'9',sex:'Female',dob:'Apr 10',mrn:'552018',location:'Peds ED 3',encounter:'Emergency visit',diagnosis:'Acute asthma exacerbation',acuity:'Urgent',codeStatus:'Full Code',allergies:'NKDA',attending:'Lau, MD',nurse:'Student Nurse',specialty:'Pediatrics',admitTime:'Today 1910',tags:['Asthma','Peds','O2','HCT'],gestation:'N/A',height:'135 cm',weight:'32 kg',isolation:'Standard',fallRisk:'Low',diet:'Clear liquids as tolerated',activity:'Rest, semi-Fowler position',lines:'No IV at this time',monitoring:'Continuous pulse oximetry during treatment',chiefComplaint:'Trouble breathing and wheezing',hpi:'Wheezing began after soccer practice. Used rescue inhaler twice at home with limited relief. Speaking in short phrases on arrival.',background:'Known asthma, last ED visit 8 months ago. No intubation history.',pastHistory:'Asthma triggered by exercise and seasonal allergies.',social:'Mother at bedside. Patient is anxious but cooperative.',familyContact:'Ana Reyes, mother',team:'Peds ED provider Lau, MD; respiratory therapist at bedside.',objectives:['Assess work of breathing and response to bronchodilators.','Use pediatric dosing and family-centered communication.','Document reassessment after each treatment.','Teach inhaler/spacer use before discharge.'],orders:[{category:'Respiratory',order:'Albuterol nebulizer',details:'2.5 mg now, repeat per protocol',status:'STAT'},{category:'Respiratory',order:'Ipratropium nebulizer',details:'0.5 mg now with first treatment',status:'STAT'},{category:'Medication',order:'Dexamethasone 16 mg PO once',details:'Give when able to tolerate PO',status:'Active'},{category:'Nursing',order:'Continuous SpO2 during treatment',details:'Notify provider SpO2 < 92%',status:'Active'}],labs:[{time:'19:10',test:'SpO2 room air',result:'91%',range:'>95%',flag:'Low',note:''},{time:'19:12',test:'Peak flow',result:'160 L/min',range:'Personal best 280',flag:'Low',note:'57% personal best'}],diagnostics:['No CXR ordered initially.'],vitals:[{time:'19:10',hr:124,bps:104,bpd:66,rr:32,temp:'98.9',spo2:91,pain:'0',fetal:'N/A',note:'Accessory muscle use',by:'Peds RN'}],meds:[{id:'albuterol',name:'Albuterol',dose:'2.5 mg',route:'Nebulized',freq:'Now',priority:'STAT',status:'pending',time:'',note:'',warn:'Reassess HR and breath sounds.'},{id:'ipratropium',name:'Ipratropium',dose:'0.5 mg',route:'Nebulized',freq:'Now',priority:'STAT',status:'pending',time:'',note:'',warn:''},{id:'dex',name:'Dexamethasone',dose:'16 mg',route:'PO',freq:'Once',priority:'Scheduled',status:'pending',time:'',note:'',warn:''}],io:[],notes:[],assessment:{neuro:'Alert, anxious',resp:'Inspiratory/expiratory wheezes, accessory muscles',cardiac:'Tachycardic',gi:'Soft, no nausea',gu:'Voided before arrival',skin:'Warm, dry',safety:'Mother at bedside',pain:'0/10',fetal:'N/A',psychosocial:'Anxious, responds to coaching',narrative:''},carePlan:[{dx:'Impaired gas exchange related to bronchospasm',goal:'SpO2 improves and work of breathing decreases.',interventions:'Position upright, administer nebulizers, monitor SpO2, coach breathing, reassess peak flow.',evaluation:'Pending'}],education:[{topic:'Spacer technique',status:'Not started',response:''},{topic:'Asthma action plan',status:'Not started',response:''}],sbar:{s:'',b:'',a:'',r:''}}
+  },
+  {
+    id:'hf', name:'Heart Failure Exacerbation', focus:'Adult / Cardiac', level:'Intermediate', summary:'Older adult with dyspnea, edema, crackles, fluid overload, diuretic therapy, and strict output monitoring.', skills:['Fluid assessment','Diuretic safety','Daily weight','Patient education'],
+    patient:{id:'hf-default',scenarioId:'hf',firstName:'Eleanor',lastName:'Brooks',age:'76',sex:'Female',dob:'Jul 12',mrn:'774209',location:'Med-Surg 418',encounter:'Observation admission',diagnosis:'Acute on chronic heart failure exacerbation',acuity:'Watcher',codeStatus:'Full Code',allergies:'Sulfa - rash',attending:'Nguyen, MD',nurse:'Student Nurse',specialty:'Medical / Cardiac',admitTime:'Today 0630',tags:['CHF','Strict I/O','Fall risk','HCT'],gestation:'N/A',height:'158 cm',weight:'78.4 kg',isolation:'Standard',fallRisk:'High',diet:'2 g sodium, 1500 mL fluid restriction',activity:'Up with assist',lines:'22g IV left forearm',monitoring:'Telemetry, daily weight, strict I/O',chiefComplaint:'Shortness of breath and swollen ankles',hpi:'Three days worsening dyspnea when lying flat, 4 lb weight gain, and bilateral ankle edema. Missed diuretic doses while visiting family.',background:'History of HFrEF, EF 35%.',pastHistory:'Heart failure, hypertension, CKD stage 3.',social:'Lives alone, daughter nearby.',familyContact:'Daughter Claire Brooks',team:'Hospitalist Nguyen, MD; cardiology consulted.',objectives:['Differentiate fluid overload from respiratory infection cues.','Administer IV diuretic safely and monitor response.','Track strict I/O and daily weight.','Teach low sodium and fluid restriction.'],orders:[{category:'Medication',order:'Furosemide 40 mg IV now',details:'Monitor urine output and potassium',status:'Active'},{category:'Nursing',order:'Strict intake and output',details:'Report urine output < 30 mL/hr',status:'Active'},{category:'Diet',order:'2 g sodium diet, 1500 mL fluid restriction',details:'Track all intake',status:'Active'},{category:'Monitoring',order:'Telemetry',details:'Notify for dysrhythmia',status:'Active'}],labs:[{time:'06:45',test:'BNP',result:'1120 pg/mL',range:'<100',flag:'High',note:''},{time:'06:45',test:'Potassium',result:'3.6 mmol/L',range:'3.5-5.0',flag:'Normal',note:'Monitor after diuresis'},{time:'06:45',test:'Creatinine',result:'1.4 mg/dL',range:'0.5-1.1',flag:'High',note:'CKD baseline 1.3'}],diagnostics:['CXR: mild pulmonary vascular congestion.', 'Telemetry: sinus rhythm with occasional PVCs.'],vitals:[{time:'06:35',hr:96,bps:148,bpd:84,rr:24,temp:'98.4',spo2:91,pain:'0',fetal:'N/A',note:'2 L NC started',by:'Night RN'}],meds:[{id:'furosemide',name:'Furosemide',dose:'40 mg',route:'IV push',freq:'Once',priority:'Scheduled',status:'pending',time:'',note:'',warn:'Monitor BP, potassium, urine output.'}],io:[],notes:[],assessment:{neuro:'Alert and oriented x4',resp:'Bibasilar crackles, dyspnea lying flat',cardiac:'S1 S2, edema +2 ankles',gi:'Soft, appetite poor',gu:'Voiding small amounts',skin:'Cool lower extremities',safety:'High fall risk',pain:'0/10',fetal:'N/A',psychosocial:'Worried about going home alone',narrative:''},carePlan:[{dx:'Excess fluid volume related to heart failure',goal:'Breathing improves and net fluid balance decreases.',interventions:'Administer diuretic, monitor VS, strict I/O, daily weight, reinforce sodium/fluid restriction.',evaluation:'Pending'}],education:[{topic:'Fluid restriction',status:'Not started',response:''},{topic:'Daily weights',status:'Not started',response:''},{topic:'Low sodium diet',status:'Not started',response:''}],sbar:{s:'',b:'',a:'',r:''}}
+  },
+  {
+    id:'dka', name:'Diabetic Ketoacidosis', focus:'Adult / Endocrine', level:'Advanced', summary:'Young adult with hyperglycemia, ketones, dehydration, potassium monitoring, insulin infusion, and neurologic reassessment.', skills:['Insulin safety','Potassium checks','Neuro monitoring','Fluid replacement'],
+    patient:{id:'dka-default',scenarioId:'dka',firstName:'Jordan',lastName:'Williams',age:'22',sex:'Male',dob:'Sep 3',mrn:'661002',location:'ED Resus 1',encounter:'Emergency visit',diagnosis:'Diabetic Ketoacidosis',acuity:'Critical',codeStatus:'Full Code',allergies:'NKDA',attending:'Santos, MD',nurse:'Student Nurse',specialty:'ED / ICU',admitTime:'Today 0120',tags:['DKA','Insulin drip','Critical','HCT'],gestation:'N/A',height:'180 cm',weight:'70 kg',isolation:'Standard',fallRisk:'High',diet:'NPO',activity:'Bedrest',lines:'18g IV right AC, 20g IV left hand',monitoring:'Continuous ECG, q1h glucose and neuro checks',chiefComplaint:'Vomiting, abdominal pain, very high blood sugar',hpi:'Type 1 diabetes patient missed insulin during illness. Presents with vomiting, abdominal pain, thirst, and fruity breath.',background:'Home glucose meter read HI. Family reports increased sleepiness.',pastHistory:'Type 1 diabetes since age 12.',social:'College student, lives with roommates.',familyContact:'Mother Angela Williams by phone',team:'ED provider Santos, MD; ICU accepted pending bed.',objectives:['Prioritize fluid replacement before insulin infusion per protocol.','Verify potassium before insulin initiation.','Monitor glucose, neuro status, and anion gap trends.','Document patient response and safety checks.'],orders:[{category:'IV Fluids',order:'NS 1 L bolus',details:'Start immediately',status:'STAT'},{category:'Lab',order:'BMP, VBG, serum ketones q2h',details:'Trend potassium and anion gap',status:'Active'},{category:'Medication',order:'Regular insulin infusion',details:'Start after potassium verified > 3.3',status:'Pending'},{category:'Nursing',order:'POC glucose q1h',details:'Follow DKA protocol',status:'Active'}],labs:[{time:'01:22',test:'Glucose',result:'586 mg/dL',range:'70-110',flag:'High',note:''},{time:'01:22',test:'Potassium',result:'4.8 mmol/L',range:'3.5-5.0',flag:'Normal',note:'Ok to start insulin per protocol'},{time:'01:22',test:'CO2',result:'12 mmol/L',range:'22-29',flag:'Low',note:''},{time:'01:22',test:'Anion gap',result:'28',range:'8-12',flag:'High',note:''},{time:'01:25',test:'VBG pH',result:'7.21',range:'7.32-7.43',flag:'Low',note:''}],diagnostics:['ECG: sinus tachycardia, no peaked T waves.'],vitals:[{time:'01:20',hr:122,bps:96,bpd:58,rr:28,temp:'99.1',spo2:98,pain:'6',fetal:'N/A',note:'Kussmaul respirations',by:'ED RN'}],meds:[{id:'ns',name:'Normal saline',dose:'1 L',route:'IV',freq:'Bolus',priority:'STAT',status:'pending',time:'',note:'',warn:''},{id:'insulin',name:'Regular insulin infusion',dose:'0.1 units/kg/hr',route:'IV',freq:'Continuous',priority:'Protocol',status:'pending',time:'',note:'Start after K verified',warn:'Do not start if K < 3.3.'}],io:[],notes:[],assessment:{neuro:'Sleepy, arouses to voice',resp:'Kussmaul respirations',cardiac:'Sinus tachycardia',gi:'Vomiting, abdominal pain',gu:'Polyuria prior to arrival',skin:'Dry mucous membranes',safety:'High fall risk, bed alarm',pain:'6/10 abdominal',fetal:'N/A',psychosocial:'Mother available by phone',narrative:''},carePlan:[{dx:'Deficient fluid volume related to osmotic diuresis',goal:'Perfusion and glucose improve with DKA protocol.',interventions:'Start fluids, monitor glucose hourly, verify potassium, administer insulin per protocol, reassess neuro status.',evaluation:'Pending'}],education:[{topic:'Sick day insulin plan',status:'Not started',response:''},{topic:'DKA warning signs',status:'Not started',response:''}],sbar:{s:'',b:'',a:'',r:''}}
+  }
+];
+
+let state = { patients: [clone(scenarioLibrary[0].patient)], activeId: 'heg-default', curTab: 'summary' };
 try {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    const parsed = JSON.parse(saved);
-    Object.assign(state, parsed);
-  }
-} catch(e){}
-
-function persist(){
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
-}
-
-document.getElementById('autosave-btn').addEventListener('click', () => {
-  if (confirm('Reset all charting and start fresh? This cannot be undone.')) {
-    localStorage.removeItem(STORAGE_KEY);
-    location.reload();
-  }
-});
-
-function toast(msg){
-  const t=document.getElementById('tst');
-  t.textContent=msg;
-  t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),1600);
-}
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+  if(saved && Array.isArray(saved.patients) && saved.patients.length){ state = saved; }
+} catch(e) {}
 
 const titles = {
-  summary:'Patient summary',orders:'Provider orders',labs:'Lab results',
-  vitals:'Vital signs flowsheet',assess:'Focused antepartum assessment',
-  meds:'Medication administration record',io:'Intake & output',
-  notes:'Nursing notes',sbar:'SBAR / provider handoff'
+  summary:'Patient summary', orders:'Provider orders', labs:'Labs / diagnostics', vitals:'Vital signs', assessment:'Focused assessment', meds:'Medication administration record', io:'Intake / output', notes:'Nursing notes', careplan:'Care plan', education:'Patient education', sbar:'SBAR / handoff', scenarios:'Sample scenarios', newpatient:'Add patient from scratch'
 };
 
-function showTab(t){
-  state.curTab=t;
-  document.querySelectorAll('.ni').forEach(el=>el.classList.toggle('act',el.dataset.tab===t));
-  document.getElementById('ttl').textContent=titles[t];
-  const renderers={summary:rSummary,orders:rOrders,labs:rLabs,vitals:rVitals,assess:rAssess,meds:rMeds,io:rIO,notes:rNotes,sbar:rSBAR};
-  document.getElementById('cnt').innerHTML=renderers[t]();
-  if(t==='vitals') hookVitals();
-  if(t==='io') hookIO();
-  if(t==='meds') hookMeds();
-  if(t==='notes') hookNotes();
-  if(t==='assess') hookAssess();
-  if(t==='sbar') hookSBAR();
+function patient(){ return state.patients.find(p => p.id === state.activeId) || state.patients[0]; }
+function persist(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500); }
+function setTab(tab){ state.curTab = tab; render(); persist(); }
+
+function render(){
+  const p = patient();
+  if(!p){ state.patients = [clone(scenarioLibrary[0].patient)]; state.activeId = state.patients[0].id; }
+  renderPatientCard();
+  renderPatientSelect();
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === state.curTab));
+  document.getElementById('toolbar-heading').textContent = titles[state.curTab] || 'Patient summary';
+  document.getElementById('toolbar-subtitle').textContent = `${patient().lastName}, ${patient().firstName} | MRN ${patient().mrn || 'unassigned'} | Autosave is on`;
+  const map = {summary:rSummary, orders:rOrders, labs:rLabs, vitals:rVitals, assessment:rAssessment, meds:rMeds, io:rIO, notes:rNotes, careplan:rCarePlan, education:rEducation, sbar:rSbar, scenarios:rScenarios, newpatient:rNewPatient};
+  document.getElementById('content').innerHTML = (map[state.curTab] || rSummary)();
+  hookCurrent();
 }
 
-document.querySelectorAll('.ni').forEach(el=>el.addEventListener('click',()=>showTab(el.dataset.tab)));
+function renderPatientCard(){
+  const p = patient();
+  const tagHtml = (p.tags || []).slice(0,6).map(t => `<span class="badge ${badgeClass(t)}">${esc(t)}</span>`).join('');
+  document.getElementById('patient-card').innerHTML = `
+    <span class="label">Active patient</span>
+    <div class="patient-name">${esc(p.lastName)}, ${esc(p.firstName)}</div>
+    <div class="patient-line">${esc(p.sex)} | ${esc(p.age)}y | DOB ${esc(p.dob)} | MRN ${esc(p.mrn)}</div>
+    <div class="patient-line">${esc(p.location)} | ${esc(p.diagnosis)}</div>
+    <div class="patient-line">${esc(p.gestation || 'N/A')} | ${esc(p.codeStatus)} | ${esc(p.allergies)}</div>
+    <div class="badges">${tagHtml}</div>`;
+}
+
+function renderPatientSelect(){
+  const select = document.getElementById('patient-select');
+  select.innerHTML = state.patients.map(p => `<option value="${esc(p.id)}" ${p.id===state.activeId?'selected':''}>${esc(p.lastName)}, ${esc(p.firstName)} - ${esc(p.diagnosis)}</option>`).join('');
+}
+
+function section(title, body, right=''){
+  return `<div class="card"><div class="card-head"><h3>${esc(title)}</h3>${right}</div><div class="card-body">${body}</div></div>`;
+}
+function field(k,v,cls=''){ return `<div class="field"><span class="k">${esc(k)}</span><span class="v ${cls}">${lines(v || '--')}</span></div>`; }
+function statusClass(s){ const x=String(s||'').toLowerCase().replace(/\s+/g,'_'); if(x.includes('stat')||x.includes('critical')||x.includes('high')||x.includes('low')) return 'critical'; if(x.includes('pending')||x.includes('hold')) return 'pending'; if(x.includes('complete')||x.includes('given')||x.includes('active')) return 'done'; return 'normal'; }
 
 function rSummary(){
-  return `
-  <div class="cd"><div class="ch2"><h3>Demographics</h3></div><div class="cb">
-    <div class="gr3">
-      <div class="fld"><span class="fl">Patient</span><span class="fv">Garces, Sandra</span></div>
-      <div class="fld"><span class="fl">DOB / Age</span><span class="fv">August 19 (30 y/o)</span></div>
-      <div class="fld"><span class="fl">MRN</span><span class="fv">102847</span></div>
-      <div class="fld"><span class="fl">Sex / Gender</span><span class="fv">Female</span></div>
-      <div class="fld"><span class="fl">Height / Weight</span><span class="fv">177.8 cm / 63.6 kg</span></div>
-      <div class="fld"><span class="fl">Pre-pregnancy Wt</span><span class="fv abn">68.2 kg (&minus;4.6 kg)</span></div>
-      <div class="fld"><span class="fl">Gestation</span><span class="fv">16 weeks G2P1</span></div>
-      <div class="fld"><span class="fl">Allergies</span><span class="fv">NKDA</span></div>
-      <div class="fld"><span class="fl">Code Status</span><span class="fv">Full Code</span></div>
-      <div class="fld"><span class="fl">Attending</span><span class="fv">Kline, MD (ED)</span></div>
-      <div class="fld"><span class="fl">Admit Date / Loc</span><span class="fv">Today / ED Bay 4</span></div>
-      <div class="fld"><span class="fl">Primary Dx</span><span class="fv abn">Hyperemesis Gravidarum</span></div>
-    </div>
-  </div></div>
-
-  <div class="cd"><div class="ch2"><h3>History of present illness</h3></div><div class="cb">
-    <p style="font-size:13px;line-height:1.6;color:var(--color-text-primary);">Sandra Garces is a 30 y/o G2P1 at 16 weeks gestation presenting with persistent N/V since 8 weeks gestation, progressive over the last 8 weeks. Reports vomiting 5&ndash;10&times;/day despite scheduled doxylamine-pyridoxine. Weight loss 9 lb (4.1 kg) in 2 weeks. UA: moderate ketones, 3+ protein. Bedside US confirmed viable singleton (FHR 150). Husband Kevin at bedside.</p>
-  </div></div>
-
-  <div class="cd"><div class="ch2"><h3>Past medical / OB history</h3></div><div class="cb">
-    <div class="gr2">
-      <div class="fld"><span class="fl">PMHx</span><span class="fv">No chronic conditions</span></div>
-      <div class="fld"><span class="fl">PSHx</span><span class="fv">None</span></div>
-      <div class="fld"><span class="fl">OB Hx</span><span class="fv">G2P1 &mdash; prior NSVD at term, child healthy</span></div>
-      <div class="fld"><span class="fl">Prior Pregnancy NV</span><span class="fv">Morning sickness T1, resolved</span></div>
-      <div class="fld"><span class="fl">Home Meds</span><span class="fv">Prenatal vit PO daily; Doxylamine-Pyridoxine 20/20mg PO HS</span></div>
-      <div class="fld"><span class="fl">Social</span><span class="fv">Married 6y, 1 child (3y/o). Denies tobacco / EtOH / drugs</span></div>
-    </div>
-  </div></div>
-
-  <div class="cd"><div class="ch2"><h3>Care team</h3></div><div class="cb">
-    <div class="gr3">
-      <div class="fld"><span class="fl">ED Physician</span><span class="fv">Kline, MD</span></div>
-      <div class="fld"><span class="fl">OB Hospitalist</span><span class="fv">Consulted (today)</span></div>
-      <div class="fld"><span class="fl">Primary RN</span><span class="fv">Santos, Maria RN</span></div>
-      <div class="fld"><span class="fl">Spouse / NOK</span><span class="fv">Kevin Garces &mdash; at bedside</span></div>
-      <div class="fld"><span class="fl">IV Access</span><span class="fv">20g L wrist saline lock (patent)</span></div>
-      <div class="fld"><span class="fl">Activity / Diet</span><span class="fv">Bedrest / NPO</span></div>
-    </div>
-  </div></div>`;
+  const p = patient();
+  const safety = `<div class="notice ${p.acuity === 'Critical' ? 'danger' : 'info'}"><span class="mark">HCT</span><span><strong>${esc(p.acuity)} acuity.</strong> Allergies: ${esc(p.allergies)}. Code status: ${esc(p.codeStatus)}. Monitoring: ${esc(p.monitoring)}.</span></div>`;
+  const demo = `<div class="grid-4">
+    ${field('Patient', `${p.lastName}, ${p.firstName}`)}${field('DOB / Age', `${p.dob} / ${p.age}`)}${field('Sex', p.sex)}${field('MRN', p.mrn)}
+    ${field('Location', p.location)}${field('Encounter', p.encounter)}${field('Attending', p.attending)}${field('Nurse', p.nurse)}
+    ${field('Height / Weight', `${p.height || '--'} / ${p.weight || '--'}`)}${field('Pregnancy / Specialty', p.gestation || p.specialty)}${field('Diet', p.diet)}${field('Activity', p.activity)}
+  </div>`;
+  const story = `<p class="text-block"><strong>Chief complaint:</strong> ${esc(p.chiefComplaint)}</p><p class="text-block" style="margin-top:8px;"><strong>History of present illness:</strong> ${esc(p.hpi)}</p><p class="text-block" style="margin-top:8px;"><strong>Background:</strong> ${esc(p.background)}</p>`;
+  const hx = `<div class="grid-2">${field('Past history', p.pastHistory)}${field('Social / family', `${p.social}\nContact: ${p.familyContact}`)}${field('Care team', p.team)}${field('Lines / monitoring', `${p.lines}\n${p.monitoring}`)}</div>`;
+  const objectives = `<div class="grid-2">${(p.objectives || []).map((o,i)=>field(`Objective ${i+1}`, o)).join('')}</div>`;
+  return safety + section('Demographics', demo) + section('Clinical picture', story) + section('History and care team', hx) + section('Student learning objectives', objectives);
 }
 
 function rOrders(){
-  const orders=[
-    {cat:'General',n:'Full Code',det:'',st:'active'},
-    {cat:'Nursing',n:'Continuous bedside ECG monitoring',det:'',st:'active'},
-    {cat:'Nursing',n:'Vital signs with SpO2 q1h',det:'or more frequently for changes',st:'active'},
-    {cat:'Nursing',n:'Hourly intake and output',det:'',st:'active'},
-    {cat:'Nursing',n:'Daily weights',det:'',st:'active'},
-    {cat:'Nursing',n:'Doppler FHR check x1',det:'',st:'completed'},
-    {cat:'Activity',n:'Bedrest',det:'',st:'active'},
-    {cat:'Diet',n:'NPO',det:'Nothing by mouth',st:'active'},
-    {cat:'Resp',n:'O2 to maintain SpO2 > 92%',det:'PRN',st:'active'},
-    {cat:'Notify MD',n:'Notify provider',det:'change in condition; UO < 120 mL/4h; abnormal VS or labs; bleeding/abd pain/membrane rupture',st:'active'},
-    {cat:'Lab',n:'CBC, STAT',det:'',st:'pending'},
-    {cat:'Lab',n:'CMP, STAT',det:'',st:'pending'},
-    {cat:'Lab',n:'Magnesium, STAT',det:'',st:'pending'},
-    {cat:'Lab',n:'Phosphorous, STAT',det:'',st:'pending'},
-    {cat:'Lab',n:'Amylase, STAT',det:'',st:'pending'},
-    {cat:'Lab',n:'Lipase, STAT',det:'',st:'pending'},
-    {cat:'Lab',n:'Thyroid panel + TSH',det:'due 1100',st:'pending'},
-    {cat:'Med',n:"LR with MVI 1L IV bolus @ 500 mL/hr x2h",det:'STAT scheduled',st:'pending'},
-    {cat:'Med',n:'Thiamine 100 mg IV push',det:'over 5 min, once daily',st:'pending'},
-    {cat:'Med',n:'D5 0.45% NaCl + 20 mEq KCl @ 150 mL/hr',det:'continuous, after bolus complete',st:'pending'},
-    {cat:'Med',n:'Ondansetron 4 mg IV push q8h',det:'PRN nausea/vomiting',st:'pending'},
-  ];
-  let h=`<div class="bn bn-i"><span class="ic">&#8505;</span><span>Orders entered by Dr. Kline at 11:00. Pending labs and medications must be implemented per scenario priorities. Document execution in MAR and Lab tabs.</span></div>
-  <table class="tbl"><tr><th>Category</th><th>Order</th><th>Detail</th><th>Status</th></tr>`;
-  orders.forEach(o=>{
-    const tag=o.st==='completed'?'<span class="b b-g">Completed</span>':o.st==='pending'?'<span class="b b-w">Pending</span>':'<span class="b b-i">Active</span>';
-    h+=`<tr><td>${o.cat}</td><td><strong style="font-weight:500;">${o.n}</strong></td><td style="color:var(--color-text-secondary)">${o.det||'&mdash;'}</td><td>${tag}</td></tr>`;
-  });
-  h+=`</table>`;
-  return `<div class="cd"><div class="ch2"><h3>Active provider orders &mdash; Dr. Kline</h3><span style="font-size:11px;color:var(--color-text-tertiary);margin-left:auto;">Entered today @ 1100</span></div><div class="cb">${h}</div></div>`;
+  const p = patient();
+  const rows = (p.orders || []).map((o,i)=>`<tr><td>${esc(o.category)}</td><td>${esc(o.order)}</td><td>${esc(o.details)}</td><td><span class="status ${statusClass(o.status)}">${esc(o.status)}</span></td><td><button class="btn small danger" data-del-order="${i}">Delete</button></td></tr>`).join('');
+  const table = `<div class="table-wrap"><table><thead><tr><th>Category</th><th>Order</th><th>Details</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  const form = `<div class="form-grid"><div><span class="input-label">Category</span><input id="ord-cat" placeholder="Nursing"></div><div><span class="input-label">Order</span><input id="ord-name" placeholder="Enter provider order"></div><div><span class="input-label">Status</span><select id="ord-status"><option>Active</option><option>STAT</option><option>Pending</option><option>Complete</option></select></div><div><span class="input-label">Details</span><input id="ord-details" placeholder="Parameters or rationale"></div></div><div class="actions"><button class="btn primary" id="add-order">Add order</button></div>`;
+  return section('Active provider orders', table) + section('Add practice order', form);
 }
 
 function rLabs(){
-  return `
-  <div class="cd"><div class="ch2"><h3>Urinalysis &mdash; today, from OB/GYN office</h3></div><div class="cb">
-    <table class="tbl">
-      <tr><th>Test</th><th>Result</th><th>Reference</th></tr>
-      <tr><td>Color / Clarity</td><td>Yellow / Clear</td><td>Yellow / Clear</td></tr>
-      <tr><td>Specific Gravity</td><td><strong style="color:#A32D2D;font-weight:500;">1.028</strong></td><td>1.005 &ndash; 1.025</td></tr>
-      <tr><td>pH</td><td>7.8</td><td>4.5 &ndash; 8.0</td></tr>
-      <tr><td>Glucose</td><td>Negative</td><td>Negative</td></tr>
-      <tr><td>Ketones</td><td><strong style="color:#A32D2D;font-weight:500;">Moderate</strong></td><td>None</td></tr>
-      <tr><td>Protein</td><td><strong style="color:#A32D2D;font-weight:500;">3+</strong></td><td>Negative</td></tr>
-      <tr><td>Nitrites / Leuk Esterase</td><td>Negative</td><td>Negative</td></tr>
-      <tr><td>RBC / WBC</td><td>0 / 0</td><td>&le;2 / &le;2-5 hpf</td></tr>
-    </table>
-  </div></div>
-
-  <div class="cd"><div class="ch2"><h3>Prenatal labs (8 wks gestation, OB/GYN faxed)</h3></div><div class="cb">
-    <table class="tbl">
-      <tr><th>Test</th><th>Result</th><th>Reference</th></tr>
-      <tr><td>Blood Type / Rh</td><td>A / Rh-Negative</td><td>&mdash;</td></tr>
-      <tr><td>RPR</td><td>Non-reactive</td><td>Non-reactive</td></tr>
-      <tr><td>Chlamydia</td><td>Negative</td><td>Negative</td></tr>
-      <tr><td>HBsAg / HIV</td><td>Negative / Negative</td><td>Negative</td></tr>
-      <tr><td>Rubella / Varicella</td><td>Immune / Immune</td><td>Immune</td></tr>
-    </table>
-  </div></div>
-
-  <div class="cd"><div class="ch2"><h3>STAT labs &mdash; ordered, awaiting results</h3></div><div class="cb">
-    <div class="bn"><span class="ic">&#9203;</span><span>Specimen collection pending. After draw, document collection time in nursing notes and send to lab.</span></div>
-    <table class="tbl">
-      <tr><th>Panel</th><th>Status</th><th>Collected</th><th>Resulted</th></tr>
-      <tr><td>CBC</td><td><span class="b b-w">Pending</span></td><td>&mdash;</td><td>&mdash;</td></tr>
-      <tr><td>CMP</td><td><span class="b b-w">Pending</span></td><td>&mdash;</td><td>&mdash;</td></tr>
-      <tr><td>Magnesium</td><td><span class="b b-w">Pending</span></td><td>&mdash;</td><td>&mdash;</td></tr>
-      <tr><td>Phosphorous</td><td><span class="b b-w">Pending</span></td><td>&mdash;</td><td>&mdash;</td></tr>
-      <tr><td>Amylase / Lipase</td><td><span class="b b-w">Pending</span></td><td>&mdash;</td><td>&mdash;</td></tr>
-      <tr><td>Thyroid + TSH</td><td><span class="b b-w">Pending</span></td><td>&mdash;</td><td>&mdash;</td></tr>
-    </table>
-  </div></div>
-
-  <div class="cd"><div class="ch2"><h3>Bedside ultrasound &mdash; today, OB hospitalist</h3></div><div class="cb">
-    <div class="gr2">
-      <div class="fld"><span class="fl">Gestational Age</span><span class="fv">16 weeks (confirmed)</span></div>
-      <div class="fld"><span class="fl">Fetal Heart Rate</span><span class="fv" style="color:#3B6D11">150 bpm</span></div>
-      <div class="fld"><span class="fl">Multiple Gestation</span><span class="fv">No</span></div>
-      <div class="fld"><span class="fl">Trophoblastic Disease</span><span class="fv">No</span></div>
-      <div class="fld"><span class="fl">Uterine Contractions</span><span class="fv">None observed</span></div>
-      <div class="fld"><span class="fl">Vaginal Bleeding</span><span class="fv">None observed</span></div>
-    </div>
-  </div></div>`;
+  const p = patient();
+  const rows = (p.labs || []).map((l,i)=>`<tr><td>${esc(l.time)}</td><td>${esc(l.test)}</td><td><strong>${esc(l.result)}</strong></td><td>${esc(l.range)}</td><td><span class="status ${statusClass(l.flag)}">${esc(l.flag)}</span></td><td>${esc(l.note)}</td><td><button class="btn small danger" data-del-lab="${i}">Delete</button></td></tr>`).join('');
+  const dx = (p.diagnostics || []).map(d=>`<div class="notice info"><span class="mark">DX</span><span>${esc(d)}</span></div>`).join('') || '<p class="text-block">No diagnostic notes charted.</p>';
+  const form = `<div class="form-grid"><div><span class="input-label">Time</span><input id="lab-time" type="time" value="${nowTime()}"></div><div><span class="input-label">Test</span><input id="lab-test" placeholder="Potassium"></div><div><span class="input-label">Result</span><input id="lab-result" placeholder="3.4 mmol/L"></div><div><span class="input-label">Flag</span><select id="lab-flag"><option>Normal</option><option>High</option><option>Low</option><option>Critical</option><option>Pending</option></select></div></div><div class="form-row" style="margin-top:10px;"><label>Range / note</label><div class="grid-2"><input id="lab-range" placeholder="Reference range"><input id="lab-note" placeholder="Clinical note"></div></div><div class="actions"><button class="btn primary" id="add-lab">Add result</button></div>`;
+  return section('Diagnostic results', dx) + section('Laboratory results', `<div class="table-wrap"><table><thead><tr><th>Time</th><th>Test</th><th>Result</th><th>Range</th><th>Flag</th><th>Note</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`) + section('Add lab result', form);
 }
 
 function rVitals(){
-  let rows='';
-  state.vitals.forEach((v,i)=>{
-    const hrCls=v.hr>=100||v.hr<60?'fv abn':'fv';
-    const bpCls=v.bps<=100||v.bpd<=60?'fv lo':'fv';
-    const spoCls=v.spo2<92?'fv abn':'fv';
-    rows+=`<tr>
-      <td>${v.t}</td>
-      <td><span class="${hrCls}">${v.hr}</span></td>
-      <td><span class="${bpCls}">${v.bps}/${v.bpd}</span></td>
-      <td>${v.rr}</td>
-      <td>${v.tmp}&deg;F</td>
-      <td><span class="${spoCls}">${v.spo2}%</span></td>
-      <td>${v.fhr||'&mdash;'}</td>
-      <td style="font-size:11px;color:var(--color-text-secondary)">${v.note||''}</td>
-      <td style="font-size:11px;color:var(--color-text-secondary)">${v.by||''}</td>
-      ${i===0?'<td>&mdash;</td>':`<td><button class="btn btn-sm btn-d" data-vital-del="${i}">&times;</button></td>`}
-    </tr>`;
-  });
-  return `
-  <div class="cd"><div class="ch2"><h3>Vital signs flowsheet</h3><span style="font-size:11px;color:var(--color-text-tertiary);margin-left:auto">Per orders: q1h or PRN</span></div><div class="cb">
-    <div class="bn bn-i"><span class="ic">&#8505;</span><span>Patient at risk for dehydration. Reassess after every intervention. Notify provider if HR &gt; 110, SBP &lt; 90, or SpO2 &lt; 92%.</span></div>
-    <table class="tbl">
-      <tr><th>Time</th><th>HR</th><th>BP</th><th>RR</th><th>Temp</th><th>SpO2</th><th>FHR</th><th>Note</th><th>By</th><th></th></tr>
-      ${rows}
-    </table>
-  </div></div>
-
-  <div class="cd"><div class="ch2"><h3>Add new vital signs entry</h3></div><div class="cb">
-    <div class="fm-rw3">
-      <div><label class="fl">Time</label><input id="vt-t" type="time" value="${currentTime()}"></div>
-      <div><label class="fl">HR (bpm)</label><input id="vt-hr" type="number" placeholder="e.g. 96"></div>
-      <div><label class="fl">BP systolic</label><input id="vt-bps" type="number" placeholder="e.g. 108"></div>
-      <div><label class="fl">BP diastolic</label><input id="vt-bpd" type="number" placeholder="e.g. 68"></div>
-    </div>
-    <div class="fm-rw3">
-      <div><label class="fl">RR (br/min)</label><input id="vt-rr" type="number" placeholder="e.g. 16"></div>
-      <div><label class="fl">Temp (&deg;F)</label><input id="vt-tmp" type="number" step="0.1" placeholder="e.g. 98.6"></div>
-      <div><label class="fl">SpO2 (%)</label><input id="vt-spo2" type="number" placeholder="e.g. 99"></div>
-      <div><label class="fl">FHR (bpm)</label><input id="vt-fhr" type="number" placeholder="e.g. 150"></div>
-    </div>
-    <div class="fm-rw"><div class="fm-l">Note</div><div class="fm-i"><input id="vt-note" type="text" placeholder="e.g. Post LR bolus reassessment"></div></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;"><button class="btn btn-p" id="vt-save">Add to flowsheet</button></div>
-  </div></div>
-
-  <div class="cd"><div class="ch2"><h3>Trend graph (HR / SBP)</h3></div><div class="cb">
-    <svg viewBox="0 0 600 160" style="width:100%;max-height:160px" id="vital-svg">
-      ${vitalChart()}
-    </svg>
-  </div></div>`;
+  const p = patient();
+  const last = p.vitals[p.vitals.length - 1] || {};
+  const metrics = `<div class="metric-row"><div class="metric"><div class="num">${esc(last.hr || '--')}</div><div class="lbl">Heart rate</div></div><div class="metric"><div class="num">${esc(last.bps || '--')}/${esc(last.bpd || '--')}</div><div class="lbl">Blood pressure</div></div><div class="metric"><div class="num">${esc(last.rr || '--')}</div><div class="lbl">Respirations</div></div><div class="metric"><div class="num">${esc(last.spo2 || '--')}%</div><div class="lbl">SpO2</div></div></div>`;
+  const rows = (p.vitals || []).map((v,i)=>`<tr><td>${esc(v.time)}</td><td>${esc(v.hr)}</td><td>${esc(v.bps)}/${esc(v.bpd)}</td><td>${esc(v.rr)}</td><td>${esc(v.temp)}</td><td>${esc(v.spo2)}%</td><td>${esc(v.pain)}</td><td>${esc(v.fetal)}</td><td>${esc(v.note)}</td><td><button class="btn small danger" data-del-vital="${i}">Delete</button></td></tr>`).join('');
+  const form = `<div class="form-grid"><div><span class="input-label">Time</span><input id="vt-time" type="time" value="${nowTime()}"></div><div><span class="input-label">HR</span><input id="vt-hr" type="number"></div><div><span class="input-label">SBP</span><input id="vt-bps" type="number"></div><div><span class="input-label">DBP</span><input id="vt-bpd" type="number"></div><div><span class="input-label">RR</span><input id="vt-rr" type="number"></div><div><span class="input-label">Temp F</span><input id="vt-temp" type="number" step="0.1"></div><div><span class="input-label">SpO2</span><input id="vt-spo2" type="number"></div><div><span class="input-label">Pain / fetal</span><div class="grid-2"><input id="vt-pain" placeholder="0-10"><input id="vt-fetal" placeholder="FHR or N/A"></div></div></div><div class="form-row" style="margin-top:10px;"><label>Note</label><input id="vt-note" placeholder="Patient response or assessment cue"></div><div class="actions"><button class="btn primary" id="add-vital">Add vital signs</button></div>`;
+  return metrics + section('Vital trend', `<svg class="vital-chart" viewBox="0 0 760 180" role="img" aria-label="Heart rate and systolic blood pressure trend">${vitalSvg(p.vitals || [])}</svg>`) + section('Vital signs flowsheet', `<div class="table-wrap"><table><thead><tr><th>Time</th><th>HR</th><th>BP</th><th>RR</th><th>Temp</th><th>SpO2</th><th>Pain</th><th>Fetal/other</th><th>Note</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`) + section('Add vital signs', form);
 }
 
-function vitalChart(){
-  if(state.vitals.length<1) return '<text x="300" y="80" text-anchor="middle" style="font-size:12px;fill:var(--color-text-tertiary)">No data</text>';
-  const w=580,h=130,px=15,py=15;
-  const xs=state.vitals.map((_,i)=>px+(state.vitals.length===1?w/2:i*(w-px*2)/(state.vitals.length-1)));
-  const hr=state.vitals.map(v=>v.hr);
-  const sbp=state.vitals.map(v=>v.bps);
-  const lo=Math.min(...hr,...sbp,60),hi=Math.max(...hr,...sbp,140);
-  const sy=v=>py+h-((v-lo)/(hi-lo))*h;
-  const hrPath=xs.map((x,i)=>`${i===0?'M':'L'}${x.toFixed(1)},${sy(hr[i]).toFixed(1)}`).join(' ');
-  const sbpPath=xs.map((x,i)=>`${i===0?'M':'L'}${x.toFixed(1)},${sy(sbp[i]).toFixed(1)}`).join(' ');
-  const labels=state.vitals.map((v,i)=>`<text x="${xs[i]}" y="${h+py+12}" text-anchor="middle" style="font-size:10px;fill:var(--color-text-tertiary)">${v.t}</text>`).join('');
-  const hrDots=xs.map((x,i)=>`<circle cx="${x}" cy="${sy(hr[i])}" r="3" fill="#A32D2D"/>`).join('');
-  const sbpDots=xs.map((x,i)=>`<circle cx="${x}" cy="${sy(sbp[i])}" r="3" fill="#185FA5"/>`).join('');
-  return `
-    <line x1="${px}" y1="${py+h}" x2="${px+w}" y2="${py+h}" stroke="var(--color-border-tertiary)" stroke-width="0.5"/>
-    <path d="${hrPath}" stroke="#A32D2D" stroke-width="1.5" fill="none"/>${hrDots}
-    <path d="${sbpPath}" stroke="#185FA5" stroke-width="1.5" fill="none"/>${sbpDots}
-    ${labels}
-    <g transform="translate(${px+w-110},${py})">
-      <circle cx="0" cy="6" r="3" fill="#A32D2D"/><text x="8" y="9" style="font-size:10px;fill:var(--color-text-secondary)">HR</text>
-      <circle cx="40" cy="6" r="3" fill="#185FA5"/><text x="48" y="9" style="font-size:10px;fill:var(--color-text-secondary)">SBP</text>
-    </g>`;
+function vitalSvg(vitals){
+  if(!vitals.length) return '<text x="380" y="92" text-anchor="middle" fill="#8b98aa" font-size="13">No vital signs charted</text>';
+  const px=42, py=22, w=690, h=120;
+  const values = vitals.flatMap(v => [Number(v.hr)||0, Number(v.bps)||0]).filter(Boolean);
+  const lo = Math.min(50, ...values) - 5;
+  const hi = Math.max(140, ...values) + 5;
+  const x = i => vitals.length === 1 ? px + w / 2 : px + i * (w / (vitals.length - 1));
+  const y = val => py + h - ((Number(val) - lo) / (hi - lo)) * h;
+  const path = key => vitals.map((v,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(v[key]).toFixed(1)}`).join(' ');
+  const labels = vitals.map((v,i)=>`<text x="${x(i)}" y="164" text-anchor="middle" fill="#8b98aa" font-size="10">${esc(v.time)}</text>`).join('');
+  const dots = (key,color) => vitals.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v[key])}" r="3.5" fill="${color}"></circle>`).join('');
+  return `<line x1="${px}" y1="${py+h}" x2="${px+w}" y2="${py+h}" stroke="rgba(23,41,70,0.18)"></line><path d="${path('hr')}" fill="none" stroke="#a33131" stroke-width="2"></path>${dots('hr','#a33131')}<path d="${path('bps')}" fill="none" stroke="#175f9e" stroke-width="2"></path>${dots('bps','#175f9e')}${labels}<circle cx="585" cy="28" r="4" fill="#a33131"></circle><text x="594" y="32" fill="#617085" font-size="11">HR</text><circle cx="635" cy="28" r="4" fill="#175f9e"></circle><text x="644" y="32" fill="#617085" font-size="11">SBP</text>`;
 }
 
-function currentTime(){const d=new Date();return d.toTimeString().slice(0,5);}
-
-function hookVitals(){
-  document.getElementById('vt-save').addEventListener('click',()=>{
-    const t=document.getElementById('vt-t').value;
-    const hr=+document.getElementById('vt-hr').value;
-    const bps=+document.getElementById('vt-bps').value;
-    const bpd=+document.getElementById('vt-bpd').value;
-    const rr=+document.getElementById('vt-rr').value;
-    const tmp=parseFloat(document.getElementById('vt-tmp').value);
-    const spo2=+document.getElementById('vt-spo2').value;
-    const fhr=+document.getElementById('vt-fhr').value;
-    const note=document.getElementById('vt-note').value.trim();
-    if(!t||!hr||!bps||!bpd){toast('Time, HR, BP required');return;}
-    state.vitals.push({t,hr,bps,bpd,rr:rr||'',tmp:tmp||'',spo2:spo2||'',fhr:fhr||'',note,by:'Santos, M RN'});
-    state.vitals.sort((a,b)=>a.t.localeCompare(b.t));
-    persist();
-    toast('Vital signs added');
-    showTab('vitals');
-  });
-  document.querySelectorAll('[data-vital-del]').forEach(b=>b.addEventListener('click',e=>{
-    state.vitals.splice(+e.target.dataset.vitalDel,1);
-    persist();
-    showTab('vitals');
-    toast('Entry removed');
-  }));
-}
-
-function rAssess(){
-  const a=state.assess;
-  const sel=(id,...arr)=>`<select id="as-${id}"><option value="">&mdash; select &mdash;</option>${arr.map(o=>`<option value="${o}" ${a[id]===o?'selected':''}>${o}</option>`).join('')}</select>`;
-  const txt=(id,p)=>`<input id="as-${id}" type="text" placeholder="${p}" value="${a[id]||''}">`;
-  return `
-  <div class="cd"><div class="ch2"><h3>Focused antepartum assessment</h3></div><div class="cb">
-    <div class="bn bn-i"><span class="ic">&#8505;</span><span>Complete on initial encounter and at each reassessment. Use clinical judgment to identify HEG-related dehydration and Wernicke risk cues.</span></div>
-
-    <div class="shdr">Neuro / general</div>
-    <div class="assess-grid"><span class="l">Level of consciousness</span>${sel('loc','Alert and oriented x4','Alert and oriented x3','Lethargic','Confused')}</div>
-    <div class="assess-grid"><span class="l">General appearance</span>${sel('gen','WNL — comfortable','Anxious','Pale','Diaphoretic','Retching / Uncomfortable','Fatigued')}</div>
-    <div class="assess-grid"><span class="l">Pain (0-10)</span>${txt('pain','e.g. 4/10 epigastric')}</div>
-
-    <div class="shdr">Cardiovascular</div>
-    <div class="assess-grid"><span class="l">Heart sounds</span>${sel('cv','S1 S2 regular','Tachycardia','Murmur','Irregular')}</div>
-    <div class="assess-grid"><span class="l">Capillary refill</span>${sel('crt','< 2 seconds','2-3 seconds','> 3 seconds (sluggish)')}</div>
-
-    <div class="shdr">Respiratory</div>
-    <div class="assess-grid"><span class="l">Lung sounds</span>${sel('resp','Clear bilaterally','Diminished','Wheezes','Crackles')}</div>
-
-    <div class="shdr">GI / OB</div>
-    <div class="assess-grid"><span class="l">Abdomen</span>${sel('gi','Soft, non-tender, BS+','Tender on palpation','Distended','Rigid')}</div>
-    <div class="assess-grid"><span class="l">Fundal palpation</span>${sel('fundal','Below umbilicus (16w appropriate)','At umbilicus','Above umbilicus','Not assessed')}</div>
-    <div class="assess-grid"><span class="l">Mucous membranes</span>${sel('mucous','Pink, moist','Dry','Pale','Cracked')}</div>
-    <div class="assess-grid"><span class="l">Skin turgor / color</span>${sel('skin','Elastic, pink, warm','Decreased turgor / dry','Pale','Cool')}</div>
-
-    <div class="shdr">GU</div>
-    <div class="assess-grid"><span class="l">Voiding</span>${sel('gu','Voiding clear amber, adequate','Concentrated dark urine','Decreased output','Per Foley','Has not voided')}</div>
-
-    <div class="shdr">Fetal</div>
-    <div class="assess-grid"><span class="l">Doppler FHR</span>${txt('fhr','e.g. 150 bpm, regular')}</div>
-
-    <div class="shdr">Psychosocial</div>
-    <div class="assess-grid"><span class="l">Mood / coping</span>${sel('psych','Calm','Anxious about pregnancy','Tearful','Family at bedside, supportive')}</div>
-
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-p" id="as-save">Save assessment</button></div>
-  </div></div>`;
-}
-
-function hookAssess(){
-  document.getElementById('as-save').addEventListener('click',()=>{
-    ['loc','gen','cv','resp','gi','gu','skin','mucous','crt','fhr','fundal','pain','psych'].forEach(k=>{
-      const el=document.getElementById('as-'+k);if(el)state.assess[k]=el.value;
-    });
-    persist();
-    toast('Assessment saved');
-  });
+function rAssessment(){
+  const a = patient().assessment || {};
+  const select = (id, opts) => `<select id="as-${id}"><option value="">-- select --</option>${opts.map(o=>`<option ${a[id]===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+  const input = (id, ph='') => `<input id="as-${id}" value="${esc(a[id] || '')}" placeholder="${esc(ph)}">`;
+  const body = `<div class="notice info"><span class="mark">HCT</span><span>Complete a focused assessment for the active diagnosis, then use the narrative field for priority cues and reassessment findings.</span></div>
+    <div class="form-row"><label>Neuro</label>${select('neuro',['Alert and oriented x4','Alert but anxious','Confused','Lethargic','Responds to pain only'])}</div>
+    <div class="form-row"><label>Respiratory</label>${select('resp',['Clear bilaterally','Wheezing','Crackles','Diminished bases','Labored respirations','Requires oxygen'])}</div>
+    <div class="form-row"><label>Cardiac / perfusion</label>${select('cardiac',['Regular rate/rhythm','Tachycardic','Hypotensive','Edema present','Delayed capillary refill','Telemetry changes'])}</div>
+    <div class="form-row"><label>GI / abdomen</label>${input('gi','Nausea, vomiting, bowel sounds, tenderness')}</div>
+    <div class="form-row"><label>GU / output</label>${input('gu','Voiding pattern, color, Foley, output')}</div>
+    <div class="form-row"><label>Skin / hydration</label>${input('skin','Color, temp, turgor, mucous membranes')}</div>
+    <div class="form-row"><label>Safety</label>${input('safety','Fall risk, bed position, call light, precautions')}</div>
+    <div class="form-row"><label>Pain</label>${input('pain','Pain score and location')}</div>
+    <div class="form-row"><label>OB / other specialty</label>${input('fetal','FHR, fundus, neuro checks, peak flow, or N/A')}</div>
+    <div class="form-row"><label>Psychosocial</label>${input('psychosocial','Coping, family support, education needs')}</div>
+    <div class="form-row"><label>Narrative</label><textarea id="as-narrative" placeholder="Focused narrative assessment and priority clinical cues">${esc(a.narrative || '')}</textarea></div>
+    <div class="actions"><button class="btn primary" id="save-assessment">Save assessment</button></div>`;
+  return section('Focused assessment template', body);
 }
 
 function rMeds(){
-  const meds=[
-    {k:'lr_mvi',n:"Lactated Ringer's with MVI",d:'1L IV bolus @ 500 mL/hr x2h',tag:'STAT',tagCls:'tag-stat'},
-    {k:'thiamine',n:'Thiamine (Vitamin B1)',d:'100 mg IV push over 5 minutes',tag:'SCHED',tagCls:'tag-sch',warn:'Give BEFORE any dextrose-containing fluid'},
-    {k:'d5_kcl',n:'D5 0.45% NaCl + 20 mEq KCl',d:'150 mL/hr continuous, after bolus complete',tag:'SCHED',tagCls:'tag-sch'},
-    {k:'ondansetron',n:'Ondansetron (Zofran)',d:'4 mg IV push',tag:'PRN q8h',tagCls:'tag-prn',warn:'PRN nausea / vomiting'},
-    {k:'prenatal',n:'Prenatal vitamin',d:'PO daily &mdash; home medication',tag:'HOME',tagCls:'tag-home'},
-    {k:'doxy',n:'Doxylamine-Pyridoxine 20/20mg',d:'PO at bedtime &mdash; home medication',tag:'HOME',tagCls:'tag-home'},
-  ];
-  let h=`<div class="bn bn-r"><span class="ic">&#9888;</span><span><strong style="font-weight:500;">Critical sequencing:</strong> Administer thiamine 100 mg IV push BEFORE the LR with MVI bolus to prevent Wernicke encephalopathy. Use BCMA if available. Scrub the hub x 5&ndash;15 sec before access; flush with NS before and after each IV push.</span></div>
-  <div class="med-row" style="font-weight:500;font-size:10px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid var(--color-border-secondary)">
-    <div>Medication</div><div>Dose / Route / Freq</div><div>Status</div><div>Action</div><div>Time / Note</div>
-  </div>`;
-  meds.forEach(m=>{
-    const s=state.meds[m.k];
-    const stPill=s.st==='given'?'<span class="st-pill st-given">Given</span>':s.st==='held'?'<span class="st-pill st-held">Held</span>':s.st==='not_given'?'<span class="st-pill st-ng">Not Given</span>':'<span class="st-pill st-pend">Pending</span>';
-    h+=`<div class="med-row">
-      <div class="med-name">${m.n}<span class="med-tag ${m.tagCls}">${m.tag}</span>${m.warn?`<span class="sub" style="color:#A32D2D">&#9888; ${m.warn}</span>`:''}</div>
-      <div style="font-size:11px;color:var(--color-text-secondary)">${m.d}</div>
-      <div>${stPill}</div>
-      <div class="med-actions">
-        <button class="act-given ${s.st==='given'?'sel':''}" data-med="${m.k}" data-act="given">Given</button>
-        <button class="act-held ${s.st==='held'?'sel':''}" data-med="${m.k}" data-act="held">Hold</button>
-        <button class="act-ng ${s.st==='not_given'?'sel':''}" data-med="${m.k}" data-act="not_given">Not given</button>
-      </div>
-      <div>
-        <input type="time" data-med-time="${m.k}" value="${s.time||''}" style="width:78px;font-size:11px;padding:3px 5px;border:0.5px solid var(--color-border-tertiary);border-radius:4px;background:transparent;color:var(--color-text-primary)">
-        <input type="text" data-med-note="${m.k}" value="${s.note||''}" placeholder="reason / site" style="margin-top:3px;width:100%;font-size:11px;padding:3px 5px;border:0.5px solid var(--color-border-tertiary);border-radius:4px;background:transparent;color:var(--color-text-primary)">
-      </div>
-    </div>`;
-  });
-  return `<div class="cd"><div class="ch2"><h3>Medication administration record (MAR)</h3><span style="font-size:11px;color:var(--color-text-tertiary);margin-left:auto">RN: Santos, Maria</span></div><div class="cb">${h}</div></div>`;
-}
-
-function hookMeds(){
-  document.querySelectorAll('[data-med]').forEach(b=>b.addEventListener('click',e=>{
-    const k=e.target.dataset.med,act=e.target.dataset.act;
-    state.meds[k].st=act;
-    if(act==='given'&&!state.meds[k].time)state.meds[k].time=currentTime();
-    persist();
-    toast(act==='given'?'Marked as given':act==='held'?'Marked as held':'Marked as not given');
-    showTab('meds');
-  }));
-  document.querySelectorAll('[data-med-time]').forEach(i=>i.addEventListener('change',e=>{
-    state.meds[e.target.dataset.medTime].time=e.target.value;
-    persist();
-  }));
-  document.querySelectorAll('[data-med-note]').forEach(i=>i.addEventListener('change',e=>{
-    state.meds[e.target.dataset.medNote].note=e.target.value;
-    persist();
-  }));
+  const p = patient();
+  const rows = (p.meds || []).map((m,i)=>`<tr><td><strong>${esc(m.name)}</strong><br><span style="color:var(--muted);font-size:11px;">${esc(m.priority || '')}</span>${m.warn?`<br><span style="color:var(--danger);font-size:11px;">${esc(m.warn)}</span>`:''}</td><td>${esc(m.dose)} ${esc(m.route)}<br>${esc(m.freq)}</td><td><span class="status ${statusClass(m.status)}">${esc(m.status)}</span></td><td><div class="actions" style="justify-content:flex-start;margin:0;"><button class="btn small primary" data-med-act="given" data-med-index="${i}">Given</button><button class="btn small" data-med-act="hold" data-med-index="${i}">Hold</button><button class="btn small danger" data-med-act="not_given" data-med-index="${i}">Not given</button></div></td><td><input data-med-time="${i}" type="time" value="${esc(m.time || '')}"><input data-med-note="${i}" style="margin-top:5px;" value="${esc(m.note || '')}" placeholder="site / response / reason"></td><td><button class="btn small danger" data-del-med="${i}">Delete</button></td></tr>`).join('');
+  const form = `<div class="form-grid"><div><span class="input-label">Medication</span><input id="med-name" placeholder="Medication name"></div><div><span class="input-label">Dose</span><input id="med-dose" placeholder="Dose"></div><div><span class="input-label">Route</span><input id="med-route" placeholder="Route"></div><div><span class="input-label">Frequency</span><input id="med-freq" placeholder="Frequency"></div></div><div class="form-row" style="margin-top:10px;"><label>Safety note</label><input id="med-warn" placeholder="Hold parameter, sequencing, or monitoring"></div><div class="actions"><button class="btn primary" id="add-med">Add medication</button></div>`;
+  return section('Medication safety cue', `<div class="notice danger"><span class="mark">MAR</span><span>Verify patient, medication, dose, route, time, allergies, indications, and relevant labs before documenting administration.</span></div>`) + section('Medication administration record', `<div class="table-wrap"><table><thead><tr><th>Medication</th><th>Dose / route</th><th>Status</th><th>Action</th><th>Time / note</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`) + section('Add medication', form);
 }
 
 function rIO(){
-  let inT=0,outT=0;
-  state.io.forEach(e=>{if(['IV bolus','IV continuous','PO','Med flush'].includes(e.type))inT+=+e.amt||0;else outT+=+e.amt||0;});
-  let rows='';
-  state.io.forEach((e,i)=>{
-    const inAmt=['IV bolus','IV continuous','PO','Med flush'].includes(e.type)?e.amt:'';
-    const outAmt=!['IV bolus','IV continuous','PO','Med flush'].includes(e.type)?e.amt:'';
-    rows+=`<tr><td>${e.t}</td><td>${e.type}</td><td>${inAmt||'&mdash;'}</td><td>${outAmt||'&mdash;'}</td><td style="font-size:11px;color:var(--color-text-secondary)">${e.route||''}</td><td style="font-size:11px;color:var(--color-text-secondary)">${e.by||''}</td>${i===0?'<td>&mdash;</td>':`<td><button class="btn btn-sm btn-d" data-io-del="${i}">&times;</button></td>`}</tr>`;
-  });
-  return `
-  <div class="io-grid">
-    <div class="io-card"><div class="v" style="color:#3B6D11">${inT}</div><div class="l">Total intake (mL)</div></div>
-    <div class="io-card"><div class="v" style="color:#A32D2D">${outT}</div><div class="l">Total output (mL)</div></div>
-    <div class="io-card"><div class="v" style="color:${inT-outT>=0?'#3B6D11':'#A32D2D'}">${inT-outT}</div><div class="l">Net (mL)</div></div>
-  </div>
-
-  <div class="cd"><div class="ch2"><h3>Intake & output log</h3><span style="font-size:11px;color:var(--color-text-tertiary);margin-left:auto">Hourly per orders</span></div><div class="cb">
-    <table class="tbl">
-      <tr><th>Time</th><th>Type</th><th>In (mL)</th><th>Out (mL)</th><th>Note</th><th>By</th><th></th></tr>
-      ${rows}
-    </table>
-  </div></div>
-
-  <div class="cd"><div class="ch2"><h3>Add I/O entry</h3></div><div class="cb">
-    <div class="fm-rw3">
-      <div><label class="fl">Time</label><input id="io-t" type="time" value="${currentTime()}"></div>
-      <div><label class="fl">Type</label>
-        <select id="io-type">
-          <option value="IV bolus">IV bolus (in)</option>
-          <option value="IV continuous">IV continuous (in)</option>
-          <option value="PO">PO (in)</option>
-          <option value="Med flush">Med / flush (in)</option>
-          <option value="Urine">Urine (out)</option>
-          <option value="Emesis">Emesis (out)</option>
-          <option value="Stool">Stool (out)</option>
-          <option value="Other">Other (out)</option>
-        </select>
-      </div>
-      <div><label class="fl">Amount (mL)</label><input id="io-amt" type="number" placeholder="e.g. 500"></div>
-      <div><label class="fl">Note</label><input id="io-note" type="text" placeholder="e.g. clear thin emesis"></div>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-p" id="io-save">Add entry</button></div>
-  </div></div>`;
-}
-
-function hookIO(){
-  document.getElementById('io-save').addEventListener('click',()=>{
-    const t=document.getElementById('io-t').value,
-          type=document.getElementById('io-type').value,
-          amt=+document.getElementById('io-amt').value,
-          route=document.getElementById('io-note').value;
-    if(!t||!type||!amt){toast('Time, type, amount required');return;}
-    state.io.push({t,type,amt,route,by:'Santos, M RN'});
-    state.io.sort((a,b)=>a.t.localeCompare(b.t));
-    persist();
-    toast('I/O entry added');
-    showTab('io');
-  });
-  document.querySelectorAll('[data-io-del]').forEach(b=>b.addEventListener('click',e=>{
-    state.io.splice(+e.target.dataset.ioDel,1);
-    persist();
-    showTab('io');
-    toast('Entry removed');
-  }));
+  const p = patient();
+  const totals = (p.io || []).reduce((acc,e)=>{ const amt=Number(e.amount)||0; if(e.direction==='in') acc.ins += amt; else acc.outs += amt; return acc; }, {ins:0, outs:0});
+  const rows = (p.io || []).map((e,i)=>`<tr><td>${esc(e.time)}</td><td>${esc(e.type)}</td><td>${e.direction==='in'?esc(e.amount):'--'}</td><td>${e.direction==='out'?esc(e.amount):'--'}</td><td>${esc(e.note)}</td><td>${esc(e.by)}</td><td><button class="btn small danger" data-del-io="${i}">Delete</button></td></tr>`).join('');
+  const metrics = `<div class="metric-row"><div class="metric"><div class="num">${totals.ins}</div><div class="lbl">Intake mL</div></div><div class="metric"><div class="num">${totals.outs}</div><div class="lbl">Output mL</div></div><div class="metric"><div class="num">${totals.ins - totals.outs}</div><div class="lbl">Net mL</div></div><div class="metric"><div class="num">${(p.io || []).length}</div><div class="lbl">Entries</div></div></div>`;
+  const form = `<div class="form-grid"><div><span class="input-label">Time</span><input id="io-time" type="time" value="${nowTime()}"></div><div><span class="input-label">Type</span><input id="io-type" placeholder="IV bolus, urine, emesis"></div><div><span class="input-label">Amount mL</span><input id="io-amount" type="number"></div><div><span class="input-label">Direction</span><select id="io-direction"><option value="in">Intake</option><option value="out">Output</option></select></div></div><div class="form-row" style="margin-top:10px;"><label>Note</label><input id="io-note" placeholder="Color, tolerance, route, or context"></div><div class="actions"><button class="btn primary" id="add-io">Add I/O</button></div>`;
+  return metrics + section('I/O flowsheet', `<div class="table-wrap"><table><thead><tr><th>Time</th><th>Type</th><th>In</th><th>Out</th><th>Note</th><th>By</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`) + section('Add I/O entry', form);
 }
 
 function rNotes(){
-  let notes='';
-  if(state.notes.length===0){
-    notes='<div style="text-align:center;padding:20px;color:var(--color-text-tertiary);font-size:13px">No nursing notes yet &mdash; use the form below to chart.</div>';
-  }else{
-    state.notes.forEach((n,i)=>{
-      notes+=`<div class="note">
-        <div class="note-h"><span><span class="note-typ">${n.type}</span> &bull; ${n.t} &bull; ${n.by}</span><button class="btn btn-sm btn-d" data-note-del="${i}">Delete</button></div>
-        <div class="note-b">${escape(n.body)}</div>
-      </div>`;
-    });
-  }
-  return `
-  <div class="cd"><div class="ch2"><h3>Nursing notes</h3><span style="font-size:11px;color:var(--color-text-tertiary);margin-left:auto">${state.notes.length} entries</span></div><div class="cb">${notes}</div></div>
-
-  <div class="cd"><div class="ch2"><h3>Add nursing note</h3></div><div class="cb">
-    <div class="fm-rw">
-      <div class="fm-l">Note type</div>
-      <div class="fm-i">
-        <select id="nt-type">
-          <option>Admission note</option>
-          <option>Assessment note</option>
-          <option>Medication note</option>
-          <option>Patient education</option>
-          <option>Family interaction</option>
-          <option>Provider notification</option>
-          <option>Procedure note</option>
-          <option>Shift summary</option>
-        </select>
-      </div>
-    </div>
-    <div class="fm-rw"><div class="fm-l">Time</div><div class="fm-i"><input id="nt-t" type="time" value="${currentTime()}"></div></div>
-    <div class="fm-rw"><div class="fm-l">Note</div><div class="fm-i"><textarea id="nt-body" rows="5" placeholder="Type your nursing note here. Be objective, factual, and time-specific. Include observations, interventions, and patient responses."></textarea></div></div>
-    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" id="nt-template">Insert assessment template</button><button class="btn btn-p" id="nt-save">Sign &amp; save</button></div>
-  </div></div>`;
+  const p = patient();
+  const notes = (p.notes || []).length ? p.notes.map((n,i)=>`<div class="note"><div class="note-head"><span><span class="note-type">${esc(n.type)}</span> | ${esc(n.time)} | ${esc(n.by)}</span><button class="btn small danger" data-del-note="${i}">Delete</button></div><div class="note-body">${esc(n.body)}</div></div>`).join('') : '<p class="text-block" style="text-align:center;color:var(--subtle);padding:18px;">No nursing notes have been signed for this patient yet.</p>';
+  const form = `<div class="form-row"><label>Note type</label><select id="note-type"><option>HCT focused progress note</option><option>Admission note</option><option>Assessment note</option><option>Medication note</option><option>Patient education</option><option>Provider notification</option><option>Shift summary</option></select></div><div class="form-row"><label>Time</label><input id="note-time" type="time" value="${nowTime()}"></div><div class="form-row"><label>Note</label><textarea id="note-body" placeholder="Chart objective findings, interventions, patient response, and follow-up plan."></textarea></div><div class="actions"><button class="btn" id="insert-note-template">Insert HCT template</button><button class="btn primary" id="save-note">Sign and save</button></div>`;
+  return section('Signed nursing notes', notes) + section('Add nursing note', form);
 }
 
-function escape(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function rCarePlan(){
+  const p = patient();
+  const rows = (p.carePlan || []).map((c,i)=>`<tr><td><input data-cp="dx" data-cp-index="${i}" value="${esc(c.dx)}"></td><td><textarea data-cp="goal" data-cp-index="${i}">${esc(c.goal)}</textarea></td><td><textarea data-cp="interventions" data-cp-index="${i}">${esc(c.interventions)}</textarea></td><td><textarea data-cp="evaluation" data-cp-index="${i}">${esc(c.evaluation)}</textarea></td><td><button class="btn small danger" data-del-cp="${i}">Delete</button></td></tr>`).join('');
+  return section('Nursing care plan', `<div class="table-wrap"><table><thead><tr><th>Nursing diagnosis</th><th>Goal / outcome</th><th>Interventions</th><th>Evaluation</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><div class="actions"><button class="btn primary" id="add-careplan">Add care plan row</button><button class="btn navy" id="save-careplan">Save care plan</button></div>`);
+}
 
+function rEducation(){
+  const p = patient();
+  const rows = (p.education || []).map((e,i)=>`<div class="check-row"><input type="checkbox" data-ed-check="${i}" ${e.status==='Complete'?'checked':''}><strong>${esc(e.topic)}</strong><select data-ed-status="${i}"><option ${e.status==='Not started'?'selected':''}>Not started</option><option ${e.status==='In progress'?'selected':''}>In progress</option><option ${e.status==='Complete'?'selected':''}>Complete</option><option ${e.status==='Deferred'?'selected':''}>Deferred</option></select><input data-ed-response="${i}" value="${esc(e.response)}" placeholder="Learner/patient response"></div>`).join('');
+  const form = `<div class="form-row"><label>New teaching topic</label><input id="ed-topic" placeholder="Medication side effects, discharge warning signs, device use"></div><div class="actions"><button class="btn primary" id="add-education">Add topic</button><button class="btn navy" id="save-education">Save education record</button></div>`;
+  return section('Education record', rows + form);
+}
+
+function rSbar(){
+  const s = patient().sbar || {s:'',b:'',a:'',r:''};
+  return section('SBAR communication template', `<div class="notice info"><span class="mark">SBAR</span><span>Use this section to prepare or document a concise provider update. Saving SBAR also adds it to nursing notes.</span></div><div class="form-row"><label>Situation</label><textarea id="sb-s">${esc(s.s)}</textarea></div><div class="form-row"><label>Background</label><textarea id="sb-b">${esc(s.b)}</textarea></div><div class="form-row"><label>Assessment</label><textarea id="sb-a">${esc(s.a)}</textarea></div><div class="form-row"><label>Recommendation</label><textarea id="sb-r">${esc(s.r)}</textarea></div><div class="actions"><button class="btn" id="insert-sbar-template">Insert template</button><button class="btn primary" id="save-sbar">Save and document call</button></div>`);
+}
+
+function rScenarios(){
+  const cards = scenarioLibrary.map(sc => `<article class="scenario-card"><div class="top"></div><div class="body"><span class="label">${esc(sc.focus)} | ${esc(sc.level)}</span><h3>${esc(sc.name)}</h3><p>${esc(sc.summary)}</p><div class="skill-list">${sc.skills.map(skill=>`<span class="badge blue">${esc(skill)}</span>`).join('')}</div><button class="btn primary" data-load-scenario="${esc(sc.id)}">Open scenario as patient</button></div></article>`).join('');
+  return section('Sample scenario library', `<div class="notice info"><span class="mark">HCT</span><span>Students can preview sample scenarios here, then open any scenario into the EHR workspace. Opening a sample creates a separate editable patient copy.</span></div><div class="scenario-grid">${cards}</div>`);
+}
+
+function rNewPatient(){
+  return section('Create a patient from scratch', `<div class="notice success"><span class="mark">NEW</span><span>Use this template when learners need to build their own case. The patient will appear in the workspace selector and can use all documentation sections.</span></div><div class="form-grid"><div><span class="input-label">First name</span><input id="np-first"></div><div><span class="input-label">Last name</span><input id="np-last"></div><div><span class="input-label">Age</span><input id="np-age"></div><div><span class="input-label">Sex</span><select id="np-sex"><option>Female</option><option>Male</option><option>Nonbinary</option><option>Other</option></select></div><div><span class="input-label">DOB</span><input id="np-dob" placeholder="Jan 1"></div><div><span class="input-label">MRN</span><input id="np-mrn" placeholder="Auto if blank"></div><div><span class="input-label">Location</span><input id="np-location" placeholder="ED Bay 1"></div><div><span class="input-label">Acuity</span><select id="np-acuity"><option>Stable</option><option>Watcher</option><option>Urgent</option><option>Critical</option></select></div></div><div class="form-row" style="margin-top:10px;"><label>Primary diagnosis</label><input id="np-diagnosis" placeholder="Primary diagnosis or scenario title"></div><div class="form-row"><label>Chief complaint</label><input id="np-cc" placeholder="Why the patient presented"></div><div class="form-row"><label>History of present illness</label><textarea id="np-hpi"></textarea></div><div class="form-row"><label>Background / PMH</label><textarea id="np-bg"></textarea></div><div class="form-row"><label>Allergies / code / provider</label><div class="grid-3"><input id="np-allergies" placeholder="NKDA"><select id="np-code"><option>Full Code</option><option>DNR</option><option>DNI</option><option>Limited Code</option></select><input id="np-provider" placeholder="Attending provider"></div></div><div class="form-row"><label>Tags</label><input id="np-tags" placeholder="Comma-separated tags such as Fall risk, NPO, HCT"></div><div class="form-row"><label>Initial note</label><textarea id="np-note" placeholder="Optional case notes or student instructions"></textarea></div><div class="actions"><button class="btn primary" id="create-patient">Create patient</button></div>`);
+}
+
+function hookCurrent(){
+  const tab = state.curTab;
+  if(tab==='orders') hookOrders();
+  if(tab==='labs') hookLabs();
+  if(tab==='vitals') hookVitals();
+  if(tab==='assessment') hookAssessment();
+  if(tab==='meds') hookMeds();
+  if(tab==='io') hookIO();
+  if(tab==='notes') hookNotes();
+  if(tab==='careplan') hookCarePlan();
+  if(tab==='education') hookEducation();
+  if(tab==='sbar') hookSbar();
+  if(tab==='scenarios') hookScenarios();
+  if(tab==='newpatient') hookNewPatient();
+}
+
+function hookOrders(){
+  document.getElementById('add-order').onclick = () => { const p=patient(); const order=document.getElementById('ord-name').value.trim(); if(!order){toast('Order text required');return;} p.orders.push({category:document.getElementById('ord-cat').value||'Nursing', order, details:document.getElementById('ord-details').value, status:document.getElementById('ord-status').value}); persist(); toast('Order added'); render(); };
+  document.querySelectorAll('[data-del-order]').forEach(b=>b.onclick=()=>{ patient().orders.splice(Number(b.dataset.delOrder),1); persist(); render(); });
+}
+function hookLabs(){
+  document.getElementById('add-lab').onclick = () => { const p=patient(); const test=document.getElementById('lab-test').value.trim(); if(!test){toast('Test name required');return;} p.labs.push({time:document.getElementById('lab-time').value, test, result:document.getElementById('lab-result').value, range:document.getElementById('lab-range').value, flag:document.getElementById('lab-flag').value, note:document.getElementById('lab-note').value}); persist(); toast('Lab added'); render(); };
+  document.querySelectorAll('[data-del-lab]').forEach(b=>b.onclick=()=>{ patient().labs.splice(Number(b.dataset.delLab),1); persist(); render(); });
+}
+function hookVitals(){
+  document.getElementById('add-vital').onclick = () => { const p=patient(); const hr=document.getElementById('vt-hr').value; const bps=document.getElementById('vt-bps').value; const bpd=document.getElementById('vt-bpd').value; if(!hr||!bps||!bpd){toast('HR and BP are required');return;} p.vitals.push({time:document.getElementById('vt-time').value, hr:Number(hr), bps:Number(bps), bpd:Number(bpd), rr:document.getElementById('vt-rr').value, temp:document.getElementById('vt-temp').value, spo2:document.getElementById('vt-spo2').value, pain:document.getElementById('vt-pain').value, fetal:document.getElementById('vt-fetal').value, note:document.getElementById('vt-note').value, by:'Student Nurse'}); p.vitals.sort((a,b)=>String(a.time).localeCompare(String(b.time))); persist(); toast('Vital signs added'); render(); };
+  document.querySelectorAll('[data-del-vital]').forEach(b=>b.onclick=()=>{ patient().vitals.splice(Number(b.dataset.delVital),1); persist(); render(); });
+}
+function hookAssessment(){
+  document.getElementById('save-assessment').onclick = () => { const p=patient(); p.assessment = p.assessment || {}; ['neuro','resp','cardiac','gi','gu','skin','safety','pain','fetal','psychosocial','narrative'].forEach(k=>{ const el=document.getElementById('as-'+k); p.assessment[k]=el?el.value:''; }); persist(); toast('Assessment saved'); };
+}
+function hookMeds(){
+  document.querySelectorAll('[data-med-act]').forEach(b=>b.onclick=()=>{ const med=patient().meds[Number(b.dataset.medIndex)]; med.status=b.dataset.medAct; if(b.dataset.medAct==='given'&&!med.time) med.time=nowTime(); persist(); toast('MAR updated'); render(); });
+  document.querySelectorAll('[data-med-time]').forEach(i=>i.onchange=()=>{ patient().meds[Number(i.dataset.medTime)].time=i.value; persist(); });
+  document.querySelectorAll('[data-med-note]').forEach(i=>i.onchange=()=>{ patient().meds[Number(i.dataset.medNote)].note=i.value; persist(); });
+  document.querySelectorAll('[data-del-med]').forEach(b=>b.onclick=()=>{ patient().meds.splice(Number(b.dataset.delMed),1); persist(); render(); });
+  document.getElementById('add-med').onclick = () => { const p=patient(); const name=document.getElementById('med-name').value.trim(); if(!name){toast('Medication name required');return;} p.meds.push({id:uid('med'), name, dose:document.getElementById('med-dose').value, route:document.getElementById('med-route').value, freq:document.getElementById('med-freq').value, priority:'Practice', status:'pending', time:'', note:'', warn:document.getElementById('med-warn').value}); persist(); toast('Medication added'); render(); };
+}
+function hookIO(){
+  document.getElementById('add-io').onclick = () => { const p=patient(); const amount=Number(document.getElementById('io-amount').value); if(!amount){toast('Amount required');return;} p.io.push({time:document.getElementById('io-time').value, type:document.getElementById('io-type').value||'Other', amount, direction:document.getElementById('io-direction').value, note:document.getElementById('io-note').value, by:'Student Nurse'}); p.io.sort((a,b)=>String(a.time).localeCompare(String(b.time))); persist(); toast('I/O added'); render(); };
+  document.querySelectorAll('[data-del-io]').forEach(b=>b.onclick=()=>{ patient().io.splice(Number(b.dataset.delIo),1); persist(); render(); });
+}
 function hookNotes(){
-  document.getElementById('nt-save').addEventListener('click',()=>{
-    const type=document.getElementById('nt-type').value,
-          t=document.getElementById('nt-t').value,
-          body=document.getElementById('nt-body').value.trim();
-    if(!body){toast('Note body required');return;}
-    state.notes.push({type,t,body,by:'Santos, M RN'});
-    state.notes.sort((a,b)=>a.t.localeCompare(b.t));
-    persist();
-    toast('Note signed and saved');
-    showTab('notes');
-  });
-  document.getElementById('nt-template').addEventListener('click',()=>{
-    document.getElementById('nt-body').value=`Pt is a 30 y/o G2P1 at 16 wks gestation, admitted to ED Bay 4 with Hyperemesis Gravidarum. Husband Kevin at bedside.
-
-Initial VS: HR 100, BP 102/60, RR 18, T 98.8°F, SpO2 98% RA. FHR 150 by Doppler.
-
-Pt reports persistent N/V, vomiting 5-10x/day x 8 weeks. Reports 9 lb wt loss in 2 weeks. UA from OB office: moderate ketones, 3+ protein.
-
-Focused assessment: alert and oriented, dry mucous membranes, sluggish capillary refill 3 sec, no abd tenderness, fundus below umbilicus appropriate for 16 wks. Pt provided emesis basin; vomited 60 mL clear thin emesis.
-
-Implementing orders: STAT labs drawn and sent. Thiamine 100 mg IVP given over 5 min. LR with MVI 1L IV bolus initiated at 500 mL/hr. Ondansetron 4 mg IVP given for nausea.
-
-Pt and husband educated on Dx, plan of care, and medications. Will reassess VS and condition after bolus completion.`;
-    toast('Template inserted');
-  });
-  document.querySelectorAll('[data-note-del]').forEach(b=>b.addEventListener('click',e=>{
-    state.notes.splice(+e.target.dataset.noteDel,1);
-    persist();
-    showTab('notes');
-    toast('Note deleted');
-  }));
+  document.getElementById('insert-note-template').onclick = () => { const p=patient(); document.getElementById('note-body').value = `HCT Focused Progress Note\nPatient: ${p.lastName}, ${p.firstName} | Diagnosis: ${p.diagnosis}\n\nAssessment cues:\n- Neuro: ${p.assessment?.neuro || ''}\n- Respiratory: ${p.assessment?.resp || ''}\n- Cardiac/perfusion: ${p.assessment?.cardiac || ''}\n- Priority concern: \n\nInterventions completed:\n- \n\nPatient response / reassessment:\n- \n\nPlan / follow-up:\n- `; toast('Template inserted'); };
+  document.getElementById('save-note').onclick = () => { const body=document.getElementById('note-body').value.trim(); if(!body){toast('Note body required');return;} patient().notes.push({type:document.getElementById('note-type').value, time:document.getElementById('note-time').value, body, by:'Student Nurse'}); persist(); toast('Note signed'); render(); };
+  document.querySelectorAll('[data-del-note]').forEach(b=>b.onclick=()=>{ patient().notes.splice(Number(b.dataset.delNote),1); persist(); render(); });
+}
+function hookCarePlan(){
+  document.getElementById('add-careplan').onclick = () => { patient().carePlan.push({dx:'',goal:'',interventions:'',evaluation:'Pending'}); persist(); render(); };
+  document.getElementById('save-careplan').onclick = () => { document.querySelectorAll('[data-cp]').forEach(el=>{ patient().carePlan[Number(el.dataset.cpIndex)][el.dataset.cp]=el.value; }); persist(); toast('Care plan saved'); };
+  document.querySelectorAll('[data-del-cp]').forEach(b=>b.onclick=()=>{ patient().carePlan.splice(Number(b.dataset.delCp),1); persist(); render(); });
+}
+function hookEducation(){
+  document.getElementById('add-education').onclick = () => { const topic=document.getElementById('ed-topic').value.trim(); if(!topic){toast('Topic required');return;} patient().education.push({topic,status:'Not started',response:''}); persist(); render(); };
+  document.getElementById('save-education').onclick = () => { document.querySelectorAll('[data-ed-status]').forEach(el=>{ patient().education[Number(el.dataset.edStatus)].status=el.value; }); document.querySelectorAll('[data-ed-response]').forEach(el=>{ patient().education[Number(el.dataset.edResponse)].response=el.value; }); document.querySelectorAll('[data-ed-check]').forEach(el=>{ if(el.checked) patient().education[Number(el.dataset.edCheck)].status='Complete'; }); persist(); toast('Education saved'); render(); };
+}
+function hookSbar(){
+  document.getElementById('insert-sbar-template').onclick = () => { const p=patient(); const last=p.vitals[p.vitals.length-1]||{}; document.getElementById('sb-s').value = `This is the student nurse calling about ${p.firstName} ${p.lastName} in ${p.location}, admitted for ${p.diagnosis}.`; document.getElementById('sb-b').value = `${p.hpi}`; document.getElementById('sb-a').value = `Current assessment: HR ${last.hr || '--'}, BP ${last.bps || '--'}/${last.bpd || '--'}, RR ${last.rr || '--'}, SpO2 ${last.spo2 || '--'}%. Priority concern: `; document.getElementById('sb-r').value = 'I recommend provider reassessment and clarification of next orders. Please advise.'; toast('SBAR template inserted'); };
+  document.getElementById('save-sbar').onclick = () => { const p=patient(); p.sbar={s:document.getElementById('sb-s').value,b:document.getElementById('sb-b').value,a:document.getElementById('sb-a').value,r:document.getElementById('sb-r').value}; if(!p.sbar.s.trim()){toast('Situation required');return;} p.notes.push({type:'Provider notification',time:nowTime(),by:'Student Nurse',body:`SBAR provider communication\n\nS: ${p.sbar.s}\n\nB: ${p.sbar.b}\n\nA: ${p.sbar.a}\n\nR: ${p.sbar.r}`}); persist(); toast('SBAR saved to notes'); render(); };
+}
+function hookScenarios(){
+  document.querySelectorAll('[data-load-scenario]').forEach(b=>b.onclick=()=>{ const sc=scenarioLibrary.find(s=>s.id===b.dataset.loadScenario); if(!sc) return; const p=clone(sc.patient); p.id = uid(sc.id); p.mrn = p.mrn || Math.floor(100000 + Math.random()*899999).toString(); state.patients.push(p); state.activeId = p.id; state.curTab = 'summary'; persist(); toast('Scenario opened'); render(); });
+}
+function blankPatientFromForm(){
+  const first = document.getElementById('np-first').value.trim();
+  const last = document.getElementById('np-last').value.trim();
+  const diagnosis = document.getElementById('np-diagnosis').value.trim();
+  if(!first || !last || !diagnosis){ toast('First name, last name, and diagnosis are required'); return null; }
+  const note = document.getElementById('np-note').value.trim();
+  const tags = (document.getElementById('np-tags').value || 'HCT').split(',').map(t=>t.trim()).filter(Boolean);
+  return { id: uid('patient'), scenarioId:'scratch', firstName:first, lastName:last, age:document.getElementById('np-age').value || '--', sex:document.getElementById('np-sex').value, dob:document.getElementById('np-dob').value || '--', mrn:document.getElementById('np-mrn').value || Math.floor(100000 + Math.random()*899999).toString(), location:document.getElementById('np-location').value || 'Simulation room', encounter:'Student-created case', diagnosis, acuity:document.getElementById('np-acuity').value, codeStatus:document.getElementById('np-code').value, allergies:document.getElementById('np-allergies').value || 'NKDA', attending:document.getElementById('np-provider').value || 'Simulation provider', nurse:'Student Nurse', specialty:'Student-created', admitTime:'Today', tags, gestation:'N/A', height:'--', weight:'--', isolation:'Standard', fallRisk:'Assess', diet:'As ordered', activity:'As tolerated', lines:'Add line/access details', monitoring:'As ordered', chiefComplaint:document.getElementById('np-cc').value || diagnosis, hpi:document.getElementById('np-hpi').value || 'Student-created patient. Add HPI details in the summary or nursing notes.', background:document.getElementById('np-bg').value || 'No background entered.', pastHistory:'Add past medical/surgical history.', social:'Add social history and support system.', familyContact:'Add emergency contact.', team:'Student-created care team.', objectives:['Complete chart review.', 'Document focused assessment.', 'Add appropriate orders, labs, medications, notes, and SBAR.'], orders:[], labs:[], diagnostics:[], vitals:[], meds:[], io:[], notes: note ? [{type:'Case setup note', time:nowTime(), body:note, by:'Student Nurse'}] : [], assessment:{neuro:'',resp:'',cardiac:'',gi:'',gu:'',skin:'',safety:'',pain:'',fetal:'',psychosocial:'',narrative:''}, carePlan:[{dx:'',goal:'',interventions:'',evaluation:'Pending'}], education:[], sbar:{s:'',b:'',a:'',r:''} };
+}
+function hookNewPatient(){
+  document.getElementById('create-patient').onclick = () => { const p = blankPatientFromForm(); if(!p) return; state.patients.push(p); state.activeId = p.id; state.curTab = 'summary'; persist(); toast('Patient created'); render(); };
 }
 
-function rSBAR(){
-  return `
-  <div class="cd"><div class="ch2"><h3>SBAR &mdash; provider handoff to Dr. Kline</h3></div><div class="cb">
-    <div class="bn bn-i"><span class="ic">&#8505;</span><span>Use this for the post-treatment update. Be concise &mdash; Dr. Kline is busy. Lead with the most clinically significant information.</span></div>
+document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => setTab(btn.dataset.tab)));
+document.getElementById('patient-select').addEventListener('change', e => { state.activeId = e.target.value; state.curTab = 'summary'; persist(); render(); });
+document.getElementById('new-patient-shortcut').addEventListener('click', () => setTab('newpatient'));
+document.getElementById('sample-shortcut').addEventListener('click', () => setTab('scenarios'));
+document.getElementById('print-btn').addEventListener('click', () => window.print());
+document.getElementById('reset-btn').addEventListener('click', () => { if(confirm('Reset all saved local EHR work in this browser?')){ localStorage.removeItem(STORAGE_KEY); location.reload(); } });
 
-    <div class="fm-rw"><div class="fm-l"><span class="sbar-tag sb-s">S</span> Situation</div><div class="fm-i"><textarea id="sb-s" rows="3" placeholder="Who, where, why now?">${state.sbar.s}</textarea></div></div>
-    <div class="fm-rw"><div class="fm-l"><span class="sbar-tag sb-b">B</span> Background</div><div class="fm-i"><textarea id="sb-b" rows="3" placeholder="Relevant Hx, prior Tx, current state.">${state.sbar.b}</textarea></div></div>
-    <div class="fm-rw"><div class="fm-l"><span class="sbar-tag sb-a">A</span> Assessment</div><div class="fm-i"><textarea id="sb-a" rows="3" placeholder="VS, key findings, response to interventions, abnormal labs.">${state.sbar.a}</textarea></div></div>
-    <div class="fm-rw"><div class="fm-l"><span class="sbar-tag sb-r">R</span> Recommendation</div><div class="fm-i"><textarea id="sb-r" rows="3" placeholder="What you need from the provider, your suggested plan.">${state.sbar.r}</textarea></div></div>
-
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button class="btn" id="sb-tpl">Insert SBAR template</button><button class="btn btn-p" id="sb-save">Save &amp; document call</button></div>
-  </div></div>
-
-  <div class="cd"><div class="ch2"><h3>Reference &mdash; abnormal values to communicate</h3></div><div class="cb">
-    <table class="tbl">
-      <tr><th>Finding</th><th>Value</th><th>Implication</th></tr>
-      <tr><td>HR</td><td><span class="fv abn">100 bpm</span></td><td>Tachycardia (dehydration)</td></tr>
-      <tr><td>BP</td><td><span class="fv lo">102/60 mmHg</span></td><td>Borderline hypotension (volume loss)</td></tr>
-      <tr><td>UA Ketones</td><td><span class="fv abn">Moderate</span></td><td>Starvation ketosis from inadequate intake</td></tr>
-      <tr><td>UA Protein</td><td><span class="fv abn">3+</span></td><td>Concentration / dehydration</td></tr>
-      <tr><td>Wt Loss</td><td><span class="fv abn">9 lb (4.1 kg) in 2 wk</span></td><td>~6.6% body weight; severe HEG</td></tr>
-      <tr><td>FHR</td><td>150 bpm</td><td>WNL &mdash; reassuring</td></tr>
-    </table>
-  </div></div>`;
-}
-
-function hookSBAR(){
-  document.getElementById('sb-save').addEventListener('click',()=>{
-    state.sbar.s=document.getElementById('sb-s').value;
-    state.sbar.b=document.getElementById('sb-b').value;
-    state.sbar.a=document.getElementById('sb-a').value;
-    state.sbar.r=document.getElementById('sb-r').value;
-    if(!state.sbar.s){toast('SBAR situation required');return;}
-    state.notes.push({type:'Provider notification',t:currentTime(),body:`SBAR call to Dr. Kline:\n\nS: ${state.sbar.s}\n\nB: ${state.sbar.b}\n\nA: ${state.sbar.a}\n\nR: ${state.sbar.r}`,by:'Santos, M RN'});
-    persist();
-    toast('SBAR documented in nursing notes');
-  });
-  document.getElementById('sb-tpl').addEventListener('click',()=>{
-    document.getElementById('sb-s').value="Dr. Kline, this is Maria Santos, RN in ED Bay 4 calling regarding Sandra Garces. She is a 30 y/o G2P1 at 16 wks gestation admitted with Hyperemesis Gravidarum.";
-    document.getElementById('sb-b').value="Pt has had persistent N/V x 8 weeks, vomiting 5-10x/day despite home doxylamine-pyridoxine. 9 lb wt loss over 2 weeks. UA from OB office showed moderate ketones and 3+ protein.";
-    document.getElementById('sb-a').value="On admission VS were HR 100, BP 102/60. After your ordered LR with MVI bolus, thiamine 100 mg IV, and ondansetron 4 mg IV, her repeat VS are HR 94, BP 108/68. She reports the nausea is somewhat improved. FHR 150. STAT labs are pending.";
-    document.getElementById('sb-r').value="Orders are completed per your initial set. I'd like to confirm whether to proceed with the D5 0.45% NaCl with 20 mEq KCl at 150 mL/hr now that the bolus is complete, and whether you want me to call back when STAT labs result.";
-    toast('SBAR template inserted');
-  });
-}
-
-showTab('summary');
+render();
 </script>
 </body>
 </html>
