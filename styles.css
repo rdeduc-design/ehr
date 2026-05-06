@@ -167,3 +167,38 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--h
 .vl-hr  { color: #a33131; }
 .vl-bp  { color: #175f9e; }
 .vl-spo2 { color: #13848a; }
+}
+
+/* ── Paste these rules at the bottom of styles.css ────────────────────────── */
+
+/* Vital sign legend */
+.vital-legend { display:flex; gap:16px; padding:6px 14px 10px; font-size:11px; font-weight:800; }
+.vl-hr  { color:#a33131; }
+.vl-bp  { color:#175f9e; }
+.vl-spo2 { color:#13848a; }
+
+/* Allergy flag in MAR */
+.allergy-flag { color:var(--danger); font-size:11px; font-weight:800; display:block; margin-top:3px; }
+
+/* Status board (Kanban) */
+.status-board { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.status-col { border:1px solid var(--line); border-radius:var(--radius); background:var(--paper); padding:10px; min-height:200px; }
+.status-col-head { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+.status-card { background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:8px 10px; margin-bottom:8px; }
+
+/* Scenario grid — 3 across on desktop, 2 on tablet */
+.scenario-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.scenario-card { min-height:235px; border:1px solid var(--line); border-radius:var(--radius); background:var(--paper); overflow:hidden; display:flex; flex-direction:column; }
+.scenario-card .top { height:8px; background:linear-gradient(90deg,var(--hct-teal),var(--hct-navy)); }
+.scenario-card .body { flex:1; padding:13px; display:flex; flex-direction:column; gap:8px; }
+.scenario-card h3 { margin:0; color:var(--hct-navy); font-size:15px; }
+.scenario-card p { margin:0; color:var(--muted); font-size:12px; line-height:1.5; }
+.skill-list { margin-top:auto; display:flex; flex-wrap:wrap; gap:5px; }
+
+/* Responsive adjustments for new features */
+@media (max-width:1020px) {
+  .status-board, .scenario-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:640px) {
+  .status-board, .scenario-grid { grid-template-columns:1fr; }
+}
