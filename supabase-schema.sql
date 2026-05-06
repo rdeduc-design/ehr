@@ -88,13 +88,21 @@ using (id = auth.uid() or public.is_instructor());
 drop policy if exists "Students create own profile" on public.profiles;
 create policy "Students create own profile"
 on public.profiles for insert
-with check (id = auth.uid());
+with check (id = auth.uid() and role = 'student');
+
+drop policy if exists "Students update own student profile" on public.profiles;
+create policy "Students update own student profile"
+on public.profiles for update
+using (id = auth.uid() and not public.is_instructor())
+with check (id = auth.uid() and role = 'student');
+
+drop policy if exists "Instructors update profiles" on public.profiles;
+create policy "Instructors update profiles"
+on public.profiles for update
+using (public.is_instructor())
+with check (public.is_instructor());
 
 drop policy if exists "Users update own profile" on public.profiles;
-create policy "Users update own profile"
-on public.profiles for update
-using (id = auth.uid() or public.is_instructor())
-with check (id = auth.uid() or public.is_instructor());
 
 drop policy if exists "Attempts visible to owner or instructor" on public.chart_attempts;
 create policy "Attempts visible to owner or instructor"
@@ -112,5 +120,5 @@ on public.chart_attempts for update
 using (user_id = auth.uid() or public.is_instructor())
 with check (user_id = auth.uid() or public.is_instructor());
 
--- After an instructor creates/logs into an account, promote them with:
+-- After an instructor creates/logs into an account, promote them with the Supabase SQL editor:
 -- update public.profiles set role = 'instructor' where email = 'instructor@example.edu';
