@@ -156,3 +156,14 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--h
   .check-row { grid-template-columns: 22px 1fr; }
   .check-row > :nth-child(3), .check-row > :nth-child(4) { grid-column: 2; }
 }
+
+.vital-legend {
+  display: flex;
+  gap: 16px;
+  padding: 6px 14px 10px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.vl-hr  { color: #a33131; }
+.vl-bp  { color: #175f9e; }
+.vl-spo2 { color: #13848a; }
