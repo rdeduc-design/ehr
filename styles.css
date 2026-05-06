@@ -202,3 +202,78 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--h
 @media (max-width:640px) {
   .status-board, .scenario-grid { grid-template-columns:1fr; }
 }
+
+/* Interactive v3: theme, peer review, reports, and faculty module builder */
+:root[data-theme="dark"] {
+  --paper: #101827;
+  --surface: #172033;
+  --surface-2: #202c43;
+  --line: rgba(222, 232, 245, 0.16);
+  --line-strong: rgba(222, 232, 245, 0.28);
+  --text: #e8eef8;
+  --muted: #b2bfd0;
+  --subtle: #8fa1b8;
+  --hct-navy: #dbeafe;
+  --danger-bg: rgba(163, 49, 49, 0.22);
+  --warning-bg: rgba(138, 86, 15, 0.22);
+  --success-bg: rgba(49, 105, 31, 0.24);
+  --info-bg: rgba(23, 95, 158, 0.24);
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.42);
+}
+
+:root[data-theme="dark"] body {
+  background: radial-gradient(circle at top left, rgba(67,192,196,0.18), transparent 30%), linear-gradient(135deg, #08111f 0%, #101827 55%, #0b1220 100%);
+}
+
+:root[data-theme="dark"] .topbar,
+:root[data-theme="dark"] .cloud-panel,
+:root[data-theme="dark"] .ehr {
+  background: rgba(16, 24, 39, 0.94);
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea {
+  background: #0b1220;
+  border-color: var(--line-strong);
+}
+
+.metric.interactive {
+  position: relative;
+  overflow: hidden;
+}
+
+.metric.interactive::after {
+  content: "";
+  position: absolute;
+  inset: auto -18px -28px auto;
+  width: 70px;
+  height: 70px;
+  border-radius: 999px;
+  background: rgba(67, 192, 196, 0.16);
+}
+
+.interactive-list {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.print-report .card {
+  border-color: var(--line-strong);
+}
+
+.print-report .card-head h3::before {
+  content: "▣ ";
+  color: var(--hct-teal-dark);
+}
+
+@media print {
+  .print-report { font-size: 11px; }
+  .print-report .actions,
+  .print-report button { display: none !important; }
+  .print-report .card { box-shadow: none; margin-bottom: 8px; }
+  .print-report .grid-4,
+  .print-report .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
