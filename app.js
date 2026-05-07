@@ -1434,11 +1434,56 @@ function bindTabEvents(){
   document.getElementById('add-lab')?.addEventListener('click',()=>{const t=val('lab-test');if(!t)return toast('Test required');p.labs.push({time:val('lab-time'),test:t,result:val('lab-result'),range:val('lab-range'),flag:val('lab-flag'),note:val('lab-note')});persist();render();});
   document.querySelectorAll('[data-del-lab]').forEach(b=>b.onclick=()=>{p.labs.splice(Number(b.dataset.delLab),1);persist();render();});
   document.getElementById('add-vital')?.addEventListener('click',()=>{
-    if(!val('vt-hr')||!val('vt-bps')||!val('vt-bpd'))return toast('HR and BP required');
-    const v={time:val('vt-time'),hr:Number(val('vt-hr')),bps:Number(val('vt-bps')),bpd:Number(val('vt-bpd')),rr:val('vt-rr'),temp:val('vt-temp'),spo2:val('vt-spo2'),pain:val('vt-pain'),fetal:val('vt-fetal'),note:val('vt-note'),by:'Student Nurse'};
-    const alerts=checkVitalAlerts(v);
-    p.vitals.push(v);p.vitals.sort((a,b)=>String(a.time).localeCompare(String(b.time)));persist();render();
-    if(alerts.length){const banner=document.getElementById('alert-banner');if(banner){banner.innerHTML=`<div style="background:var(--danger-bg);border:1px solid var(--danger);border-radius:6px;padding:10px 14px;margin:0 0 8px;font-size:13px;color:var(--danger);"><strong>⚠ Clinical alert:</strong> ${alerts.map(esc).join(' | ')}</div>`;setTimeout(()=>{banner.innerHTML='';},8000);}}
+    if(!val('vt-hr')||!val('vt-bps')||!val('vt-bpd')) return toast('HR and BP required');
+ 
+    // Temperature: accept °C input directly (stored as °C string)
+    const tempInput = val('vt-temp');  // now entered as °C
+ 
+    const v = {
+      time:  val('vt-time'),
+      hr:    Number(val('vt-hr')),
+      bps:   Number(val('vt-bps')),
+      bpd:   Number(val('vt-bpd')),
+      rr:    val('vt-rr'),
+      temp:  tempInput,   // stored as °C string, e.g. "37.2"
+      spo2:  val('vt-spo2'),
+      pain:  val('vt-pain'),
+      fetal: val('vt-fetal'),
+      note:  val('vt-note'),
+      by:    'Student Nurse',
+    };
+ 
+    // For alert checking: convert °C → °F so existing checkVitalAlerts still works
+    // (VITAL_RULES now uses tempc key, handled separately below)
+    const alertsNew = [];
+    VITAL_RULES.forEach(r => {
+      let val2;
+      if(r.key === 'tempc'){
+        val2 = parseFloat(v.temp);   // already °C
+      } else if(r.key === 'bpd'){
+        val2 = Number(v.bpd);
+      } else {
+        val2 = Number(v[r.key]);
+      }
+      if(!isNaN(val2) && isFinite(val2) && (val2 < r.lo || val2 > r.hi)){
+        alertsNew.push(`${r.label} (${val2}${r.unit??' '})${r.unit?'':''}: ${r.msg}`);
+      }
+    });
+ 
+    p.vitals.push(v);
+    p.vitals.sort((a,b)=>String(a.time).localeCompare(String(b.time)));
+    persist();
+    render();
+ 
+    if(alertsNew.length){
+      const banner = document.getElementById('alert-banner');
+      if(banner){
+        banner.innerHTML = `<div style="background:var(--danger-bg);border:1px solid var(--danger);border-radius:6px;padding:10px 14px;margin:0 0 8px;font-size:13px;color:var(--danger);">
+          <strong>⚠ Clinical alert(s):</strong><br>${alertsNew.map(a=>`• ${esc(a)}`).join('<br>')}
+        </div>`;
+        setTimeout(()=>{ banner.innerHTML=''; }, 10000);
+      }
+    }
   });
   document.querySelectorAll('[data-del-vital]').forEach(b=>b.onclick=()=>{p.vitals.splice(Number(b.dataset.delVital),1);persist();render();});
   document.getElementById('save-assessment')?.addEventListener('click',()=>{['neuro','resp','cardiac','gi','gu','skin','safety','pain','specialty','psychosocial','narrative'].forEach(k=>p.assessment[k]=val('as-'+k));persist();toast('Assessment saved');render();});
