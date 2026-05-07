@@ -2508,6 +2508,9 @@ function bindTabEvents(){
     const routeSel = document.getElementById('io-out-stool-route');
     if (routeSel && meta.stoolRoute) routeSel.value = meta.stoolRoute;
   });
+  document.querySelectorAll('[data-del-io]').forEach(b => {
+    b.onclick = () => { p.io.splice(Number(b.dataset.delIo), 1); persist(); render(); };
+  });
   document.getElementById('add-io-intake')?.addEventListener('click',()=>{
     const typeEl  = document.getElementById('io-in-type');
     const typeVal = typeEl?.value;
