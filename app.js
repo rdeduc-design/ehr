@@ -119,7 +119,7 @@ const scenarios = [
     summary:'Elderly patient with severely elevated blood pressure, headache, visual changes, and target organ assessment priorities.',
     skills:['Neuro assessment','Antihypertensives','Fall prevention','Medication reconciliation'],
     patient:patientTemplate({id:'htn-default',scenarioId:'htn',firstName:'Aling',lastName:'Reyes',age:'74',sex:'Female',dob:'Jun 5',mrn:'884430',location:'Med-Surg Ward B6',diagnosis:'Hypertensive urgency with suspected hypertensive encephalopathy',acuity:'Urgent',allergies:'Sulfa drugs — rash',specialty:'Medical / Community',tags:['HTN','Fall risk','Neuro watch','HCT'],gestation:'N/A',chiefComplaint:'Severe headache, blurred vision, and dizziness',hpi:'2-day history of throbbing occipital headache and blurred vision. Ran out of amlodipine 5 days ago and did not refill. BP on triage 218/126 mmHg.',background:'Referred from barangay health center. No ECG changes on community 12-lead strip. Lives alone.',pastHistory:'Hypertension 15 years, type 2 diabetes mellitus, osteoarthritis bilateral knees.',social:'Retired schoolteacher. Lives alone. Daughter visits weekly. Medication adherence inconsistent due to cost and access.',familyContact:'Daughter Maria Reyes. Primary decision-maker.',objectives:['Prioritize neuro and cardiac assessment to rule out hypertensive emergency vs. urgency.','Safely administer antihypertensive and document BP response q15 minutes.','Identify fall risk factors and implement precautions.','Reconcile home medications and identify adherence gaps.','Plan discharge teaching addressing medication access and barangay health center follow-up.'],orders:[['Nursing','Neuro check q1h','GCS, pupil response, grip strength, speech clarity','Active'],['Nursing','BP both arms on admission, then q15 min x4, then q1h','Notify if SBP>220 or drops >25% in 1 hr','Active'],['Nursing','Fall precautions','Bed lowest, call light within reach, non-slip footwear','Active'],['Medication','Amlodipine 5 mg PO now','Resume home dose; max 25% reduction in first hour','Active'],['Medication','Captopril 25 mg SL once','For BP>200/120 before amlodipine takes effect; monitor for hypotension','PRN'],['Lab','CBC, CMP, BUN/Cr, urinalysis, 12-lead ECG','Assess for target organ damage','STAT'],['Imaging','CT head without contrast','If new neuro deficits develop','PRN']],labs:[['09:40','BP right arm','218/126 mmHg','<130/80','High','Hypertensive urgency threshold'],['09:45','BP left arm','214/122 mmHg','<130/80','High','Symmetric'],['09:50','Creatinine','1.4 mg/dL','0.5-1.1','High','Mild CKD'],['09:50','Glucose','148 mg/dL','70-110','High','Known DM2; not fasting'],['09:55','Urinalysis protein','2+','Negative/trace','High','Possible hypertensive nephropathy'],['10:00','12-lead ECG','LVH pattern, no ST changes','Normal','Abnormal','Consistent with chronic hypertension']],vitals:[{time:'09:35',hr:88,bps:218,bpd:126,rr:18,temp:'97.9',spo2:97,pain:'6',fetal:'N/A',note:'Occipital headache, blurred vision; alert x3',by:'Ward RN'}],meds:[['Amlodipine','5 mg','PO','Once (resume home)','Scheduled','pending','Goal: reduce MAP ≤25% in first hour.'],['Captopril','25 mg','Sublingual','Once PRN','PRN','pending','Hold if SBP<160 or symptomatic hypotension.'],['Aspirin','80 mg','PO','Daily (home dose)','Scheduled','pending','Resume only after BP controlled.']]})
-  }
+  },
 // ═══════════════════════════════════════════════════════════════════════════
 // HCT UbiSim Scenario Patch — 6 cases from UbiSim VR platform
 // Paste these entries inside the scenarios = [ ... ] array in app.js
@@ -542,8 +542,8 @@ const scenarios = [
 
 // ═══════════════════════════════════════════════════════════════════════════
 // END OF UBISIM PATCH
-// ═══════════════════════════════════════════════════════════════════════════
-// ];
+// ═══════════════════════════════════════════════════════════════════════════// 
+];
 
 function patientTemplate(input) {
   return {
