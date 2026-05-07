@@ -630,7 +630,7 @@ let dashboardRows=[];
 let dashboardSelectedId='';
 let saveTimer=null;
 let cloud={ready:false,client:null,session:null,profile:null,status:'Local only',busy:false};
-function isInstructor(){return cloud.profile?.role==='instructor';}
+
 function loadState(){
    try{const s=JSON.parse(localStorage.getItem(LOCAL_KEY)||'null');if(s&&Array.isArray(s.patients)&&s.patients.length){s.settings=s.settings||{theme:'light',language:'en',interactive:true};s.patients.forEach(p=>{p.peerReviews=p.peerReviews||[];p.facultyModules=p.facultyModules||[];p.interactionLog=p.interactionLog||[];});return s;}}catch(e){}
   return{patients:[clone(scenarios[0].patient)],activeId:'heg-default',tab:'summary',submitted:{},settings:{theme:'light',language:'en',interactive:true}};
@@ -869,59 +869,12 @@ function renderPatientCard(p){
 }
 function renderPatientTools(){return`<div class="patient-tools"><label class="label" for="patient-select">Patient workspace</label><select id="patient-select">${state.patients.map(p=>`<option value="${esc(p.id)}" ${p.id===state.activeId?'selected':''}>${esc(p.lastName)}, ${esc(p.firstName)} — ${esc(p.diagnosis)}</option>`).join('')}</select><div class="quick-actions"><button class="btn small primary" data-tab-jump="newpatient">New patient</button><button class="btn small" data-tab-jump="scenarios">Samples</button></div></div>`;}
 function renderNav(){
-  const groups=[
-    ['Chart review',[
-      ['summary','PS','Patient summary'],
-      ['orders','PO','Provider orders'],
-      ['labs','LR','Labs / diagnostics']
-    ]],
-    ['Documentation',[
-      ['vitals','VS','Vital signs'],
-      ['assessment','FA','Focused assessment'],
-      ['meds','MR','MAR'],
-      ['io','IO','Intake / output'],
-      ['notes','NN','Nursing notes'],
-      ['careplan','CP','Care plan'],
-      ['education','ED','Education'],
-      ['sbar','SB','SBAR / handoff']
-    ]],
-    ['Learning tools',[
-      ['reasoning','CR','Clinical reasoning'],
-      ['peerreview','PR','Peer review mode'],
-      ['debriefing','DB','Debriefing'],
-      ['progress','PT','My progress'],
-      ['report','RP','Print report'],
-      ['scenarios','SC','Sample scenarios'],
-      ['newpatient','NP','Add patient']
-    ]]
-  ];
-  // Faculty tools group — only appended for instructor accounts
-  if(isInstructor()){
-    groups.push(['Faculty tools',[
-      ['modulebuilder','MB','Faculty module builder'],
-      ['dashboard','ID','Instructor dashboard'],
-      ['statusboard','SS','Status board']
-    ]]);
-  }
+  const groups=[['Chart review',[['summary','PS','Patient summary'],['orders','PO','Provider orders'],['labs','LR','Labs / diagnostics']]],['Documentation',[['vitals','VS','Vital signs'],['assessment','FA','Focused assessment'],['meds','MR','MAR'],['io','IO','Intake / output'],['notes','NN','Nursing notes'],['careplan','CP','Care plan'],['education','ED','Education'],['sbar','SB','SBAR / handoff']]],['Learning tools',[['reasoning','CR','Clinical reasoning'],['peerreview','PR','Peer review mode'],['debriefing','DB','Debriefing'],['progress','PT','My progress'],['report','RP','Print report'],['scenarios','SC','Sample scenarios'],['newpatient','NP','Add patient']]],['Faculty tools',[['modulebuilder','MB','Faculty module builder']]]];
   return`<nav class="nav">${groups.map(([g,items])=>`<div class="group">${g}</div>${items.map(([tab,ic,label])=>`<button class="nav-btn ${state.tab===tab?'active':''}" data-tab="${tab}"><span class="nav-ic">${ic}</span>${label}</button>`).join('')}`).join('')}</nav>`;
 }
 function toolbarButtons(){return`<button class="btn small primary" id="save-local-btn">Save</button><button class="btn small" id="print-report-btn">${tr('printReport')}</button><button class="btn small danger" id="reset-btn">Reset local</button>`;}
 function tabTitle(){const t={summary:'Patient summary',orders:'Provider orders',labs:'Labs / diagnostics',vitals:'Vital signs',assessment:'Focused assessment',meds:'Medication administration record',io:'Intake / output',notes:'Nursing notes',careplan:'Care plan',education:'Patient education',sbar:'SBAR / handoff',reasoning:'Clinical reasoning prompts',debriefing:'Simulation debriefing',progress:'My progress tracker',scenarios:'Sample scenarios',newpatient:'Add patient from scratch',dashboard:'Instructor dashboard',statusboard:'Submission status board',peerreview:tr('peer'),report:'Printable chart report',modulebuilder:tr('faculty')};return t[state.tab]||'Patient summary';}
-function renderTab(){
-  const map={
-    summary:rSummary,orders:rOrders,labs:rLabs,vitals:rVitals,
-    assessment:rAssessment,meds:rMeds,io:rIO,notes:rNotes,
-    careplan:rCarePlan,education:rEducation,sbar:rSbar,
-    reasoning:rReasoning,debriefing:rDebriefing,progress:rProgress,
-    scenarios:rScenarios,newpatient:rNewPatient,dashboard:rDashboard,
-    statusboard:rStatusBoard,peerreview:rPeerReview,report:rReport,
-    modulebuilder:rModuleBuilder
-  };
-  // Defence-in-depth: block faculty tabs regardless of how the student reached them
-  const facultyOnlyTabs=['modulebuilder','dashboard','statusboard'];
-  if(facultyOnlyTabs.includes(state.tab)&&!isInstructor())return rAccessDenied();
-  return(map[state.tab]||rSummary)();
-}
+function renderTab(){const map={summary:rSummary,orders:rOrders,labs:rLabs,vitals:rVitals,assessment:rAssessment,meds:rMeds,io:rIO,notes:rNotes,careplan:rCarePlan,education:rEducation,sbar:rSbar,reasoning:rReasoning,debriefing:rDebriefing,progress:rProgress,scenarios:rScenarios,newpatient:rNewPatient,dashboard:rDashboard,statusboard:rStatusBoard,peerreview:rPeerReview,report:rReport,modulebuilder:rModuleBuilder};return(map[state.tab]||rSummary)();}
 function renderAuthPage() {
   return `
     <div class="auth-shell">
@@ -1179,7 +1132,7 @@ function renderVitalAlerts(vital){
   return alerts.map(a=>`<div class="notice danger" style="margin-bottom:6px;"><span class="mark">⚠ ALERT</span><span>${esc(a)}</span></div>`).join('');
 }
 
-function rSummary(){const p=currentPatient();const c=chartStats(p);const score=completionScore(p);return`${section('Interactive chart readiness',`<div class="metric-row"><div class="metric interactive"><div class="num">${score}%</div><div class="lbl">Completion</div></div><div class="metric interactive"><div class="num">${c.notes}</div><div class="lbl">Notes</div></div><div class="metric interactive"><div class="num">${c.peer}</div><div class="lbl">Peer reviews</div></div><div class="metric interactive"><div class="num">${c.modules}</div><div class="lbl">Faculty modules</div></div></div><div class="actions" style="justify-content:flex-start"><button class="btn small primary" data-tab-jump="vitals">Chart vitals</button><button class="btn small" data-tab-jump="peerreview">Start peer review</button>${isInstructor()?'<button class="btn small" data-tab-jump="modulebuilder">Build module</button>':''}<button class="btn small" data-tab-jump="report">Preview report</button></div>`)}${section('Safety snapshot',`<div class="notice ${p.acuity==='Critical'?'danger':'info'}"><span class="mark">HCT</span><span><strong>${esc(p.acuity)} acuity.</strong> Allergies: ${esc(p.allergies)}. Monitoring: ${esc(p.monitoring)}.</span></div><div class="grid-4">${field('Patient',`${p.lastName}, ${p.firstName}`)}${field('DOB / Age',`${p.dob} / ${p.age}`)}${field('Location',p.location)}${field('Diagnosis',p.diagnosis)}${field('Code status',p.codeStatus)}${field('Diet',p.diet)}${field('Activity',p.activity)}${field('Lines',p.lines)}</div>`)}${section('Clinical picture',`<p class="text-block"><strong>Chief complaint:</strong> ${esc(p.chiefComplaint)}</p><p class="text-block"><strong>HPI:</strong> ${esc(p.hpi)}</p><p class="text-block"><strong>Background:</strong> ${esc(p.background)}</p>`)}${section('History and objectives',`<div class="grid-2">${field('Past history',p.pastHistory)}${field('Social / contact',`${p.social}\n${p.familyContact}`)}${(p.objectives||[]).map((o,i)=>field(`Objective ${i+1}`,o)).join('')}</div>`)}`;}
+function rSummary(){const p=currentPatient();const c=chartStats(p);const score=completionScore(p);return`${section('Interactive chart readiness',`<div class="metric-row"><div class="metric interactive"><div class="num">${score}%</div><div class="lbl">Completion</div></div><div class="metric interactive"><div class="num">${c.notes}</div><div class="lbl">Notes</div></div><div class="metric interactive"><div class="num">${c.peer}</div><div class="lbl">Peer reviews</div></div><div class="metric interactive"><div class="num">${c.modules}</div><div class="lbl">Faculty modules</div></div></div><div class="actions" style="justify-content:flex-start"><button class="btn small primary" data-tab-jump="vitals">Chart vitals</button><button class="btn small" data-tab-jump="peerreview">Start peer review</button><button class="btn small" data-tab-jump="modulebuilder">Build module</button><button class="btn small" data-tab-jump="report">Preview report</button></div>`)}${section('Safety snapshot',`<div class="notice ${p.acuity==='Critical'?'danger':'info'}"><span class="mark">HCT</span><span><strong>${esc(p.acuity)} acuity.</strong> Allergies: ${esc(p.allergies)}. Monitoring: ${esc(p.monitoring)}.</span></div><div class="grid-4">${field('Patient',`${p.lastName}, ${p.firstName}`)}${field('DOB / Age',`${p.dob} / ${p.age}`)}${field('Location',p.location)}${field('Diagnosis',p.diagnosis)}${field('Code status',p.codeStatus)}${field('Diet',p.diet)}${field('Activity',p.activity)}${field('Lines',p.lines)}</div>`)}${section('Clinical picture',`<p class="text-block"><strong>Chief complaint:</strong> ${esc(p.chiefComplaint)}</p><p class="text-block"><strong>HPI:</strong> ${esc(p.hpi)}</p><p class="text-block"><strong>Background:</strong> ${esc(p.background)}</p>`)}${section('History and objectives',`<div class="grid-2">${field('Past history',p.pastHistory)}${field('Social / contact',`${p.social}\n${p.familyContact}`)}${(p.objectives||[]).map((o,i)=>field(`Objective ${i+1}`,o)).join('')}</div>`)}`;}
 function rOrders(){
   const p=currentPatient();
  
@@ -2540,30 +2493,7 @@ function rPeerReview(){const p=currentPatient();const reviews=p.peerReviews||[];
 
 function rReport(){const p=currentPatient();const c=chartStats(p);const latest=p.vitals[p.vitals.length-1]||{};const notes=(p.notes||[]).slice(-4).map(n=>`<div class="note"><div class="note-head"><span class="note-type">${esc(n.type)} | ${esc(n.time)}</span><span>${esc(n.by)}</span></div><div class="note-body">${lines(n.body)}</div></div>`).join('')||'<p class="text-block">No notes documented.</p>';const peer=(p.peerReviews||[]).map(r=>`<li><strong>${esc(r.reviewer)} (${esc(r.score)}/5):</strong> ${esc(r.strength)} — ${esc(r.growth)}</li>`).join('')||'<li>No peer review saved.</li>';return `<div class="print-report">${section('Printable EHR report',`<div class="notice info"><span class="mark">REPORT</span><span>Use the print report button for a focused handoff packet.</span></div><div class="actions" style="justify-content:flex-start"><button class="btn primary" onclick="window.print()">${tr('printReport')}</button></div>`)}${section('Patient snapshot',`<div class="grid-4">${field('Patient',`${p.lastName}, ${p.firstName}`)}${field('MRN',p.mrn)}${field('Diagnosis',p.diagnosis)}${field('Acuity',p.acuity)}${field('Allergies',p.allergies)}${field('Latest vitals',`HR ${latest.hr||'--'} BP ${latest.bps||'--'}/${latest.bpd||'--'} RR ${latest.rr||'--'} SpO2 ${latest.spo2||'--'}%`)}${field('Completion',completionScore(p)+'%')}${field('Peer reviews',c.peer)}`)}${section('SBAR',`<div class="grid-2">${field('Situation',p.sbar?.s)}${field('Background',p.sbar?.b)}${field('Assessment',p.sbar?.a)}${field('Recommendation',p.sbar?.r)}</div>`)}${section('Recent notes',notes)}${section('Peer review summary',`<ul class="interactive-list">${peer}</ul>`)}</div>`;}
 
-function rModuleBuilder(){
-  if(!isInstructor())return rAccessDenied(); // ← GUARD: students see access denied
-  const p=currentPatient();const modules=p.facultyModules||[];
-  const rows=modules.map((m,i)=>`<tr><td>${esc(m.title)}</td><td>${esc(m.level)}</td><td>${lines(m.objectives)}</td><td>${lines(m.activities)}</td><td>${esc(m.checkpoint)}</td><td><button class="btn small" data-apply-module="${i}">Apply</button> <button class="btn small danger" data-del-module="${i}">Delete</button></td></tr>`).join('');
-  return section('Faculty module builder',`<div class="notice info"><span class="mark">FACULTY</span><span>Create interactive mini-modules that can add objectives, a nursing note prompt, and checklist activity to this patient.</span></div><div class="form-grid"><input id="module-title" placeholder="Module title"><select id="module-level"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select><input id="module-checkpoint" placeholder="Checkpoint / exit ticket"></div><div class="grid-2"><div class="form-row"><label>Learning objectives</label><textarea id="module-objectives" placeholder="One objective per line"></textarea></div><div class="form-row"><label>Interactive activities</label><textarea id="module-activities" placeholder="Assessment huddle, med safety check, SBAR role play"></textarea></div></div><div class="actions"><button class="btn" id="module-template">Load HCT template</button><button class="btn primary" id="save-module">Save module</button></div>`)+section('Built modules',table(['Title','Level','Objectives','Activities','Checkpoint',''],rows||'<tr><td colspan="6">No faculty modules yet.</td></tr>'));
-}
-
-function rAccessDenied(){
-  return section('Access restricted',`
-    <div class="notice danger">
-      <span class="mark">🔒 RESTRICTED</span>
-      <span>
-        <strong>This section is available to faculty accounts only.</strong><br>
-        Student accounts do not have access to the Faculty Module Builder, Instructor Dashboard,
-        or Submission Status Board. If you believe this is an error, please contact your instructor
-        or the HCT R&amp;D team.
-      </span>
-    </div>
-    <div class="actions" style="justify-content:flex-start;">
-      <button class="btn primary" data-tab-jump="summary">Return to patient summary</button>
-      <button class="btn" data-tab-jump="progress">My progress tracker</button>
-    </div>
-  `);
-}
+function rModuleBuilder(){const p=currentPatient();const modules=p.facultyModules||[];const rows=modules.map((m,i)=>`<tr><td>${esc(m.title)}</td><td>${esc(m.level)}</td><td>${lines(m.objectives)}</td><td>${lines(m.activities)}</td><td>${esc(m.checkpoint)}</td><td><button class="btn small" data-apply-module="${i}">Apply</button> <button class="btn small danger" data-del-module="${i}">Delete</button></td></tr>`).join('');return section('Faculty module builder',`<div class="notice info"><span class="mark">FACULTY</span><span>Create interactive mini-modules that can add objectives, a nursing note prompt, and checklist activity to this patient.</span></div><div class="form-grid"><input id="module-title" placeholder="Module title"><select id="module-level"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select><input id="module-checkpoint" placeholder="Checkpoint / exit ticket"></div><div class="grid-2"><div class="form-row"><label>Learning objectives</label><textarea id="module-objectives" placeholder="One objective per line"></textarea></div><div class="form-row"><label>Interactive activities</label><textarea id="module-activities" placeholder="Assessment huddle, med safety check, SBAR role play"></textarea></div></div><div class="actions"><button class="btn" id="module-template">Load HCT template</button><button class="btn primary" id="save-module">Save module</button></div>`)+section('Built modules',table(['Title','Level','Objectives','Activities','Checkpoint',''],rows||'<tr><td colspan="6">No faculty modules yet.</td></tr>'));}
 
 function rDashboard(){
   if(!cloud.profile)return section('Instructor dashboard','<div class="notice info"><span class="mark">LOADING</span><span>Profile loading. Sign out and back in if this persists.</span></div>');
