@@ -1011,7 +1011,545 @@ function rVitals(){
   `;
 }
 
-function rAssessment(){const a=currentPatient().assessment;const inp=(k,ph='')=>`<input id="as-${k}" value="${esc(a[k]||'')}" placeholder="${esc(ph)}">`;return section('Focused assessment template',`<div class="form-row"><label>Neuro</label>${inp('neuro')}</div><div class="form-row"><label>Respiratory</label>${inp('resp')}</div><div class="form-row"><label>Cardiac / perfusion</label>${inp('cardiac')}</div><div class="form-row"><label>GI</label>${inp('gi')}</div><div class="form-row"><label>GU / output</label>${inp('gu')}</div><div class="form-row"><label>Skin / hydration</label>${inp('skin')}</div><div class="form-row"><label>Safety</label>${inp('safety')}</div><div class="form-row"><label>Pain</label>${inp('pain')}</div><div class="form-row"><label>Specialty cues</label>${inp('specialty','FHR, fundus, peak flow, neuro checks, etc.')}</div><div class="form-row"><label>Psychosocial</label>${inp('psychosocial')}</div><div class="form-row"><label>Narrative</label><textarea id="as-narrative">${esc(a.narrative||'')}</textarea></div><div class="actions"><button class="btn primary" id="save-assessment">Save assessment</button></div>`);}
+function rAssessment(){
+  const a = currentPatient().assessment;
+ 
+  // ── Per-system dropdown option sets ────────────────────────────────────────
+  // Format: { label, abnormal: true|false }
+  const SYSTEMS = {
+    neuro: {
+      label: 'Neurological',
+      icon: '🧠',
+      placeholder: 'Type or select neuro findings…',
+      options: [
+        { label: 'Alert and oriented ×4 (person, place, time, event)', abnormal: false },
+        { label: 'Alert and oriented ×3 (person, place, time)', abnormal: false },
+        { label: 'Alert and oriented ×2 (person and place only)', abnormal: true },
+        { label: 'Alert and oriented ×1 (person only)', abnormal: true },
+        { label: 'PERRL — pupils equal, round, reactive to light', abnormal: false },
+        { label: 'Pupils unequal (anisocoria)', abnormal: true },
+        { label: 'Pupils sluggish or non-reactive', abnormal: true },
+        { label: 'GCS 15 — normal', abnormal: false },
+        { label: 'GCS 13–14 — mild impairment', abnormal: true },
+        { label: 'GCS 9–12 — moderate impairment', abnormal: true },
+        { label: 'GCS ≤8 — severe impairment', abnormal: true },
+        { label: 'Speech clear and coherent', abnormal: false },
+        { label: 'Speech slurred or garbled', abnormal: true },
+        { label: 'Expressive aphasia noted', abnormal: true },
+        { label: 'Receptive aphasia noted', abnormal: true },
+        { label: 'Strength 5/5 bilaterally — upper and lower extremities', abnormal: false },
+        { label: 'Weakness in upper extremity (specify side)', abnormal: true },
+        { label: 'Weakness in lower extremity (specify side)', abnormal: true },
+        { label: 'Hemiparesis noted', abnormal: true },
+        { label: 'Facial droop noted', abnormal: true },
+        { label: 'No focal neurological deficits', abnormal: false },
+        { label: 'Restless and confused', abnormal: true },
+        { label: 'Agitated, difficult to redirect', abnormal: true },
+        { label: 'Lethargic — arousable to voice', abnormal: true },
+        { label: 'Obtunded — requires stimulation to respond', abnormal: true },
+        { label: 'Sundowning behaviour noted', abnormal: true },
+        { label: 'Hallucinations reported or observed', abnormal: true },
+        { label: 'Memory impairment — short-term affected', abnormal: true },
+        { label: 'Seizure activity noted', abnormal: true },
+      ]
+    },
+    resp: {
+      label: 'Respiratory',
+      icon: '🫁',
+      placeholder: 'Type or select respiratory findings…',
+      options: [
+        { label: 'Lungs clear to auscultation bilaterally (CTAB)', abnormal: false },
+        { label: 'Diminished breath sounds bilateral bases', abnormal: true },
+        { label: 'Diminished breath sounds — right base', abnormal: true },
+        { label: 'Diminished breath sounds — left base', abnormal: true },
+        { label: 'Fine crackles (rales) bilateral bases', abnormal: true },
+        { label: 'Coarse crackles noted', abnormal: true },
+        { label: 'Expiratory wheezes bilateral', abnormal: true },
+        { label: 'Inspiratory stridor noted', abnormal: true },
+        { label: 'Pleural friction rub noted', abnormal: true },
+        { label: 'Respirations regular and unlaboured', abnormal: false },
+        { label: 'Tachypnea — RR >20 breaths/min', abnormal: true },
+        { label: 'Bradypnea — RR <12 breaths/min', abnormal: true },
+        { label: 'Use of accessory muscles noted', abnormal: true },
+        { label: 'Nasal flaring observed', abnormal: true },
+        { label: 'Intercostal retractions noted', abnormal: true },
+        { label: 'Subcostal retractions noted', abnormal: true },
+        { label: 'Shallow and irregular respirations', abnormal: true },
+        { label: 'Kussmaul breathing pattern noted', abnormal: true },
+        { label: 'Cheyne-Stokes respirations noted', abnormal: true },
+        { label: 'Productive cough — describe sputum', abnormal: true },
+        { label: 'Non-productive cough', abnormal: false },
+        { label: 'No cough present', abnormal: false },
+        { label: 'SpO₂ ≥95% on room air', abnormal: false },
+        { label: 'SpO₂ 92–94% on room air — borderline', abnormal: true },
+        { label: 'SpO₂ <92% on room air — supplemental O₂ applied', abnormal: true },
+        { label: 'On supplemental O₂ via nasal cannula', abnormal: false },
+        { label: 'Patient reports dyspnoea at rest', abnormal: true },
+        { label: 'Patient reports dyspnoea on exertion', abnormal: true },
+      ]
+    },
+    cardiac: {
+      label: 'Cardiac / Perfusion',
+      icon: '🫀',
+      placeholder: 'Type or select cardiac findings…',
+      options: [
+        { label: 'S1 and S2 present, regular rate and rhythm (RRR)', abnormal: false },
+        { label: 'S1 and S2 present, irregular rhythm noted', abnormal: true },
+        { label: 'S3 gallop auscultated', abnormal: true },
+        { label: 'S4 gallop auscultated', abnormal: true },
+        { label: 'Systolic murmur auscultated', abnormal: true },
+        { label: 'Diastolic murmur auscultated', abnormal: true },
+        { label: 'Carotid bruits auscultated bilaterally', abnormal: true },
+        { label: 'No murmurs, rubs, or gallops', abnormal: false },
+        { label: 'Peripheral pulses 2+ and equal bilaterally', abnormal: false },
+        { label: 'Peripheral pulses 1+ bilateral lower extremities', abnormal: true },
+        { label: 'Dorsalis pedis pulse diminished or absent', abnormal: true },
+        { label: 'Radial pulse irregular', abnormal: true },
+        { label: 'Capillary refill <2 seconds bilaterally', abnormal: false },
+        { label: 'Capillary refill 2–3 seconds', abnormal: true },
+        { label: 'Capillary refill >3 seconds', abnormal: true },
+        { label: 'Skin warm, dry, and pink', abnormal: false },
+        { label: 'Skin cool and pale peripherally', abnormal: true },
+        { label: 'Skin cold and mottled', abnormal: true },
+        { label: 'Skin clammy and diaphoretic', abnormal: true },
+        { label: 'Cyanosis noted (peripheral)', abnormal: true },
+        { label: 'Central cyanosis noted', abnormal: true },
+        { label: 'No pitting oedema noted', abnormal: false },
+        { label: '1+ pitting oedema bilateral lower extremities', abnormal: true },
+        { label: '2+ pitting oedema bilateral lower extremities', abnormal: true },
+        { label: '3+ pitting oedema bilateral lower extremities', abnormal: true },
+        { label: 'JVD present at 45° — jugular venous distension', abnormal: true },
+        { label: 'Telemetry: normal sinus rhythm', abnormal: false },
+        { label: 'Telemetry: occasional PVCs noted', abnormal: true },
+        { label: 'Telemetry: atrial fibrillation', abnormal: true },
+        { label: 'Telemetry: tachycardia noted', abnormal: true },
+        { label: 'Arterial ulcer noted (describe location)', abnormal: true },
+        { label: 'Lower extremities warm bilaterally', abnormal: false },
+        { label: 'Lower extremities cool bilaterally', abnormal: true },
+      ]
+    },
+    gi: {
+      label: 'Gastrointestinal',
+      icon: '🩺',
+      placeholder: 'Type or select GI findings…',
+      options: [
+        { label: 'Abdomen soft, non-tender, non-distended', abnormal: false },
+        { label: 'Abdomen soft, tender to palpation — specify region', abnormal: true },
+        { label: 'Abdomen firm and distended', abnormal: true },
+        { label: 'Mild abdominal distension noted', abnormal: true },
+        { label: 'Bowel sounds present ×4 quadrants — normoactive', abnormal: false },
+        { label: 'Bowel sounds hypoactive', abnormal: true },
+        { label: 'Bowel sounds hyperactive', abnormal: true },
+        { label: 'Bowel sounds absent', abnormal: true },
+        { label: 'No nausea or vomiting', abnormal: false },
+        { label: 'Nausea present — no emesis', abnormal: true },
+        { label: 'Vomiting — describe frequency and character', abnormal: true },
+        { label: 'Last bowel movement today — normal', abnormal: false },
+        { label: 'No bowel movement in >3 days — constipation', abnormal: true },
+        { label: 'Diarrhoea — liquid stools, describe frequency', abnormal: true },
+        { label: 'Melena (tarry, black stool) noted', abnormal: true },
+        { label: 'Haematochezia (bright red blood per rectum)', abnormal: true },
+        { label: 'Tolerating PO intake without difficulty', abnormal: false },
+        { label: 'Poor oral intake — reports anorexia', abnormal: true },
+        { label: 'NPO — per order', abnormal: false },
+        { label: 'Nasogastric tube in place — describe output', abnormal: false },
+        { label: 'Liver enlarged to palpation', abnormal: true },
+        { label: 'Liver normal size on palpation', abnormal: false },
+        { label: 'Splenomegaly on palpation', abnormal: true },
+        { label: 'Rebound tenderness noted', abnormal: true },
+        { label: 'Guarding noted on palpation', abnormal: true },
+        { label: 'Surgical wound intact — no redness or drainage', abnormal: false },
+        { label: 'Surgical wound — serosanguineous drainage noted', abnormal: true },
+        { label: 'Oral mucosa moist and pink', abnormal: false },
+        { label: 'Oral mucosa dry — signs of dehydration', abnormal: true },
+        { label: 'Oral ulcers or mouth sores noted', abnormal: true },
+      ]
+    },
+    gu: {
+      label: 'Genitourinary / Output',
+      icon: '💧',
+      placeholder: 'Type or select GU/output findings…',
+      options: [
+        { label: 'Voiding spontaneously — clear yellow urine', abnormal: false },
+        { label: 'Voiding spontaneously — dark amber urine', abnormal: true },
+        { label: 'Urine output adequate >0.5 mL/kg/hr', abnormal: false },
+        { label: 'Urine output decreased — oliguria <30 mL/hr', abnormal: true },
+        { label: 'Anuria — no urine output in last 4 hours', abnormal: true },
+        { label: 'Haematuria — gross blood in urine', abnormal: true },
+        { label: 'Foley catheter in place — describe output', abnormal: false },
+        { label: 'Urinary retention noted', abnormal: true },
+        { label: 'Dysuria reported by patient', abnormal: true },
+        { label: 'Frequency and urgency reported', abnormal: true },
+        { label: 'Lochia — normal postpartum discharge', abnormal: false },
+        { label: 'Lochia — increased or abnormal character', abnormal: true },
+        { label: 'Postpartum — pad count within normal limits', abnormal: false },
+        { label: 'Postpartum — heavy bleeding noted', abnormal: true },
+        { label: 'No oedema to genitalia', abnormal: false },
+        { label: 'Scrotal/labial oedema noted', abnormal: true },
+        { label: 'Urostomy or nephrostomy — describe output', abnormal: false },
+        { label: 'BUN and creatinine elevated — renal function impaired', abnormal: true },
+      ]
+    },
+    skin: {
+      label: 'Skin / Hydration / Wound',
+      icon: '🩹',
+      placeholder: 'Type or select skin/wound findings…',
+      options: [
+        { label: 'Skin intact, warm, dry, and appropriate for age', abnormal: false },
+        { label: 'Skin intact — good turgor', abnormal: false },
+        { label: 'Skin poor turgor — tenting present', abnormal: true },
+        { label: 'Skin dry and flaky', abnormal: true },
+        { label: 'Diaphoresis noted', abnormal: true },
+        { label: 'Pallor noted', abnormal: true },
+        { label: 'Jaundice — icteric sclera and skin', abnormal: true },
+        { label: 'Erythema — redness noted (specify location)', abnormal: true },
+        { label: 'Ecchymosis (bruising) noted — specify location', abnormal: true },
+        { label: 'Petechiae noted', abnormal: true },
+        { label: 'Rash observed — describe character', abnormal: true },
+        { label: 'Pressure injury Stage I — non-blanchable erythema', abnormal: true },
+        { label: 'Pressure injury Stage II — partial thickness skin loss', abnormal: true },
+        { label: 'Pressure injury Stage III — full thickness skin loss', abnormal: true },
+        { label: 'Arterial ulcer noted — pale, well-defined edges', abnormal: true },
+        { label: 'Venous ulcer noted — irregular edges, ruddy base', abnormal: true },
+        { label: 'Diabetic foot ulcer noted', abnormal: true },
+        { label: 'Wound edges approximated, no signs of infection', abnormal: false },
+        { label: 'Wound — purulent drainage noted', abnormal: true },
+        { label: 'Wound — erythema/warmth/oedema at site', abnormal: true },
+        { label: 'IV site — patent, no redness or oedema', abnormal: false },
+        { label: 'IV site — signs of infiltration noted', abnormal: true },
+        { label: 'IV site — phlebitis noted', abnormal: true },
+        { label: 'Mucous membranes moist — hydration adequate', abnormal: false },
+        { label: 'Mucous membranes dry — dehydration suspected', abnormal: true },
+      ]
+    },
+    safety: {
+      label: 'Safety / Environment',
+      icon: '🛡️',
+      placeholder: 'Type or select safety findings…',
+      options: [
+        { label: 'Call light within reach — patient verbalized understanding', abnormal: false },
+        { label: 'Bed in lowest position and locked', abnormal: false },
+        { label: 'Two side rails raised per facility policy', abnormal: false },
+        { label: 'Non-skid footwear in place', abnormal: false },
+        { label: 'Fall risk assessed — low risk', abnormal: false },
+        { label: 'Fall risk assessed — moderate risk', abnormal: true },
+        { label: 'Fall risk assessed — high risk — precautions implemented', abnormal: true },
+        { label: 'Patient ambulating safely with assistance', abnormal: false },
+        { label: 'Patient ambulating independently', abnormal: false },
+        { label: 'Gait unsteady — assistive device needed', abnormal: true },
+        { label: 'Patient confined to bed — mobility limitations', abnormal: true },
+        { label: 'Restraints in use — per order and monitored', abnormal: true },
+        { label: 'Allergy band in place and verified', abnormal: false },
+        { label: 'Allergy band missing — replaced', abnormal: true },
+        { label: 'Elopement risk identified — precautions in place', abnormal: true },
+        { label: 'Suicide risk screened — no current ideation', abnormal: false },
+        { label: 'Suicide risk — active ideation or plan — provider notified', abnormal: true },
+        { label: 'Patient oriented to environment', abnormal: false },
+        { label: 'Patient disoriented to environment', abnormal: true },
+        { label: 'Hazardous items removed from reach', abnormal: false },
+        { label: 'Side rails down — safety concern addressed', abnormal: true },
+      ]
+    },
+    pain: {
+      label: 'Pain Assessment',
+      icon: '😣',
+      placeholder: 'Type or select pain assessment findings…',
+      options: [
+        { label: 'No pain reported — 0/10', abnormal: false },
+        { label: 'Mild pain — 1–3/10 — patient comfortable', abnormal: false },
+        { label: 'Moderate pain — 4–6/10 — intervention required', abnormal: true },
+        { label: 'Severe pain — 7–9/10 — priority intervention', abnormal: true },
+        { label: 'Worst possible pain — 10/10', abnormal: true },
+        { label: 'Pain quality: sharp and stabbing', abnormal: false },
+        { label: 'Pain quality: dull and aching', abnormal: false },
+        { label: 'Pain quality: burning', abnormal: false },
+        { label: 'Pain quality: cramping', abnormal: false },
+        { label: 'Pain quality: throbbing', abnormal: false },
+        { label: 'Chest pain — substernal, with radiation', abnormal: true },
+        { label: 'Chest pain — pleuritic (worsens with breathing)', abnormal: true },
+        { label: 'Headache — severe and sudden onset (worst of life)', abnormal: true },
+        { label: 'Abdominal pain — localised', abnormal: true },
+        { label: 'Abdominal pain — diffuse and generalised', abnormal: true },
+        { label: 'Pain worsens with movement', abnormal: true },
+        { label: 'Pain worsens with inspiration', abnormal: true },
+        { label: 'Pain relieved with current medication', abnormal: false },
+        { label: 'Pain unrelieved despite medication — reassess', abnormal: true },
+        { label: 'Non-verbal pain indicators noted (grimacing, guarding)', abnormal: true },
+        { label: 'FLACC scale used — score documented', abnormal: false },
+        { label: 'CPOT scale used — score documented', abnormal: false },
+      ]
+    },
+    specialty: {
+      label: 'Specialty Cues',
+      icon: '⚕️',
+      placeholder: 'Type or select specialty findings…',
+      options: [
+        // OB / Maternity
+        { label: 'Fetal heart rate 110–160 bpm — reassuring', abnormal: false },
+        { label: 'Fetal heart rate <110 bpm — bradycardia', abnormal: true },
+        { label: 'Fetal heart rate >160 bpm — tachycardia', abnormal: true },
+        { label: 'Fundal height appropriate for gestational age', abnormal: false },
+        { label: 'Fundus firm and at umbilicus', abnormal: false },
+        { label: 'Fundus boggy — uterine atony suspected', abnormal: true },
+        { label: 'Contractions regular — describe frequency/duration', abnormal: false },
+        { label: 'Rupture of membranes — describe fluid character', abnormal: false },
+        { label: 'Meconium-stained amniotic fluid', abnormal: true },
+        // Respiratory/Asthma
+        { label: 'Peak flow ≥80% of personal best — green zone', abnormal: false },
+        { label: 'Peak flow 50–79% of personal best — yellow zone', abnormal: true },
+        { label: 'Peak flow <50% of personal best — red zone', abnormal: true },
+        { label: 'Wheeze resolved post-nebulisation', abnormal: false },
+        { label: 'Wheeze persists post-nebulisation', abnormal: true },
+        // Metabolic/DM
+        { label: 'Blood glucose 70–180 mg/dL — within target', abnormal: false },
+        { label: 'Blood glucose <70 mg/dL — hypoglycaemia', abnormal: true },
+        { label: 'Blood glucose >180 mg/dL — hyperglycaemia', abnormal: true },
+        { label: 'Blood glucose >300 mg/dL — critical hyperglycaemia', abnormal: true },
+        { label: 'Insulin administered per sliding scale', abnormal: false },
+        { label: 'Ketones present in urine', abnormal: true },
+        // DVT / Vascular
+        { label: 'No erythema, warmth, or oedema to lower extremities', abnormal: false },
+        { label: 'Unilateral lower extremity swelling and erythema', abnormal: true },
+        { label: 'Calf pain with dorsiflexion (Homan\'s sign positive)', abnormal: true },
+        { label: 'Positive duplex ultrasound — DVT confirmed', abnormal: true },
+        // Neuro/Post-op
+        { label: 'Surgical site dry and intact', abnormal: false },
+        { label: 'Incentive spirometry performed ×10 as ordered', abnormal: false },
+        { label: 'Patient unable to use incentive spirometer', abnormal: true },
+      ]
+    },
+    psychosocial: {
+      label: 'Psychosocial',
+      icon: '🤝',
+      placeholder: 'Type or select psychosocial findings…',
+      options: [
+        { label: 'Patient calm and cooperative', abnormal: false },
+        { label: 'Patient anxious — reassurance provided', abnormal: true },
+        { label: 'Patient verbalises fear or worry', abnormal: true },
+        { label: 'Patient tearful or emotional', abnormal: false },
+        { label: 'Patient in denial regarding diagnosis', abnormal: true },
+        { label: 'Patient verbalises understanding of plan of care', abnormal: false },
+        { label: 'Patient unable to verbalise understanding — re-teaching done', abnormal: true },
+        { label: 'Adequate support system — family present', abnormal: false },
+        { label: 'Inadequate support system — social work referral made', abnormal: true },
+        { label: 'Patient expresses suicidal ideation — immediate action taken', abnormal: true },
+        { label: 'Patient expresses homicidal ideation — provider notified', abnormal: true },
+        { label: 'Patient refuses treatment — documented and provider notified', abnormal: true },
+        { label: 'Patient reports non-compliance with medications at home', abnormal: true },
+        { label: 'Cultural or language barrier identified — interpreter requested', abnormal: false },
+        { label: 'Patient expresses financial concerns regarding medications', abnormal: false },
+        { label: 'Patient motivated and engaged in care', abnormal: false },
+        { label: 'Depression screening positive — provider notified', abnormal: true },
+        { label: 'Grief response noted — therapeutic communication provided', abnormal: false },
+        { label: 'Caregiver burden noted — support services discussed', abnormal: true },
+      ]
+    },
+  };
+ 
+  // ── Abnormal detection ─────────────────────────────────────────────────────
+  // For each system, check if the saved text matches any abnormal option label
+  function detectAbnormals(systemKey, savedText){
+    if(!savedText || !savedText.trim()) return [];
+    const opts = SYSTEMS[systemKey]?.options || [];
+    const alerts = [];
+    // Split saved text by newline or semicolon for multi-select
+    const entries = savedText.split(/[\n;]+/).map(s=>s.trim()).filter(Boolean);
+    entries.forEach(entry => {
+      // Check exact match first, then partial
+      const matched = opts.find(o =>
+        o.abnormal && (
+          entry.toLowerCase() === o.label.toLowerCase() ||
+          entry.toLowerCase().includes(o.label.toLowerCase().slice(0,30)) ||
+          o.label.toLowerCase().includes(entry.toLowerCase().slice(0,30))
+        )
+      );
+      if(matched){
+        alerts.push({system: SYSTEMS[systemKey].label, finding: entry, label: matched.label});
+      }
+    });
+    return alerts;
+  }
+ 
+  // ── Collect all abnormals from current saved assessment ───────────────────
+  const allAbnormals = Object.keys(SYSTEMS).flatMap(k => detectAbnormals(k, a[k]));
+ 
+  // ── Render alert banners ──────────────────────────────────────────────────
+  const alertBanner = allAbnormals.length ? `
+    <div class="card" style="margin-bottom:14px;border-color:rgba(163,49,49,0.35);">
+      <div class="card-head" style="background:var(--danger-bg);">
+        <h3 style="color:var(--danger);">⚠ Abnormal Assessment Findings — ${allAbnormals.length} alert(s)</h3>
+      </div>
+      <div class="card-body">
+        ${allAbnormals.map(ab=>`
+          <div class="notice danger" style="margin-bottom:6px;">
+            <span class="mark">⚠ ${esc(ab.system)}</span>
+            <span>${esc(ab.finding)}</span>
+          </div>`).join('')}
+        <p style="font-size:11px;color:var(--muted);margin-top:8px;">
+          Document these findings in nursing notes and notify the provider as indicated per facility policy.
+        </p>
+      </div>
+    </div>` : `
+    <div class="notice info" style="margin-bottom:14px;">
+      <span class="mark">ASSESSMENT</span>
+      <span>No abnormal findings currently flagged. Complete the assessment below — abnormal selections will appear here automatically.</span>
+    </div>`;
+ 
+  // ── Render each system row ────────────────────────────────────────────────
+  function systemRow(key){
+    const sys = SYSTEMS[key];
+    const currentVal = a[key] || '';
+    const hasAbnormal = detectAbnormals(key, currentVal).length > 0;
+    const optionsHTML = sys.options.map(o =>
+      `<option value="${esc(o.label)}" ${o.abnormal ? 'data-abnormal="true"' : ''}>${o.abnormal ? '⚠ ' : '✓ '}${esc(o.label)}</option>`
+    ).join('');
+ 
+    return `
+      <div class="assessment-row ${hasAbnormal ? 'assessment-abnormal' : ''}">
+        <div class="assessment-label">
+          <span class="assessment-icon">${sys.icon}</span>
+          <label for="as-${key}">${esc(sys.label)}</label>
+          ${hasAbnormal ? `<span class="badge red" style="margin-left:6px;">⚠ Abnormal</span>` : ''}
+        </div>
+        <div class="assessment-input-group">
+          <select id="as-dd-${key}" class="assessment-dropdown"
+            onchange="
+              const ta=document.getElementById('as-${key}');
+              const sel=this.value;
+              if(!sel)return;
+              ta.value = ta.value ? ta.value + '\\n' + sel : sel;
+              this.value='';
+              ta.dispatchEvent(new Event('input'));
+            ">
+            <option value="">— Select finding to add —</option>
+            <optgroup label="Normal findings">
+              ${sys.options.filter(o=>!o.abnormal).map(o=>`<option value="${esc(o.label)}">✓ ${esc(o.label)}</option>`).join('')}
+            </optgroup>
+            <optgroup label="⚠ Abnormal findings">
+              ${sys.options.filter(o=>o.abnormal).map(o=>`<option value="${esc(o.label)}">⚠ ${esc(o.label)}</option>`).join('')}
+            </optgroup>
+          </select>
+          <textarea id="as-${key}"
+            placeholder="${esc(sys.placeholder)}"
+            rows="3"
+            oninput="hctCheckAssessmentAbnormal('${key}', this.value)"
+          >${esc(currentVal)}</textarea>
+          <button class="btn small" style="align-self:flex-start;margin-top:4px;"
+            onclick="document.getElementById('as-${key}').value='';hctCheckAssessmentAbnormal('${key}','');"
+            title="Clear this field">✕ Clear</button>
+        </div>
+      </div>`;
+  }
+ 
+  // ── Narrative section ─────────────────────────────────────────────────────
+  const narrativeRow = `
+    <div class="assessment-row">
+      <div class="assessment-label">
+        <span class="assessment-icon">📝</span>
+        <label for="as-narrative">Narrative / Clinical Impression</label>
+      </div>
+      <div class="assessment-input-group">
+        <textarea id="as-narrative" rows="4"
+          placeholder="Summarise overall assessment, priority concerns, and planned interventions. Link abnormal findings to nursing diagnoses."
+        >${esc(a.narrative || '')}</textarea>
+      </div>
+    </div>`;
+ 
+  return `
+    <style>
+      .assessment-row {
+        display: grid;
+        grid-template-columns: 210px 1fr;
+        gap: 12px;
+        align-items: start;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .assessment-row:last-child { border-bottom: none; }
+      .assessment-row.assessment-abnormal {
+        background: rgba(163,49,49,0.04);
+        border-radius: 6px;
+        padding: 12px 8px;
+        border-left: 3px solid var(--danger);
+        margin-bottom: 2px;
+      }
+      .assessment-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        padding-top: 6px;
+        flex-wrap: wrap;
+      }
+      .assessment-label label {
+        font-size: 12px;
+        font-weight: 800;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+      .assessment-icon { font-size: 16px; flex-shrink: 0; }
+      .assessment-input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .assessment-dropdown {
+        width: 100%;
+        font-size: 12px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 6px 8px;
+        color: var(--text);
+      }
+      .assessment-dropdown option[data-abnormal] { color: var(--danger); }
+      .assessment-dropdown optgroup { font-weight: 800; font-size: 11px; }
+      @media (max-width: 640px) {
+        .assessment-row { grid-template-columns: 1fr; }
+      }
+    </style>
+ 
+    ${alertBanner}
+ 
+    ${section('Focused Assessment by System', `
+      <div id="assessment-live-alerts"></div>
+      ${Object.keys(SYSTEMS).map(k => systemRow(k)).join('')}
+      ${narrativeRow}
+      <div class="actions">
+        <button class="btn" id="insert-assessment-template">Insert HCT template into narrative</button>
+        <button class="btn primary" id="save-assessment">Save assessment</button>
+      </div>
+    `)}
+ 
+    <script>
+    // Live alert update as student types/selects — no page reload needed
+    window.hctCheckAssessmentAbnormal = function(key, val) {
+      // Re-highlight the row in real time
+      const row = document.querySelector('[id="as-' + key + '"]')?.closest('.assessment-row');
+      if(!row) return;
+      const SYSTEMS_KEYS = ${JSON.stringify(Object.fromEntries(
+        Object.entries(SYSTEMS).map(([k,v])=>[k, v.options.filter(o=>o.abnormal).map(o=>o.label.toLowerCase().slice(0,30))])
+      ))};
+      const entries = (val||'').split(/[\\n;]+/).map(s=>s.trim()).filter(Boolean);
+      const hasAb = entries.some(e =>
+        (SYSTEMS_KEYS[key]||[]).some(pattern => e.toLowerCase().includes(pattern) || pattern.includes(e.toLowerCase().slice(0,20)))
+      );
+      row.classList.toggle('assessment-abnormal', hasAb);
+      // Update the badge
+      const label = row.querySelector('.assessment-label');
+      const existingBadge = label?.querySelector('.badge.red');
+      if(hasAb && !existingBadge && label){
+        const b = document.createElement('span');
+        b.className = 'badge red';
+        b.style.marginLeft = '6px';
+        b.textContent = '⚠ Abnormal';
+        label.appendChild(b);
+      } else if(!hasAb && existingBadge){
+        existingBadge.remove();
+      }
+    };
+    </script>
+  `;
+}
 
 // ── FEATURE 2: MEDICATION SAFETY CHECKER ──────────────────────────────────
 function rMeds(){
@@ -1486,7 +2024,35 @@ function bindTabEvents(){
     }
   });
   document.querySelectorAll('[data-del-vital]').forEach(b=>b.onclick=()=>{p.vitals.splice(Number(b.dataset.delVital),1);persist();render();});
-  document.getElementById('save-assessment')?.addEventListener('click',()=>{['neuro','resp','cardiac','gi','gu','skin','safety','pain','specialty','psychosocial','narrative'].forEach(k=>p.assessment[k]=val('as-'+k));persist();toast('Assessment saved');render();});
+  document.getElementById('save-assessment')?.addEventListener('click',()=>{
+    ['neuro','resp','cardiac','gi','gu','skin','safety','pain','specialty','psychosocial','narrative'].forEach(k=>{
+      const el = document.getElementById('as-'+k);
+      if(el) p.assessment[k] = el.value;
+    });
+    persist();
+    toast('Assessment saved');
+    render();
+  });
+
+  document.getElementById('insert-assessment-template')?.addEventListener('click',()=>{
+    const ta = document.getElementById('as-narrative');
+    if(!ta) return;
+    const a = currentPatient().assessment;
+    ta.value =
+      `HCT Focused Assessment — ${new Date().toLocaleDateString()}\n\n` +
+      `NEUROLOGICAL: ${a.neuro || 'Not assessed'}\n` +
+      `RESPIRATORY: ${a.resp || 'Not assessed'}\n` +
+      `CARDIAC/PERFUSION: ${a.cardiac || 'Not assessed'}\n` +
+      `GI: ${a.gi || 'Not assessed'}\n` +
+      `GU/OUTPUT: ${a.gu || 'Not assessed'}\n` +
+      `SKIN/WOUND: ${a.skin || 'Not assessed'}\n` +
+      `SAFETY: ${a.safety || 'Not assessed'}\n` +
+      `PAIN: ${a.pain || 'Not assessed'}\n` +
+      `SPECIALTY: ${a.specialty || 'Not assessed'}\n` +
+      `PSYCHOSOCIAL: ${a.psychosocial || 'Not assessed'}\n\n` +
+      `PRIORITY CONCERNS:\n- \n\nPLAN:\n- `;
+    ta.focus();
+  });
   document.querySelectorAll('[data-med-act]').forEach(b=>b.onclick=()=>{
     const m=p.meds[Number(b.dataset.medIndex)];
     if(b.dataset.medAct==='given'){
