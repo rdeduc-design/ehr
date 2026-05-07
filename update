@@ -655,7 +655,17 @@ async function initSupabase(){
   const{data}=await cloud.client.auth.getSession();
   cloud.session=data.session;
   if(cloud.session)await loadProfile();
-  cloud.client.auth.onAuthStateChange(async(_,session)=>{cloud.session=session;cloud.profile=null;if(session)await loadProfile();render();});
+  cloud.client.auth.onAuthStateChange(async (_, session) => {
+    cloud.session = session;
+    cloud.profile = null;
+    if (session) {
+      await loadProfile();
+      cloud.status = 'Cloud connected';
+    } else {
+      cloud.status = 'Not signed in';
+    }
+    render();
+  });
   cloud.status=cloud.session?'Cloud connected':'Ready for login';
   render();
 }
@@ -668,10 +678,70 @@ async function loadProfile(){
   const p={id:u.id,email:u.email,full_name:m.full_name||'',student_id:m.student_id||'',section:m.section||'',role:'student'};
   await cloud.client.from('profiles').insert(p);cloud.profile=p;
 }
-async function signIn(){const e=val('auth-email'),p=val('auth-password');if(!e||!p){toast('Email and password required');return;}cloud.status='Signing in...';render();const{error}=await cloud.client.auth.signInWithPassword({email:e,password:p});if(error){cloud.status='Sign in failed';toast(error.message);render();return;}toast('Signed in');}
-async function signUp(){const e=val('auth-email'),p=val('auth-password');if(!e||!p){toast('Email and password required');return;}const m={full_name:val('auth-name'),student_id:val('auth-student-id'),section:val('auth-section')};cloud.status='Creating account...';render();const{data,error}=await cloud.client.auth.signUp({email:e,password:p,options:{data:m}});if(error){cloud.status='Account creation failed';toast(error.message);render();return;}if(data.session){cloud.session=data.session;await upsertProfile(m);toast('Student account ready');}else toast('Check email to confirm the account');render();}
+async function signIn() {
+  const e = val('auth-email');
+  const pw = val('auth-password');
+  if (!e || !pw) { toast('Email and password required'); return; }
+ 
+  setAuthStatus('Signing in…');
+  const { error } = await cloud.client.auth.signInWithPassword({ email: e, password: pw });
+ 
+  if (error) {
+    setAuthStatus('Sign in failed');
+    showAuthError(error.message);
+    return;
+  }
+  // onAuthStateChange will fire render() automatically
+}
+async function signUp() {
+  const accountType = document.querySelector('input[name="account-type"]:checked')?.value || 'student';
+  const e    = val('auth-email-su');
+  const pw   = val('auth-password-su');
+  const pw2  = val('auth-password2');
+  const name = val('auth-name');
+ 
+  if (!e || !pw || !name) { showAuthError('Name, email, and password are required.'); return; }
+  if (pw !== pw2)          { showAuthError('Passwords do not match.'); return; }
+  if (pw.length < 8)       { showAuthError('Password must be at least 8 characters.'); return; }
+ 
+  const meta = { full_name: name };
+  if (accountType === 'student') {
+    meta.student_id  = val('auth-student-id');
+    meta.section     = val('auth-section');
+    meta.institution = val('auth-institution');
+    meta.role        = 'student';
+  } else {
+    meta.role = 'instructor';
+  }
+  
+  setAuthStatus('Creating account…');
+  const { data, error } = await cloud.client.auth.signUp({
+    email: e, password: pw, options: { data: meta }
+  });
+ 
+  if (error) {
+    setAuthStatus('Account creation failed');
+    showAuthError(error.message);
+    return;
+  }
+ 
+  if (data.session) {
+    cloud.session = data.session;
+    await upsertProfile(meta);
+    // onAuthStateChange fires render()
+  } else {
+    // Email confirmation required
+    document.getElementById('app').innerHTML = renderEmailConfirmPage(e);
+  }
+}
 async function upsertProfile(m={}){if(!cloud.session)return;const u=cloud.session.user;const r=cloud.profile?.role||'student';const p={id:u.id,email:u.email,full_name:m.full_name||cloud.profile?.full_name||'',student_id:m.student_id||cloud.profile?.student_id||'',section:m.section||cloud.profile?.section||'',role:r};const{error}=await cloud.client.from('profiles').upsert(p,{onConflict:'id'});if(error)toast(error.message);else cloud.profile=p;}
-async function signOut(){await cloud.client.auth.signOut();cloud.session=null;cloud.profile=null;cloud.status='Signed out';toast('Signed out');render();}
+async function signOut() {
+  await cloud.client.auth.signOut();
+  cloud.session = null;
+  cloud.profile = null;
+  cloud.status  = 'Signed out';
+  render(); // shows auth page
+}
 
 function chartRecord(status){
   const p=currentPatient();const prof=cloud.profile||{};const submitted=status==='submitted'||state.submitted[p.id];
@@ -696,30 +766,101 @@ async function saveReview(id){
   if(error)toast(error.message);else{toast('Review saved');await fetchDashboard();}
 }
 
-function render(){
+function render() {
   applyTheme();
-  const p=currentPatient();
-  document.getElementById('app').innerHTML=`
+ 
+  // ── AUTH GATE: show login page if not signed in ───────────────────────────
+  if (!cloud.session) {
+    document.getElementById('app').innerHTML = renderAuthPage();
+    bindAuthEvents();
+    return;
+  }
+  // ── AUTHENTICATED: show full EHR ──────────────────────────────────────────
+  const p = currentPatient();
+ 
+  document.getElementById('app').innerHTML = `
     <div class="app-shell">
       <header class="topbar">
-        <div class="brand"><img class="logo" src="${LOGO_TEAL}" alt="HCT logo"><div><h1>${tr('appTitle')}</h1><p>${tr('tagline')}</p></div></div>
-        <div class="top-actions"><div><strong>${cloud.profile?esc(cloud.profile.full_name||cloud.profile.email):'HCT Simulation Program'}</strong><p>${esc(cloud.status)}</p></div><button class="btn small" id="theme-toggle">${settings().theme==='dark'?tr('light'):tr('dark')}</button><button class="btn small" id="lang-toggle">${tr('lang')}</button><img class="logo small" src="${LOGO_NAVY}" alt="HCT logo navy"></div>
+        <div class="brand">
+          <img class="logo" src="${LOGO_TEAL}" alt="HCT logo">
+          <div>
+            <h1>${tr('appTitle')}</h1>
+            <p>${tr('tagline')}</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <div>
+            <strong>${cloud.profile
+              ? esc(cloud.profile.full_name || cloud.session.user.email)
+              : 'HCT Simulation Program'}
+            </strong>
+            <p>${esc(cloud.status)}</p>
+          </div>
+          <button class="btn small" id="theme-toggle">
+            ${settings().theme === 'dark' ? tr('light') : tr('dark')}
+          </button>
+          <button class="btn small" id="lang-toggle">${tr('lang')}</button>
+          <img class="logo small" src="${LOGO_NAVY}" alt="HCT logo navy">
+        </div>
       </header>
+ 
       ${renderCloudPanel()}
+ 
       <div id="alert-banner"></div>
+ 
       <div class="ehr">
-         <aside class="sidebar">${renderPatientCard(p)}${renderPatientTools()}${renderNav()}<div class="sidebar-foot">${cloud.profile?`${esc(cloud.profile.role)} | ${esc(cloud.profile.section||'No section')}`:'Local practice mode'}<br>HCT EHR v3 — interactive build</div></aside>
-        <main class="main"><div class="toolbar"><div class="toolbar-title"><h2>${esc(tabTitle())}</h2><p>${esc(p.lastName)}, ${esc(p.firstName)} | MRN ${esc(p.mrn)} | ${esc(cloud.status)}</p></div>${toolbarButtons()}</div><section class="content" id="content">${renderTab()}</section></main>
+        <aside class="sidebar">
+          ${renderPatientCard(p)}
+          ${renderPatientTools()}
+          ${renderNav()}
+          <div class="sidebar-foot">
+            ${cloud.profile
+              ? `${esc(cloud.profile.role)} | ${esc(cloud.profile.section || 'No section')}`
+              : 'Local practice mode'}
+            <br>HCT EHR v3 — interactive build
+          </div>
+        </aside>
+        <main class="main">
+          <div class="toolbar">
+            <div class="toolbar-title">
+              <h2>${esc(tabTitle())}</h2>
+              <p>${esc(p.lastName)}, ${esc(p.firstName)} | MRN ${esc(p.mrn)} | ${esc(cloud.status)}</p>
+            </div>
+            ${toolbarButtons()}
+          </div>
+          <section class="content" id="content">${renderTab()}</section>
+        </main>
       </div>
     </div>`;
+ 
   bindEvents();
 }
 function renderCloudOnly(){const panel=document.getElementById('cloud-panel');if(panel)panel.outerHTML=renderCloudPanel();const sub=document.querySelector('.toolbar-title p');if(sub){const p=currentPatient();sub.textContent=`${p.lastName}, ${p.firstName} | MRN ${p.mrn} | ${cloud.status}`;}bindCloudEvents();}
-function renderCloudPanel(){
-  if(!cloud.ready)return`<section class="cloud-panel" id="cloud-panel"><div class="notice danger"><span class="mark">SETUP</span><span>Supabase not configured. Fill in supabase-config.js and run supabase-schema.sql.</span></div></section>`;
-  if(!cloud.session)return`<section class="cloud-panel" id="cloud-panel"><div class="cloud-grid"><div><span class="input-label">Email</span><input id="auth-email" type="email" placeholder="student@example.edu"></div><div><span class="input-label">Password</span><input id="auth-password" type="password" placeholder="Password"></div><div><span class="input-label">Full name</span><input id="auth-name" placeholder="Student name"></div><div><span class="input-label">Student ID</span><input id="auth-student-id" placeholder="ID"></div><div><span class="input-label">Section</span><input id="auth-section" placeholder="Class/section"></div></div><div class="actions"><button class="btn" id="signin-btn">Sign in</button><button class="btn primary" id="signup-btn">Create student account</button></div></section>`;
-  const p=cloud.profile||{};
-  return`<section class="cloud-panel" id="cloud-panel"><div class="cloud-status"><span class="badge ${p.role==='instructor'?'navy':'teal'}">${esc(p.role||'student')}</span><strong>${esc(p.full_name||cloud.session.user.email)}</strong><span>${esc(p.student_id||'')}</span><span>${esc(p.section||'')}</span><span>${esc(cloud.status)}</span></div><div class="actions"><button class="btn primary" id="save-cloud-btn">Save chart</button><button class="btn navy" id="submit-chart-btn">Submit chart</button>${p.role==='instructor'?'<button class="btn" id="dashboard-shortcut">Instructor dashboard</button>':''}<button class="btn" id="signout-btn">Sign out</button></div></section>`;
+function renderCloudPanel() {
+  if (!cloud.session) return ''; // auth gate handles this — nothing shown
+ 
+  const p = cloud.profile || {};
+  const roleColor = p.role === 'instructor' ? 'navy' : 'teal';
+ 
+  return `
+    <section class="cloud-panel" id="cloud-panel">
+      <div class="cloud-status">
+        <span class="badge ${roleColor}">${esc(p.role || 'student')}</span>
+        <strong>${esc(p.full_name || cloud.session.user.email)}</strong>
+        ${p.student_id ? `<span>${esc(p.student_id)}</span>` : ''}
+        ${p.section    ? `<span>${esc(p.section)}</span>`     : ''}
+        ${p.institution? `<span>${esc(p.institution)}</span>` : ''}
+        <span style="color:var(--subtle);font-size:11px;">${esc(cloud.status)}</span>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="save-cloud-btn">Save chart</button>
+        <button class="btn navy"    id="submit-chart-btn">Submit chart</button>
+        ${p.role === 'instructor'
+          ? '<button class="btn" id="dashboard-shortcut">Instructor dashboard</button>'
+          : ''}
+        <button class="btn danger" id="signout-btn">Sign out</button>
+      </div>
+    </section>`;
 }
 
 function renderPatientCard(p){
@@ -734,7 +875,256 @@ function renderNav(){
 function toolbarButtons(){return`<button class="btn small primary" id="save-local-btn">Save</button><button class="btn small" id="print-report-btn">${tr('printReport')}</button><button class="btn small danger" id="reset-btn">Reset local</button>`;}
 function tabTitle(){const t={summary:'Patient summary',orders:'Provider orders',labs:'Labs / diagnostics',vitals:'Vital signs',assessment:'Focused assessment',meds:'Medication administration record',io:'Intake / output',notes:'Nursing notes',careplan:'Care plan',education:'Patient education',sbar:'SBAR / handoff',reasoning:'Clinical reasoning prompts',debriefing:'Simulation debriefing',progress:'My progress tracker',scenarios:'Sample scenarios',newpatient:'Add patient from scratch',dashboard:'Instructor dashboard',statusboard:'Submission status board',peerreview:tr('peer'),report:'Printable chart report',modulebuilder:tr('faculty')};return t[state.tab]||'Patient summary';}
 function renderTab(){const map={summary:rSummary,orders:rOrders,labs:rLabs,vitals:rVitals,assessment:rAssessment,meds:rMeds,io:rIO,notes:rNotes,careplan:rCarePlan,education:rEducation,sbar:rSbar,reasoning:rReasoning,debriefing:rDebriefing,progress:rProgress,scenarios:rScenarios,newpatient:rNewPatient,dashboard:rDashboard,statusboard:rStatusBoard,peerreview:rPeerReview,report:rReport,modulebuilder:rModuleBuilder};return(map[state.tab]||rSummary)();}
+function renderAuthPage() {
+  return `
+    <div class="auth-shell">
+ 
+      <!-- Left branding panel -->
+      <div class="auth-brand">
+        <img class="auth-logo" src="${LOGO_TEAL}" alt="HCT logo">
+        <h1 class="auth-title">HCT Academy</h1>
+        <p class="auth-subtitle">Student EHR Simulation</p>
+        <p class="auth-tagline">How Care Transforms</p>
+        <div class="auth-brand-dots"></div>
+      </div>
+ 
+      <!-- Right form panel -->
+      <div class="auth-form-panel">
+        <div class="auth-card" id="auth-card">
+ 
+          <!-- ── Login view ──────────────────────────────────────────── -->
+          <div id="view-login" class="auth-view active">
+            <div class="auth-card-head">
+              <img src="${LOGO_NAVY}" class="auth-card-logo" alt="">
+              <h2>Welcome back</h2>
+              <p>Sign in to your HCT EHR account</p>
+            </div>
+ 
+            <div id="auth-error" class="auth-error" style="display:none;"></div>
+            <div id="auth-loading" class="auth-loading" style="display:none;">
+              <span class="auth-spinner"></span> Signing in…
+            </div>
+ 
+            <div class="auth-field">
+              <label>Email address</label>
+              <input id="auth-email" type="email" placeholder="you@example.edu" autocomplete="email">
+            </div>
+            <div class="auth-field">
+              <label>Password</label>
+              <div class="auth-pw-wrap">
+                <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password">
+                <button class="auth-pw-toggle" data-target="auth-password" type="button" title="Show/hide">👁</button>
+              </div>
+            </div>
+ 
+            <button class="auth-btn primary" id="signin-btn">Sign in</button>
+ 
+            <p class="auth-switch">
+              Don't have an account?
+              <button class="auth-link" id="go-signup">Create account</button>
+            </p>
+          </div>
+ 
+          <!-- ── Signup view ─────────────────────────────────────────── -->
+          <div id="view-signup" class="auth-view">
+            <div class="auth-card-head">
+              <img src="${LOGO_NAVY}" class="auth-card-logo" alt="">
+              <h2>Create account</h2>
+              <p>Join HCT EHR Simulation</p>
+            </div>
+ 
+            <div id="auth-error-su" class="auth-error" style="display:none;"></div>
+            <div id="auth-loading-su" class="auth-loading" style="display:none;">
+              <span class="auth-spinner"></span> Creating account…
+            </div>
+ 
+            <!-- Account type toggle -->
+            <div class="auth-type-toggle">
+              <label class="auth-type-option">
+                <input type="radio" name="account-type" value="student" checked>
+                <span>
+                  <strong>Student</strong>
+                  <small>BSN learner</small>
+                </span>
+              </label>
+              <label class="auth-type-option">
+                <input type="radio" name="account-type" value="instructor">
+                <span>
+                  <strong>Faculty</strong>
+                  <small>Instructor / CI</small>
+                </span>
+              </label>
+            </div>
+ 
+            <!-- Common fields -->
+            <div class="auth-field">
+              <label>Full name</label>
+              <input id="auth-name" type="text" placeholder="Your full name" autocomplete="name">
+            </div>
+            <div class="auth-field">
+              <label>Email address</label>
+              <input id="auth-email-su" type="email" placeholder="you@example.edu" autocomplete="email">
+            </div>
+ 
+            <!-- Student-only fields -->
+            <div id="student-fields">
+              <div class="auth-field-row">
+                <div class="auth-field">
+                  <label>Student ID</label>
+                  <input id="auth-student-id" placeholder="e.g. 2024-00123">
+                </div>
+                <div class="auth-field">
+                  <label>Section / Year</label>
+                  <input id="auth-section" placeholder="e.g. 4-A">
+                </div>
+              </div>
+              <div class="auth-field">
+                <label>School / Institution</label>
+                <input id="auth-institution" placeholder="e.g. St. Dominic College of Asia">
+              </div>
+            </div>
+ 
+            <!-- Password fields -->
+            <div class="auth-field-row">
+              <div class="auth-field">
+                <label>Password</label>
+                <div class="auth-pw-wrap">
+                  <input id="auth-password-su" type="password" placeholder="Min. 8 chars" autocomplete="new-password">
+                  <button class="auth-pw-toggle" data-target="auth-password-su" type="button" title="Show/hide">👁</button>
+                </div>
+              </div>
+              <div class="auth-field">
+                <label>Confirm password</label>
+                <div class="auth-pw-wrap">
+                  <input id="auth-password2" type="password" placeholder="Repeat password" autocomplete="new-password">
+                  <button class="auth-pw-toggle" data-target="auth-password2" type="button" title="Show/hide">👁</button>
+                </div>
+              </div>
+            </div>
+ 
+            <button class="auth-btn primary" id="signup-btn">Create account</button>
+ 
+            <p class="auth-switch">
+              Already have an account?
+              <button class="auth-link" id="go-login">Sign in</button>
+            </p>
+          </div>
+ 
+        </div><!-- /auth-card -->
+ 
+        <p class="auth-footer">
+          HCT Academy · Healthcare and Technology Institute Inc. · Pasig City, Philippines
+        </p>
+      </div><!-- /auth-form-panel -->
+ 
+    </div>`;
+}
 
+function renderEmailConfirmPage(email) {
+  return `
+    <div class="auth-shell">
+      <div class="auth-brand">
+        <img class="auth-logo" src="${LOGO_TEAL}" alt="HCT logo">
+        <h1 class="auth-title">HCT Academy</h1>
+        <p class="auth-subtitle">Student EHR Simulation</p>
+        <p class="auth-tagline">How Care Transforms</p>
+      </div>
+      <div class="auth-form-panel">
+        <div class="auth-card">
+          <div class="auth-card-head">
+            <div style="font-size:40px;margin-bottom:8px;">📧</div>
+            <h2>Check your email</h2>
+            <p>We sent a confirmation link to<br><strong>${esc(email)}</strong></p>
+          </div>
+          <div class="notice info" style="margin:16px 0;">
+            <span class="mark">INFO</span>
+            <span>Click the link in the email to activate your account, then return here to sign in.</span>
+          </div>
+          <button class="auth-btn primary" onclick="render()">Back to sign in</button>
+        </div>
+        <p class="auth-footer">HCT Academy · Pasig City, Philippines</p>
+      </div>
+    </div>`;
+}
+
+function bindAuthEvents() {
+  // View switching
+  document.getElementById('go-signup')?.addEventListener('click', () => {
+    switchAuthView('signup');
+  });
+  document.getElementById('go-login')?.addEventListener('click', () => {
+    switchAuthView('login');
+  });
+ 
+  // Submit buttons
+  document.getElementById('signin-btn')?.addEventListener('click', signIn);
+  document.getElementById('signup-btn')?.addEventListener('click', signUp);
+ 
+  // Enter key on login
+  document.getElementById('auth-password')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') signIn();
+  });
+  document.getElementById('auth-email')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('auth-password')?.focus();
+  });
+ 
+  // Account type toggle — show/hide student fields
+  document.querySelectorAll('input[name="account-type"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const isStudent = radio.value === 'student';
+      document.getElementById('student-fields').style.display = isStudent ? '' : 'none';
+    });
+  });
+ 
+  // Password visibility toggles
+  document.querySelectorAll('.auth-pw-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.target);
+      if (!input) return;
+      input.type = input.type === 'password' ? 'text' : 'password';
+      btn.textContent = input.type === 'password' ? '👁' : '🙈';
+    });
+  });
+}
+ 
+// Helper: switch between login and signup views
+function switchAuthView(view) {
+  document.getElementById('view-login').classList.toggle('active', view === 'login');
+  document.getElementById('view-signup').classList.toggle('active', view === 'signup');
+  clearAuthErrors();
+}
+ 
+// Helper: show error in whichever view is active
+function showAuthError(msg) {
+  const loginErr = document.getElementById('auth-error');
+  const signupErr = document.getElementById('auth-error-su');
+  const loginActive = document.getElementById('view-login')?.classList.contains('active');
+  const target = loginActive ? loginErr : signupErr;
+  if (target) { target.textContent = msg; target.style.display = 'block'; }
+  setAuthStatus('');
+}
+ 
+function clearAuthErrors() {
+  ['auth-error', 'auth-error-su'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = ''; el.style.display = 'none'; }
+  });
+}
+ 
+function setAuthStatus(msg) {
+  cloud.status = msg;
+  const l1 = document.getElementById('auth-loading');
+  const l2 = document.getElementById('auth-loading-su');
+  const show = !!msg;
+  if (l1) l1.style.display = show ? 'flex' : 'none';
+  if (l2) l2.style.display = show ? 'flex' : 'none';
+}
+ 
+// Override val() to also check -su suffixed inputs (signup form uses different IDs)
+// The existing signUp() needs these helpers:
+function valSU(id) {
+  return (document.getElementById(id + '-su') || document.getElementById(id))?.value?.trim() || '';
+}
 // ── FEATURE 1: CLINICAL DECISION ALERTS rendered in vitals tab ─────────────
 function renderVitalAlerts(vital){
   const alerts=checkVitalAlerts(vital);
