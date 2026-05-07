@@ -2485,7 +2485,7 @@ function bindTabEvents(){
   document.querySelectorAll('[data-med-note]').forEach(i=>i.onchange=()=>{p.meds[Number(i.dataset.medNote)].note=i.value;persist();});
   document.querySelectorAll('[data-del-med]').forEach(b=>b.onclick=()=>{p.meds.splice(Number(b.dataset.delMed),1);persist();render();});
   document.getElementById('add-med')?.addEventListener('click',()=>{const name=val('med-name');if(!name)return toast('Medication required');p.meds.push({id:uid('med'),name,dose:val('med-dose'),route:val('med-route'),freq:val('med-freq'),priority:'Practice',status:'pending',time:'',note:'',warn:val('med-warn')});persist();render();});
-   document.getElementById('add-io-intake')?.addEventListener('click',()=>{
+  document.getElementById('add-io-intake')?.addEventListener('click',()=>{
     const typeEl  = document.getElementById('io-in-type');
     const typeVal = typeEl?.value;
     if(!typeVal) return toast('Select an intake type');
