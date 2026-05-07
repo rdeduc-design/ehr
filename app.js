@@ -735,8 +735,140 @@ function renderVitalAlerts(vital){
 }
 
 function rSummary(){const p=currentPatient();const c=chartStats(p);const score=completionScore(p);return`${section('Interactive chart readiness',`<div class="metric-row"><div class="metric interactive"><div class="num">${score}%</div><div class="lbl">Completion</div></div><div class="metric interactive"><div class="num">${c.notes}</div><div class="lbl">Notes</div></div><div class="metric interactive"><div class="num">${c.peer}</div><div class="lbl">Peer reviews</div></div><div class="metric interactive"><div class="num">${c.modules}</div><div class="lbl">Faculty modules</div></div></div><div class="actions" style="justify-content:flex-start"><button class="btn small primary" data-tab-jump="vitals">Chart vitals</button><button class="btn small" data-tab-jump="peerreview">Start peer review</button><button class="btn small" data-tab-jump="modulebuilder">Build module</button><button class="btn small" data-tab-jump="report">Preview report</button></div>`)}${section('Safety snapshot',`<div class="notice ${p.acuity==='Critical'?'danger':'info'}"><span class="mark">HCT</span><span><strong>${esc(p.acuity)} acuity.</strong> Allergies: ${esc(p.allergies)}. Monitoring: ${esc(p.monitoring)}.</span></div><div class="grid-4">${field('Patient',`${p.lastName}, ${p.firstName}`)}${field('DOB / Age',`${p.dob} / ${p.age}`)}${field('Location',p.location)}${field('Diagnosis',p.diagnosis)}${field('Code status',p.codeStatus)}${field('Diet',p.diet)}${field('Activity',p.activity)}${field('Lines',p.lines)}</div>`)}${section('Clinical picture',`<p class="text-block"><strong>Chief complaint:</strong> ${esc(p.chiefComplaint)}</p><p class="text-block"><strong>HPI:</strong> ${esc(p.hpi)}</p><p class="text-block"><strong>Background:</strong> ${esc(p.background)}</p>`)}${section('History and objectives',`<div class="grid-2">${field('Past history',p.pastHistory)}${field('Social / contact',`${p.social}\n${p.familyContact}`)}${(p.objectives||[]).map((o,i)=>field(`Objective ${i+1}`,o)).join('')}</div>`)}`;}
-function rOrders(){const p=currentPatient();const rows=p.orders.map((o,i)=>`<tr><td>${esc(o.category)}</td><td>${esc(o.order)}</td><td>${esc(o.details)}</td><td><span class="status ${statusClass(o.status)}">${esc(o.status)}</span></td><td><button class="btn small danger" data-del-order="${i}">Delete</button></td></tr>`).join('');return section('Provider orders',table(['Category','Order','Details','Status',''],rows))+section('Add order',`<div class="form-grid"><input id="ord-cat" placeholder="Category"><input id="ord-name" placeholder="Order"><input id="ord-details" placeholder="Details"><select id="ord-status"><option>Active</option><option>STAT</option><option>Pending</option><option>Complete</option></select></div><div class="actions"><button class="btn primary" id="add-order">Add order</button></div>`);}
-function rLabs(){const p=currentPatient();const rows=p.labs.map((l,i)=>`<tr><td>${esc(l.time)}</td><td>${esc(l.test)}</td><td><strong>${esc(l.result)}</strong></td><td>${esc(l.range)}</td><td><span class="status ${statusClass(l.flag)}">${esc(l.flag)}</span></td><td>${esc(l.note)}</td><td><button class="btn small danger" data-del-lab="${i}">Delete</button></td></tr>`).join('');return section('Labs and diagnostics',table(['Time','Test','Result','Range','Flag','Note',''],rows))+section('Add lab result',`<div class="form-grid"><input id="lab-time" type="time" value="${nowTime()}"><input id="lab-test" placeholder="Test"><input id="lab-result" placeholder="Result"><select id="lab-flag"><option>Normal</option><option>High</option><option>Low</option><option>Critical</option><option>Pending</option></select></div><div class="form-row"><label>Range / note</label><div class="grid-2"><input id="lab-range" placeholder="Reference range"><input id="lab-note" placeholder="Clinical note"></div></div><div class="actions"><button class="btn primary" id="add-lab">Add result</button></div>`);}
+function rOrders(){
+  const p=currentPatient();
+ 
+  // ── helper: detect if an order is a medication order ──────────────────────
+  const MED_CATEGORIES = ['medication','med','drug','iv fluids','iv','infusion','analgesic','antibiotic','new order'];
+  const LAB_CATEGORIES = ['lab','labs','diagnostic','diagnostics','imaging','ecg','ekg','x-ray','xray','ct','mri','ultrasound','blood','culture','specimen','radiology'];
+ 
+  function isMedOrder(o){
+    const cat=(o.category||'').toLowerCase();
+    const ord=(o.order||'').toLowerCase();
+    return MED_CATEGORIES.some(k=>cat.includes(k)||ord.startsWith(k));
+  }
+  function isLabOrder(o){
+    const cat=(o.category||'').toLowerCase();
+    const ord=(o.order||'').toLowerCase();
+    return LAB_CATEGORIES.some(k=>cat.includes(k)||ord.startsWith(k));
+  }
+ 
+  const rows = p.orders.map((o,i) => {
+    const done = o.nurseCompleted === true;
+    const medFlag = isMedOrder(o) ? `<span class="badge teal" style="margin-left:4px;">MAR</span>` : '';
+    const labFlag = isLabOrder(o) ? `<span class="badge blue" style="margin-left:4px;">LAB</span>` : '';
+    return `<tr style="opacity:${done?'0.55':'1'}">
+      <td>
+        <input type="checkbox" data-order-complete="${i}" ${done?'checked':''} title="Mark as completed by nurse" style="width:16px;height:16px;cursor:pointer;accent-color:var(--hct-teal);">
+      </td>
+      <td>${esc(o.category)}${medFlag}${labFlag}</td>
+      <td style="${done?'text-decoration:line-through;color:var(--subtle);':''}"><strong>${esc(o.order)}</strong></td>
+      <td style="color:var(--muted);font-size:11px;">${esc(o.details)}</td>
+      <td><span class="status ${statusClass(o.status)}">${esc(o.status)}</span></td>
+      <td>
+        ${done
+          ? `<span style="color:var(--success);font-size:11px;font-weight:800;">✓ Done</span>`
+          : `<button class="btn small primary" data-order-complete="${i}">Mark done</button>`
+        }
+      </td>
+      <td><button class="btn small danger" data-del-order="${i}">Delete</button></td>
+    </tr>`;
+  }).join('');
+ 
+  const syncBanner = `<div class="notice info">
+    <span class="mark">SYNC</span>
+    <span>
+      Orders tagged <span class="badge teal">MAR</span> automatically appear in the Medication tab.
+      Orders tagged <span class="badge blue">LAB</span> automatically appear in the Labs tab.
+      Check the ✓ checkbox to mark an order as completed by the nurse.
+    </span>
+  </div>`;
+ 
+  return syncBanner +
+    section('Provider orders',
+      table(['✓','Category','Order','Details','Status','Nurse action',''],rows)
+    ) +
+    section('Add order',`
+      <div class="form-grid">
+        <input id="ord-cat" placeholder="Category (e.g. Medication, Lab, Nursing)">
+        <input id="ord-name" placeholder="Order">
+        <input id="ord-details" placeholder="Details / parameters">
+        <select id="ord-status"><option>Active</option><option>STAT</option><option>Pending</option><option>Complete</option></select>
+      </div>
+      <div class="actions"><button class="btn primary" id="add-order">Add order</button></div>
+    `);
+}
+function rLabs(){
+  const p = currentPatient();
+ 
+  const LAB_CATEGORIES = ['lab','labs','diagnostic','diagnostics','imaging','ecg','ekg','x-ray','xray','ct','mri','ultrasound','blood','culture','specimen','radiology'];
+  function isLabOrder(o){
+    const cat=(o.category||'').toLowerCase();
+    const ord=(o.order||'').toLowerCase();
+    return LAB_CATEGORIES.some(k=>cat.includes(k)||ord.startsWith(k));
+  }
+  
+// ── Build synced lab entries from orders ──────────────────────────────────
+  const existingLabTests = new Set((p.labs||[]).map(l=>(l.test||'').toLowerCase().trim()));
+ 
+  const syncedFromOrders = (p.orders||[])
+    .filter(o => isLabOrder(o) && !existingLabTests.has((o.order||'').toLowerCase().trim()))
+    .map((o, idx) => ({
+      time: o.nurseCompleted ? 'Collected' : 'Pending collection',
+      test: o.order,
+      result: o.nurseCompleted ? '— (result pending)' : '— (not yet collected)',
+      range: o.details || '',
+      flag: o.nurseCompleted ? 'Pending' : 'Pending',
+      note: `Auto-synced from orders. Status: ${o.status}`,
+      _fromOrder: true,
+    }));
+ 
+  // Combined: manual labs first, then synced
+  const allLabs = [...(p.labs||[]), ...syncedFromOrders];
+ 
+  const rows = allLabs.map((l, i) => {
+    const isSync = !!l._fromOrder;
+    const syncTag = isSync
+      ? `<span class="badge blue" style="margin-left:4px;font-size:9px;">From orders</span>`
+      : '';
+    return `<tr style="${isSync?'opacity:0.7;':''}">
+      <td>${esc(l.time)}</td>
+      <td>${esc(l.test)}${syncTag}</td>
+      <td><strong style="${isSync?'color:var(--subtle);':''}">${esc(l.result)}</strong></td>
+      <td style="color:var(--muted);font-size:11px;">${esc(l.range)}</td>
+      <td><span class="status ${statusClass(l.flag)}">${esc(l.flag)}</span></td>
+      <td style="font-size:11px;color:var(--muted);">${esc(l.note)}</td>
+      <td>
+        ${isSync
+          ? `<span style="font-size:10px;color:var(--subtle);">Auto</span>`
+          : `<button class="btn small danger" data-del-lab="${i}">Delete</button>`
+        }
+      </td>
+    </tr>`;
+  }).join('');
+ 
+  const hasSynced = syncedFromOrders.length > 0;
+ 
+  return section('Labs and diagnostics',
+    (hasSynced ? `<div class="notice info"><span class="mark">SYNC</span><span><strong>${syncedFromOrders.length} lab/diagnostic order(s)</strong> auto-populated from Provider Orders. Once results are available, add them manually using the form below — they will replace the placeholder rows.</span></div>` : '') +
+    table(['Time','Test','Result','Range','Flag','Note',''], rows)
+  ) +
+  section('Add lab result',`
+    <div class="form-grid">
+      <input id="lab-time" type="time" value="${nowTime()}">
+      <input id="lab-test" placeholder="Test">
+      <input id="lab-result" placeholder="Result">
+      <select id="lab-flag"><option>Normal</option><option>High</option><option>Low</option><option>Critical</option><option>Pending</option></select>
+    </div>
+    <div class="form-row"><label>Range / note</label>
+      <div class="grid-2">
+        <input id="lab-range" placeholder="Reference range">
+        <input id="lab-note" placeholder="Clinical note">
+      </div>
+    </div>
+    <div class="actions"><button class="btn primary" id="add-lab">Add result</button></div>
+  `);
+}
 
 function rVitals(){
   const p=currentPatient();const last=p.vitals[p.vitals.length-1]||{};
@@ -749,12 +881,99 @@ function rAssessment(){const a=currentPatient().assessment;const inp=(k,ph='')=>
 
 // ── FEATURE 2: MEDICATION SAFETY CHECKER ──────────────────────────────────
 function rMeds(){
-  const p=currentPatient();
-  const rows=p.meds.map((m,i)=>{
-    const allergyWarn=checkMedAllergy(m.name,p.allergies);
-    return`<tr><td><strong>${esc(m.name)}</strong><br><span class="badge blue">${esc(m.priority)}</span>${allergyWarn?`<br><span class="allergy-flag">🚨 ${esc(allergyWarn)}</span>`:''}${m.warn?`<br><span style="color:var(--danger);font-size:11px;">${esc(m.warn)}</span>`:''}</td><td>${esc(m.dose)} ${esc(m.route)}<br>${esc(m.freq)}</td><td><span class="status ${statusClass(m.status)}">${esc(m.status)}</span></td><td><button class="btn small primary" data-med-act="given" data-med-index="${i}">Given</button> <button class="btn small" data-med-act="hold" data-med-index="${i}">Hold</button> <button class="btn small danger" data-med-act="not_given" data-med-index="${i}">Not given</button></td><td><input data-med-time="${i}" type="time" value="${esc(m.time||'')}"><input data-med-note="${i}" value="${esc(m.note||'')}" placeholder="site / response / reason"></td><td><button class="btn small danger" data-del-med="${i}">Delete</button></td></tr>`;
+  const p = currentPatient();
+ 
+  // ── Keyword lists — used to pull med orders into MAR ─────────────────────
+  const MED_CATEGORIES = ['medication','med','drug','iv fluids','iv','infusion','analgesic','antibiotic','new order'];
+  function isMedOrder(o){
+    const cat=(o.category||'').toLowerCase();
+    const ord=(o.order||'').toLowerCase();
+    return MED_CATEGORIES.some(k=>cat.includes(k)||ord.startsWith(k));
+  }
+ 
+  // ── Build auto-synced entries from orders ─────────────────────────────────
+  // Only include orders not already represented in p.meds (match by order text)
+  const existingMedNames = new Set((p.meds||[]).map(m=>(m.name||'').toLowerCase().trim()));
+ 
+  const syncedFromOrders = (p.orders||[])
+    .filter(o => isMedOrder(o) && !existingMedNames.has((o.order||'').toLowerCase().trim()))
+    .map((o, idx) => ({
+      id: `sync-order-${idx}`,
+      name: o.order,
+      dose: o.details || '—',
+      route: '',
+      freq: o.status,
+      priority: o.category,
+      status: o.nurseCompleted ? 'given' : 'pending',
+      time: '',
+      note: '',
+      warn: '',
+      _fromOrder: true,   // flag: synced, not manually added
+    }));
+ 
+  // Combined list: manual meds first, then order-synced
+  const allMeds = [...(p.meds||[]), ...syncedFromOrders];
+ 
+  const rows = allMeds.map((m, i) => {
+    const isSync = !!m._fromOrder;
+    const allergyWarn = checkMedAllergy(m.name, p.allergies);
+    const syncTag = isSync
+      ? `<span class="badge blue" style="margin-left:4px;" title="Auto-synced from Provider Orders">From orders</span>`
+      : '';
+    return `<tr>
+      <td>
+        <strong>${esc(m.name)}</strong>${syncTag}<br>
+        <span class="badge blue">${esc(m.priority)}</span>
+        ${allergyWarn ? `<br><span class="allergy-flag">🚨 ${esc(allergyWarn)}</span>` : ''}
+        ${m.warn ? `<br><span style="color:var(--danger);font-size:11px;">${esc(m.warn)}</span>` : ''}
+      </td>
+      <td>${esc(m.dose)} ${esc(m.route)}<br><span style="color:var(--muted);font-size:11px;">${esc(m.freq)}</span></td>
+      <td><span class="status ${statusClass(m.status)}">${esc(m.status)}</span></td>
+      <td>
+        ${isSync
+          ? `<span style="font-size:11px;color:var(--muted);">Mark done in Orders tab</span>`
+          : `<button class="btn small primary" data-med-act="given" data-med-index="${i}">Given</button>
+             <button class="btn small" data-med-act="hold" data-med-index="${i}">Hold</button>
+             <button class="btn small danger" data-med-act="not_given" data-med-index="${i}">Not given</button>`
+        }
+      </td>
+      <td>
+        ${isSync ? '' : `
+          <input data-med-time="${i}" type="time" value="${esc(m.time||'')}">
+          <input data-med-note="${i}" value="${esc(m.note||'')}" placeholder="site / response / reason">
+        `}
+      </td>
+      <td>
+        ${isSync
+          ? `<span style="font-size:10px;color:var(--subtle);">Auto</span>`
+          : `<button class="btn small danger" data-del-med="${i}">Delete</button>`
+        }
+      </td>
+    </tr>`;
   }).join('');
-  return section('MAR safety',`<div class="notice danger"><span class="mark">MAR</span><span>Verify patient, medication, dose, route, time, allergies, indication, and relevant labs before documenting administration. Allergy cross-reactions are flagged automatically.</span></div>`)+section('Medication administration record',table(['Medication','Dose / route','Status','Action','Time / note',''],rows))+section('Add medication',`<div class="form-grid"><input id="med-name" placeholder="Medication"><input id="med-dose" placeholder="Dose"><input id="med-route" placeholder="Route"><input id="med-freq" placeholder="Frequency"></div><div class="form-row"><label>Safety note</label><input id="med-warn" placeholder="Hold parameter or sequencing cue"></div><div class="actions"><button class="btn primary" id="add-med">Add medication</button></div>`);
+ 
+  const hasSynced = syncedFromOrders.length > 0;
+ 
+  return section('MAR safety',`
+    <div class="notice danger">
+      <span class="mark">MAR</span>
+      <span>Verify patient, medication, dose, route, time, allergies, indication, and relevant labs before documenting administration. Allergy cross-reactions are flagged automatically.</span>
+    </div>
+    ${hasSynced ? `<div class="notice info"><span class="mark">SYNC</span><span><strong>${syncedFromOrders.length} medication order(s)</strong> auto-populated from Provider Orders tab. To remove them, delete the source order or add the medication manually here.</span></div>` : ''}
+  `) +
+  section('Medication administration record',
+    table(['Medication','Dose / route','Status','Action','Time / note',''], rows)
+  ) +
+  section('Add medication manually',`
+    <div class="form-grid">
+      <input id="med-name" placeholder="Medication">
+      <input id="med-dose" placeholder="Dose">
+      <input id="med-route" placeholder="Route">
+      <input id="med-freq" placeholder="Frequency">
+    </div>
+    <div class="form-row"><label>Safety note</label><input id="med-warn" placeholder="Hold parameter or sequencing cue"></div>
+    <div class="actions"><button class="btn primary" id="add-med">Add medication</button></div>
+  `);
 }
 
 function rIO(){const p=currentPatient();const totals=p.io.reduce((a,e)=>{if(e.direction==='in')a.ins+=Number(e.amount)||0;else a.outs+=Number(e.amount)||0;return a;},{ins:0,outs:0});const rows=p.io.map((e,i)=>`<tr><td>${esc(e.time)}</td><td>${esc(e.type)}</td><td>${e.direction==='in'?esc(e.amount):'--'}</td><td>${e.direction==='out'?esc(e.amount):'--'}</td><td>${esc(e.note)}</td><td>${esc(e.by)}</td><td><button class="btn small danger" data-del-io="${i}">Delete</button></td></tr>`).join('');return`<div class="metric-row"><div class="metric"><div class="num">${totals.ins}</div><div class="lbl">Intake</div></div><div class="metric"><div class="num">${totals.outs}</div><div class="lbl">Output</div></div><div class="metric"><div class="num">${totals.ins-totals.outs}</div><div class="lbl">Net</div></div><div class="metric"><div class="num">${p.io.length}</div><div class="lbl">Entries</div></div></div>${section('I/O flowsheet',table(['Time','Type','In','Out','Note','By',''],rows))}${section('Add I/O',`<div class="form-grid"><input id="io-time" type="time" value="${nowTime()}"><input id="io-type" placeholder="IV bolus, urine, emesis"><input id="io-amount" type="number" placeholder="mL"><select id="io-direction"><option value="in">Intake</option><option value="out">Output</option></select></div><div class="form-row"><label>Note</label><input id="io-note" placeholder="Color, tolerance, route, or context"></div><div class="actions"><button class="btn primary" id="add-io">Add I/O</button></div>`)}`;}
@@ -933,8 +1152,47 @@ function bindCloudEvents(){
 }
 function bindTabEvents(){
   const p=currentPatient();
-  document.getElementById('add-order')?.addEventListener('click',()=>{const o=val('ord-name');if(!o)return toast('Order required');p.orders.push({category:val('ord-cat')||'Nursing',order:o,details:val('ord-details'),status:val('ord-status')||'Active'});persist();render();});
-  document.querySelectorAll('[data-del-order]').forEach(b=>b.onclick=()=>{p.orders.splice(Number(b.dataset.delOrder),1);persist();render();});
+  document.getElementById('add-order')?.addEventListener('click',()=>{
+    const o=val('ord-name');if(!o)return toast('Order required');
+    p.orders.push({
+      category: val('ord-cat')||'Nursing',
+      order: o,
+      details: val('ord-details'),
+      status: val('ord-status')||'Active',
+      nurseCompleted: false,
+    });
+    persist();render();
+  });
+ 
+  document.querySelectorAll('[data-del-order]').forEach(b=>b.onclick=()=>{
+    p.orders.splice(Number(b.dataset.delOrder),1);persist();render();
+  });
+ 
+  // ── NEW: nurse completion checkbox + button ────────────────────────────────
+  document.querySelectorAll('[data-order-complete]').forEach(el => {
+    el.onclick = () => {
+      const idx = Number(el.dataset.orderComplete);
+      const order = p.orders[idx];
+      if (!order) return;
+      order.nurseCompleted = !order.nurseCompleted;
+      // Auto-update order status
+      if (order.nurseCompleted) {
+        order.status = 'Complete';
+        // Auto-sign a quick nursing note
+        p.notes.push({
+          type: 'Nursing note',
+          time: nowTime(),
+          by: 'Student Nurse',
+          body: `Order completed: ${order.order}${order.details ? ' — ' + order.details : ''}`
+        });
+        toast(`✓ Order marked complete: ${order.order}`);
+      } else {
+        order.status = 'Active';
+        toast('Order marked as active again');
+      }
+      persist();render();
+    };
+  });
   document.getElementById('add-lab')?.addEventListener('click',()=>{const t=val('lab-test');if(!t)return toast('Test required');p.labs.push({time:val('lab-time'),test:t,result:val('lab-result'),range:val('lab-range'),flag:val('lab-flag'),note:val('lab-note')});persist();render();});
   document.querySelectorAll('[data-del-lab]').forEach(b=>b.onclick=()=>{p.labs.splice(Number(b.dataset.delLab),1);persist();render();});
   document.getElementById('add-vital')?.addEventListener('click',()=>{
