@@ -1648,7 +1648,427 @@ function rMeds(){
   `);
 }
 
-function rIO(){const p=currentPatient();const totals=p.io.reduce((a,e)=>{if(e.direction==='in')a.ins+=Number(e.amount)||0;else a.outs+=Number(e.amount)||0;return a;},{ins:0,outs:0});const rows=p.io.map((e,i)=>`<tr><td>${esc(e.time)}</td><td>${esc(e.type)}</td><td>${e.direction==='in'?esc(e.amount):'--'}</td><td>${e.direction==='out'?esc(e.amount):'--'}</td><td>${esc(e.note)}</td><td>${esc(e.by)}</td><td><button class="btn small danger" data-del-io="${i}">Delete</button></td></tr>`).join('');return`<div class="metric-row"><div class="metric"><div class="num">${totals.ins}</div><div class="lbl">Intake</div></div><div class="metric"><div class="num">${totals.outs}</div><div class="lbl">Output</div></div><div class="metric"><div class="num">${totals.ins-totals.outs}</div><div class="lbl">Net</div></div><div class="metric"><div class="num">${p.io.length}</div><div class="lbl">Entries</div></div></div>${section('I/O flowsheet',table(['Time','Type','In','Out','Note','By',''],rows))}${section('Add I/O',`<div class="form-grid"><input id="io-time" type="time" value="${nowTime()}"><input id="io-type" placeholder="IV bolus, urine, emesis"><input id="io-amount" type="number" placeholder="mL"><select id="io-direction"><option value="in">Intake</option><option value="out">Output</option></select></div><div class="form-row"><label>Note</label><input id="io-note" placeholder="Color, tolerance, route, or context"></div><div class="actions"><button class="btn primary" id="add-io">Add I/O</button></div>`)}`;}
+function rIO(){
+  const p = currentPatient();
+ 
+  // ── Totals ────────────────────────────────────────────────────────────────
+  const totals = (p.io||[]).reduce((a,e)=>{
+    if(e.direction==='in')  a.ins  += Number(e.amount)||0;
+    if(e.direction==='out') a.outs += Number(e.amount)||0;
+    return a;
+  }, {ins:0, outs:0});
+  const net = totals.ins - totals.outs;
+  const netColor = net < -500 ? 'color:var(--danger);' : net > 1000 ? 'color:var(--warning);' : 'color:var(--success);';
+ 
+  // ── Type metadata ──────────────────────────────────────────────────────────
+  // inputType → { label, category, mLEntry, countEntry, charDropdown }
+  const INTAKE_TYPES = [
+    // ── Liquid (mL entry)
+    { value:'iv_fluid',        label:'IV Fluid (continuous)',      cat:'Intravenous',    mL:true },
+    { value:'iv_bolus',        label:'IV Bolus',                   cat:'Intravenous',    mL:true },
+    { value:'iv_piggyback',    label:'IV Piggyback / IVPB',        cat:'Intravenous',    mL:true },
+    { value:'blood_product',   label:'Blood / Blood product',      cat:'Intravenous',    mL:true },
+    { value:'tpn',             label:'Total Parenteral Nutrition (TPN)', cat:'Intravenous', mL:true },
+    { value:'lipids',          label:'IV Lipids',                  cat:'Intravenous',    mL:true },
+    { value:'po_water',        label:'Water (PO)',                  cat:'Oral / PO',      mL:true },
+    { value:'po_juice',        label:'Juice / Non-dairy drink (PO)',cat:'Oral / PO',      mL:true },
+    { value:'po_milk',         label:'Milk (PO)',                   cat:'Oral / PO',      mL:true },
+    { value:'po_broth',        label:'Broth / Clear liquid (PO)',   cat:'Oral / PO',      mL:true },
+    { value:'po_coffee_tea',   label:'Coffee / Tea (PO)',           cat:'Oral / PO',      mL:true },
+    { value:'po_supplement',   label:'Oral supplement (e.g. Ensure)', cat:'Oral / PO',   mL:true },
+    { value:'po_ice_chips',    label:'Ice chips (PO) — 1 cup = 120 mL', cat:'Oral / PO', mL:true },
+    { value:'ng_tube_feeding', label:'Nasogastric / NG tube feeding', cat:'Enteral',      mL:true },
+    { value:'og_tube_feeding', label:'OG / Orogastric tube feeding', cat:'Enteral',       mL:true },
+    { value:'peg_tube_feeding',label:'PEG / Gastrostomy tube feeding', cat:'Enteral',     mL:true },
+    { value:'ng_flush',        label:'NG tube flush (water)',       cat:'Enteral',        mL:true },
+    { value:'irrigation',      label:'Irrigation fluid (e.g. bladder, wound)', cat:'Other', mL:true },
+    { value:'contrast',        label:'Oral contrast (imaging)',     cat:'Other',          mL:true },
+    { value:'medication_liquid',label:'Liquid medication (oral)',   cat:'Medication',     mL:true },
+    { value:'oral_rehydration',label:'Oral rehydration solution (ORS)', cat:'Oral / PO', mL:true },
+  ];
+ 
+  const OUTPUT_TYPES = [
+    // ── Liquid urine (mL entry)
+    { value:'urine_voided',    label:'Urine — voided (spontaneous)',cat:'Urine',          mL:true,  urinChar:true },
+    { value:'urine_catheter',  label:'Urine — Foley / catheter',    cat:'Urine',          mL:true,  urinChar:true },
+    { value:'urine_straight',  label:'Urine — straight cath',       cat:'Urine',          mL:true,  urinChar:true },
+    { value:'urine_ostomy',    label:'Urine — urostomy',            cat:'Urine',          mL:true,  urinChar:true },
+    { value:'urine_condom_cath',label:'Urine — condom catheter',    cat:'Urine',          mL:true,  urinChar:true },
+    // ── Emesis (count + mL)
+    { value:'emesis',          label:'Emesis / vomiting',           cat:'Emesis',         mL:true,  countable:true, emesisChar:true },
+    // ── Stool / BM
+    { value:'bm_toilet',       label:'Bowel movement — toilet',     cat:'Stool',          count:true, stoolChar:true, stoolRoute:'toilet' },
+    { value:'bm_bedpan',       label:'Bowel movement — bedpan',     cat:'Stool',          count:true, stoolChar:true, stoolRoute:'bedpan' },
+    { value:'bm_diaper',       label:'Bowel movement — diaper',     cat:'Stool',          count:true, stoolChar:true, stoolRoute:'diaper' },
+    { value:'bm_commode',      label:'Bowel movement — commode',    cat:'Stool',          count:true, stoolChar:true, stoolRoute:'commode' },
+    { value:'bm_colostomy',    label:'Stool — colostomy',           cat:'Stool',          mL:true,  stoolChar:true, stoolRoute:'colostomy' },
+    { value:'bm_ileostomy',    label:'Stool — ileostomy',           cat:'Stool',          mL:true,  stoolChar:true, stoolRoute:'ileostomy' },
+    // ── Drainage / other liquid (mL)
+    { value:'ng_drainage',     label:'NG tube drainage / aspirate', cat:'Drainage',       mL:true },
+    { value:'jp_drain',        label:'JP drain output',             cat:'Drainage',       mL:true },
+    { value:'chest_tube',      label:'Chest tube drainage',         cat:'Drainage',       mL:true },
+    { value:'wound_drain',     label:'Wound drain (other)',         cat:'Drainage',       mL:true },
+    { value:'biliary_drain',   label:'Biliary drain',               cat:'Drainage',       mL:true },
+    { value:'peritoneal_drain',label:'Peritoneal drain',            cat:'Drainage',       mL:true },
+    { value:'lochia',          label:'Lochia (postpartum)',         cat:'OB / Postpartum',mL:true },
+    { value:'amniotic_fluid',  label:'Amniotic fluid (ROM)',        cat:'OB / Postpartum',mL:true },
+    { value:'blood_loss',      label:'Estimated blood loss (EBL)',  cat:'Blood',          mL:true },
+    { value:'surgical_drain',  label:'Surgical drain output',       cat:'Drainage',       mL:true },
+    { value:'lumbar_drain',    label:'Lumbar / CSF drain',          cat:'Drainage',       mL:true },
+    { value:'sweat_insensible',label:'Insensible loss (estimated)', cat:'Insensible',     mL:true },
+    { value:'dialysis_uf',     label:'Dialysis / ultrafiltrate',    cat:'Dialysis',       mL:true },
+  ];
+ 
+  const URINE_CHAR = [
+    '— Select characteristic —',
+    'Clear, pale yellow — normal',
+    'Yellow, slightly cloudy — normal variation',
+    'Dark amber / concentrated',
+    'Orange-tinged',
+    'Pink-tinged (trace blood)',
+    'Gross haematuria — frank blood',
+    'Cloudy with sediment',
+    'Foul-smelling',
+    'Foamy (proteinuria suspected)',
+    'Tea-coloured / cola-coloured',
+  ];
+ 
+  const EMESIS_CHAR = [
+    '— Select characteristic —',
+    'Clear / watery',
+    'Yellow-green (bilious)',
+    'Undigested food content',
+    'Coffee-ground appearance (old blood)',
+    'Bright red blood (haematemesis)',
+    'Foul-smelling (faeculent)',
+    'Mucus-mixed',
+  ];
+ 
+  const STOOL_CHAR = [
+    { label:'— Select characteristic —', abnormal: false },
+    // Bristol Stool Scale
+    { label:'Bristol Type 1 — hard separate lumps', abnormal: true },
+    { label:'Bristol Type 2 — lumpy and sausage-shaped', abnormal: true },
+    { label:'Bristol Type 3 — cracked sausage shape (normal)', abnormal: false },
+    { label:'Bristol Type 4 — smooth, soft sausage (normal)', abnormal: false },
+    { label:'Bristol Type 5 — soft blobs with clear edges', abnormal: false },
+    { label:'Bristol Type 6 — mushy / fluffy pieces', abnormal: true },
+    { label:'Bristol Type 7 — entirely liquid, watery', abnormal: true },
+    // Colour
+    { label:'Brown — normal colour', abnormal: false },
+    { label:'Yellow — possible infection or malabsorption', abnormal: true },
+    { label:'Green — bile not fully absorbed', abnormal: true },
+    { label:'Pale / clay-coloured — biliary obstruction suspected', abnormal: true },
+    { label:'Red / bloody — haematochezia', abnormal: true },
+    { label:'Black, tarry (melena) — upper GI bleed', abnormal: true },
+    // Other descriptors
+    { label:'Mucus present in stool', abnormal: true },
+    { label:'Foul-smelling beyond normal', abnormal: true },
+    { label:'Large volume, loose', abnormal: true },
+    { label:'Small volume, hard', abnormal: true },
+  ];
+ 
+  // ── Trend chart data ───────────────────────────────────────────────────────
+  function ioTrendSvg(entries){
+    if(!entries || entries.length < 2) return '<text x="340" y="80" text-anchor="middle" fill="#8b98aa" font-size="12">Add 2+ entries to view trend</text>';
+    // Group by time, accumulate running totals
+    const sorted = [...entries].sort((a,b)=>String(a.time).localeCompare(String(b.time)));
+    let runIn=0, runOut=0;
+    const pts = sorted.map(e=>{
+      if(e.direction==='in')  runIn  += Number(e.amount)||0;
+      else                    runOut += Number(e.amount)||0;
+      return { time:e.time, ins:runIn, outs:runOut, net:runIn-runOut };
+    });
+ 
+    const PAD_L=52, PAD_R=16, PAD_T=20, PAD_B=36;
+    const W=680-PAD_L-PAD_R, H=160-PAD_T-PAD_B;
+    const n = pts.length;
+    const xOf = i => n===1 ? PAD_L+W/2 : PAD_L + i*(W/(n-1));
+ 
+    const allVals = pts.flatMap(p=>[p.ins, p.outs, Math.abs(p.net)]).filter(v=>v>0);
+    const maxV = allVals.length ? Math.max(...allVals) : 1000;
+    const yOf  = v => PAD_T + H - Math.min(1, v/maxV)*H;
+ 
+    const pathIn  = pts.map((p,i)=>`${i?'L':'M'}${xOf(i).toFixed(1)},${yOf(p.ins).toFixed(1)}`).join(' ');
+    const pathOut = pts.map((p,i)=>`${i?'L':'M'}${xOf(i).toFixed(1)},${yOf(p.outs).toFixed(1)}`).join(' ');
+    const dotsIn  = pts.map((p,i)=>`<circle cx="${xOf(i)}" cy="${yOf(p.ins)}"  r="3.5" fill="#175f9e"></circle>`).join('');
+    const dotsOut = pts.map((p,i)=>`<circle cx="${xOf(i)}" cy="${yOf(p.outs)}" r="3.5" fill="#a33131"></circle>`).join('');
+    const labels  = pts.map((p,i)=>`<text x="${xOf(i)}" y="${PAD_T+H+16}" text-anchor="middle" fill="#8b98aa" font-size="9">${esc(p.time||'')}</text>`).join('');
+ 
+    // Net balance bar area (green=positive, red=negative)
+    const netBars = pts.map((p,i)=>{
+      const barH = Math.abs(yOf(p.net) - yOf(0));
+      const y0   = p.net>=0 ? yOf(p.net) : yOf(0);
+      const col  = p.net>=0 ? 'rgba(49,105,31,0.18)' : 'rgba(163,49,49,0.18)';
+      return `<rect x="${(xOf(i)-6).toFixed(1)}" y="${y0.toFixed(1)}" width="12" height="${barH.toFixed(1)}" fill="${col}" rx="2"></rect>`;
+    }).join('');
+ 
+    const gridY = [0, 0.25, 0.5, 0.75, 1].map(f=>{
+      const gy = (PAD_T+H - f*H).toFixed(1);
+      const lbl = Math.round(maxV*f);
+      return `<line x1="${PAD_L}" y1="${gy}" x2="${PAD_L+W}" y2="${gy}" stroke="rgba(23,41,70,0.09)"></line>
+              <text x="${PAD_L-4}" y="${(+gy+3).toFixed(1)}" text-anchor="end" fill="#8b98aa" font-size="8">${lbl}</text>`;
+    }).join('');
+ 
+    return `
+      ${gridY}
+      <line x1="${PAD_L}" y1="${PAD_T+H}" x2="${PAD_L+W}" y2="${PAD_T+H}" stroke="rgba(23,41,70,0.18)"></line>
+      ${netBars}
+      <path d="${pathIn}"  fill="none" stroke="#175f9e" stroke-width="2"></path>
+      <path d="${pathOut}" fill="none" stroke="#a33131" stroke-width="2"></path>
+      ${dotsIn}${dotsOut}
+      ${labels}
+    `;
+  }
+ 
+  // ── Build grouped options for select ──────────────────────────────────────
+  function groupOptions(list){
+    const cats = {};
+    list.forEach(t=>{ (cats[t.cat]||(cats[t.cat]=[])).push(t); });
+    return Object.entries(cats).map(([cat,items])=>
+      `<optgroup label="${esc(cat)}">${items.map(t=>`<option value="${esc(t.value)}">${esc(t.label)}</option>`).join('')}</optgroup>`
+    ).join('');
+  }
+ 
+  // ── Flowsheet rows ────────────────────────────────────────────────────────
+  const rows = (p.io||[]).map((e,i)=>{
+    const isOut = e.direction==='out';
+    const amtCell = e.countOnly
+      ? `<strong>${esc(e.count||'—')}×</strong> <span style="color:var(--muted);font-size:11px;">${esc(e.unit||'episodes')}</span>`
+      : `<strong>${esc(e.amount||'—')} mL</strong>`;
+    const charCell = e.characteristic
+      ? `<span style="font-size:11px;color:var(--muted);">${esc(e.characteristic)}</span>`
+      : '';
+    const noteCell = e.note ? `<span style="font-size:11px;color:var(--muted);">${esc(e.note)}</span>` : '';
+    return `<tr>
+      <td>${esc(e.time)}</td>
+      <td><span class="badge ${isOut?'red':'blue'}">${isOut?'OUT':'IN'}</span></td>
+      <td>${esc(e.type)}</td>
+      <td>${amtCell}</td>
+      <td>${charCell}${noteCell}</td>
+      <td>${esc(e.by||'Student Nurse')}</td>
+      <td><button class="btn small danger" data-del-io="${i}">Delete</button></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" style="color:var(--subtle);text-align:center;padding:16px;">No I/O entries yet.</td></tr>`;
+ 
+  // ── Inline styles ─────────────────────────────────────────────────────────
+  const inlineStyles = `
+    <style>
+      .io-form-section { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:14px; margin-bottom:12px; }
+      .io-form-section h4 { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:0 0 10px; }
+      .io-type-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:start; margin-bottom:8px; }
+      .io-sub-row  { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:6px; font-size:12px; }
+      .io-sub-row label { color:var(--muted); font-weight:800; font-size:11px; white-space:nowrap; }
+      .io-sub-row input[type=number], .io-sub-row select { width:140px; }
+      .io-char-select { width:100%; }
+      .io-trend-legend { display:flex; gap:16px; padding:4px 0 8px; font-size:11px; font-weight:800; flex-wrap:wrap; }
+      .io-leg-in  { color:#175f9e; }
+      .io-leg-out { color:#a33131; }
+      .io-leg-net { color:#31691f; }
+      @media(max-width:640px){ .io-type-row { grid-template-columns:1fr; } }
+    </style>`;
+ 
+  // ── Metric tiles ──────────────────────────────────────────────────────────
+  const intakeCount  = (p.io||[]).filter(e=>e.direction==='in').length;
+  const outputCount  = (p.io||[]).filter(e=>e.direction==='out').length;
+  const metricRow = `
+    <div class="metric-row" style="grid-template-columns:repeat(4,minmax(100px,1fr));margin-bottom:14px;">
+      <div class="metric"><div class="num" style="color:#175f9e;">${totals.ins.toLocaleString()}</div><div class="lbl">Total Intake (mL)</div></div>
+      <div class="metric"><div class="num" style="color:#a33131;">${totals.outs.toLocaleString()}</div><div class="lbl">Total Output (mL)</div></div>
+      <div class="metric"><div class="num" style="${netColor}">${net >= 0 ? '+' : ''}${net.toLocaleString()}</div><div class="lbl">Net Balance (mL)</div></div>
+      <div class="metric"><div class="num">${intakeCount + outputCount}</div><div class="lbl">Entries</div></div>
+    </div>`;
+ 
+  // ── Net balance alert ─────────────────────────────────────────────────────
+  let balanceAlert = '';
+  if((p.io||[]).length > 0){
+    if(net < -500)
+      balanceAlert = `<div class="notice danger" style="margin-bottom:12px;"><span class="mark">⚠ FLUID DEFICIT</span><span>Net balance is ${net.toLocaleString()} mL — patient is in significant negative balance. Assess for dehydration. Verify IV fluid orders and notify provider if clinically indicated.</span></div>`;
+    else if(net > 2000)
+      balanceAlert = `<div class="notice" style="margin-bottom:12px;"><span class="mark">⚠ FLUID EXCESS</span><span>Net balance is +${net.toLocaleString()} mL — patient is in significant positive balance. Assess for oedema, lung sounds, and fluid overload. Notify provider if clinically indicated.</span></div>`;
+  }
+ 
+  // ── INTAKE entry form ─────────────────────────────────────────────────────
+  const intakeForm = `
+    <div class="io-form-section">
+      <h4>📥 Add Intake Entry</h4>
+      <div class="io-type-row">
+        <div>
+          <span class="input-label">Intake type</span>
+          <select id="io-in-type" onchange="hctIOUpdateIntakeFields(this.value)">
+            <option value="">— Select type —</option>
+            ${groupOptions(INTAKE_TYPES)}
+          </select>
+        </div>
+        <div>
+          <span class="input-label">Time</span>
+          <input id="io-in-time" type="time" value="${nowTime()}">
+        </div>
+      </div>
+      <div id="io-in-fields" class="io-sub-row" style="display:none;">
+        <label>Amount (mL):</label>
+        <input type="number" id="io-in-ml" placeholder="mL" min="0" step="1" style="width:110px;">
+        <label style="margin-left:8px;">Note / route:</label>
+        <input type="text" id="io-in-note" placeholder="e.g. left AC, rate, flavour" style="flex:1;min-width:140px;">
+      </div>
+      <div class="actions" style="margin-top:10px;">
+        <button class="btn primary" id="add-io-intake">Add intake</button>
+      </div>
+    </div>`;
+ 
+  // ── OUTPUT entry form ─────────────────────────────────────────────────────
+  const outputForm = `
+    <div class="io-form-section">
+      <h4>📤 Add Output Entry</h4>
+      <div class="io-type-row">
+        <div>
+          <span class="input-label">Output type</span>
+          <select id="io-out-type" onchange="hctIOUpdateOutputFields(this.value)">
+            <option value="">— Select type —</option>
+            ${groupOptions(OUTPUT_TYPES)}
+          </select>
+        </div>
+        <div>
+          <span class="input-label">Time</span>
+          <input id="io-out-time" type="time" value="${nowTime()}">
+        </div>
+      </div>
+ 
+      <!-- Liquid mL row -->
+      <div id="io-out-ml-row" class="io-sub-row" style="display:none;">
+        <label>Amount (mL):</label>
+        <input type="number" id="io-out-ml" placeholder="mL" min="0" step="1" style="width:110px;">
+      </div>
+ 
+      <!-- Count row (BM / emesis episodes) -->
+      <div id="io-out-count-row" class="io-sub-row" style="display:none;">
+        <label id="io-out-count-label">Episodes:</label>
+        <input type="number" id="io-out-count" placeholder="e.g. 2" min="1" step="1" style="width:80px;">
+        <span id="io-out-count-unit" style="color:var(--muted);font-size:11px;">times</span>
+      </div>
+ 
+      <!-- Urine characteristic -->
+      <div id="io-out-urine-row" class="io-sub-row" style="display:none;">
+        <label>Urine characteristic:</label>
+        <select id="io-out-urine-char" class="io-char-select" style="width:auto;flex:1;">
+          ${URINE_CHAR.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}
+        </select>
+      </div>
+ 
+      <!-- Emesis characteristic -->
+      <div id="io-out-emesis-row" class="io-sub-row" style="display:none;">
+        <label>Emesis characteristic:</label>
+        <select id="io-out-emesis-char" class="io-char-select" style="width:auto;flex:1;">
+          ${EMESIS_CHAR.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}
+        </select>
+      </div>
+ 
+      <!-- Stool characteristic + route -->
+      <div id="io-out-stool-row" class="io-sub-row" style="display:none;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:220px;">
+          <label>Stool characteristic:</label>
+          <select id="io-out-stool-char" class="io-char-select" style="flex:1;">
+            ${STOOL_CHAR.map(c=>`<option value="${esc(c.label)}" ${c.abnormal?'style="color:var(--danger);"':''}>${c.abnormal?'⚠ ':''}${esc(c.label)}</option>`).join('')}
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <label>Route:</label>
+          <select id="io-out-stool-route" style="width:150px;">
+            <option value="toilet">Toilet</option>
+            <option value="bedpan">Bedpan</option>
+            <option value="diaper">Diaper</option>
+            <option value="commode">Commode</option>
+            <option value="colostomy">Colostomy</option>
+            <option value="ileostomy">Ileostomy</option>
+          </select>
+        </div>
+      </div>
+ 
+      <!-- Note row -->
+      <div class="io-sub-row" style="margin-top:6px;">
+        <label>Note:</label>
+        <input type="text" id="io-out-note" placeholder="Colour, smell, consistency, site, drain type…" style="flex:1;min-width:180px;">
+      </div>
+ 
+      <div class="actions" style="margin-top:10px;">
+        <button class="btn primary" id="add-io-output">Add output</button>
+      </div>
+    </div>`;
+ 
+  // ── Client-side JS for dynamic field visibility ───────────────────────────
+  // These run inline when onchange fires — no re-render needed
+  const OUTPUT_META = JSON.stringify(
+    Object.fromEntries(OUTPUT_TYPES.map(t=>[t.value, {
+      mL:       !!t.mL,
+      count:    !!t.count,
+      countable:!!t.countable,
+      urinChar: !!t.urinChar,
+      emesisChar:!!t.emesisChar,
+      stoolChar: !!t.stoolChar,
+      stoolRoute:t.stoolRoute||null,
+    }]))
+  );
+ 
+  const clientJS = `
+    <script>
+    window._IO_OUTPUT_META = ${OUTPUT_META};
+ 
+    window.hctIOUpdateIntakeFields = function(val){
+      const row = document.getElementById('io-in-fields');
+      row.style.display = val ? 'flex' : 'none';
+    };
+ 
+    window.hctIOUpdateOutputFields = function(val){
+      const meta = window._IO_OUTPUT_META[val] || {};
+      function show(id, visible){ const el=document.getElementById(id); if(el) el.style.display=visible?'flex':'none'; }
+ 
+      show('io-out-ml-row',     meta.mL || meta.countable);
+      show('io-out-count-row',  meta.count || meta.countable);
+      show('io-out-urine-row',  meta.urinChar);
+      show('io-out-emesis-row', meta.emesisChar);
+      show('io-out-stool-row',  meta.stoolChar);
+ 
+      // Customise count label
+      const lbl = document.getElementById('io-out-count-label');
+      const unit = document.getElementById('io-out-count-unit');
+      if(lbl && unit){
+        if(meta.emesisChar){ lbl.textContent='Episodes:'; unit.textContent='times vomited'; }
+        else if(meta.stoolChar){ lbl.textContent='Episodes:'; unit.textContent='bowel movements'; }
+        else { lbl.textContent='Episodes:'; unit.textContent='times'; }
+      }
+ 
+      // Pre-set stool route if specified in metadata
+      const routeSel = document.getElementById('io-out-stool-route');
+      if(routeSel && meta.stoolRoute) routeSel.value = meta.stoolRoute;
+    };
+    </script>`;
+ 
+  return `
+    ${inlineStyles}
+    ${metricRow}
+    ${balanceAlert}
+ 
+    ${section('I/O Trend', `
+      <svg viewBox="0 0 680 160" style="width:100%;height:160px;border:1px solid var(--line);border-radius:8px;background:var(--paper);">
+        ${ioTrendSvg(p.io)}
+      </svg>
+      <div class="io-trend-legend">
+        <span class="io-leg-in">■ Cumulative intake</span>
+        <span class="io-leg-out">■ Cumulative output</span>
+        <span class="io-leg-net">▪ Net balance (bars)</span>
+      </div>
+    `)}
+ 
+    ${section('Flowsheet', table(
+      ['Time','Direction','Type','Amount','Characteristic / Note','By',''],
+      rows
+    ))}
+ 
+    ${section('Add I/O Entry', intakeForm + outputForm)}
+ 
+    ${clientJS}
+  `;
+}
 function rNotes(){const p=currentPatient();const notes=p.notes.length?p.notes.map((n,i)=>`<div class="note"><div class="note-head"><span><span class="note-type">${esc(n.type)}</span> | ${esc(n.time)} | ${esc(n.by)}</span><button class="btn small danger" data-del-note="${i}">Delete</button></div><div class="note-body">${esc(n.body)}</div></div>`).join(''):'<p class="text-block" style="text-align:center;color:var(--subtle);padding:18px;">No signed notes yet.</p>';return section('Signed nursing notes',notes)+section('Add note',`<div class="form-row"><label>Type</label><select id="note-type"><option>HCT focused progress note</option><option>Admission note</option><option>Assessment note</option><option>Medication note</option><option>Patient education</option><option>Provider notification</option><option>Shift summary</option></select></div><div class="form-row"><label>Time</label><input id="note-time" type="time" value="${nowTime()}"></div><div class="form-row"><label>Note</label><textarea id="note-body" placeholder="Objective findings, interventions, response, follow-up plan."></textarea></div><div class="actions"><button class="btn" id="insert-note-template">Insert HCT template</button><button class="btn primary" id="save-note">Sign and save</button></div>`);}
 function rCarePlan(){const rows=currentPatient().carePlan.map((c,i)=>`<tr><td><input data-cp="dx" data-cp-index="${i}" value="${esc(c.dx)}"></td><td><textarea data-cp="goal" data-cp-index="${i}">${esc(c.goal)}</textarea></td><td><textarea data-cp="interventions" data-cp-index="${i}">${esc(c.interventions)}</textarea></td><td><textarea data-cp="evaluation" data-cp-index="${i}">${esc(c.evaluation)}</textarea></td><td><button class="btn small danger" data-del-cp="${i}">Delete</button></td></tr>`).join('');return section('Nursing care plan',table(['Diagnosis','Goal','Interventions','Evaluation',''],rows)+'<div class="actions"><button class="btn primary" id="add-careplan">Add row</button><button class="btn navy" id="save-careplan">Save care plan</button></div>');}
 function rEducation(){const rows=currentPatient().education.map((e,i)=>`<div class="check-row"><input type="checkbox" data-ed-check="${i}" ${e.status==='Complete'?'checked':''}><strong>${esc(e.topic)}</strong><select data-ed-status="${i}"><option ${e.status==='Not started'?'selected':''}>Not started</option><option ${e.status==='In progress'?'selected':''}>In progress</option><option ${e.status==='Complete'?'selected':''}>Complete</option><option ${e.status==='Deferred'?'selected':''}>Deferred</option></select><input data-ed-response="${i}" value="${esc(e.response)}" placeholder="Learner/patient response"></div>`).join('');return section('Education record',`${rows}<div class="form-row"><label>New topic</label><input id="ed-topic" placeholder="Medication effects, warning signs, device use"></div><div class="actions"><button class="btn primary" id="add-education">Add topic</button><button class="btn navy" id="save-education">Save education</button></div>`);}
@@ -2065,8 +2485,96 @@ function bindTabEvents(){
   document.querySelectorAll('[data-med-note]').forEach(i=>i.onchange=()=>{p.meds[Number(i.dataset.medNote)].note=i.value;persist();});
   document.querySelectorAll('[data-del-med]').forEach(b=>b.onclick=()=>{p.meds.splice(Number(b.dataset.delMed),1);persist();render();});
   document.getElementById('add-med')?.addEventListener('click',()=>{const name=val('med-name');if(!name)return toast('Medication required');p.meds.push({id:uid('med'),name,dose:val('med-dose'),route:val('med-route'),freq:val('med-freq'),priority:'Practice',status:'pending',time:'',note:'',warn:val('med-warn')});persist();render();});
-  document.getElementById('add-io')?.addEventListener('click',()=>{const amt=Number(val('io-amount'));if(!amt)return toast('Amount required');p.io.push({time:val('io-time'),type:val('io-type')||'Other',amount:amt,direction:val('io-direction'),note:val('io-note'),by:'Student Nurse'});persist();render();});
-  document.querySelectorAll('[data-del-io]').forEach(b=>b.onclick=()=>{p.io.splice(Number(b.dataset.delIo),1);persist();render();});
+   document.getElementById('add-io-intake')?.addEventListener('click',()=>{
+    const typeEl  = document.getElementById('io-in-type');
+    const typeVal = typeEl?.value;
+    if(!typeVal) return toast('Select an intake type');
+ 
+    const typeLabel = typeEl?.options[typeEl.selectedIndex]?.text || typeVal;
+    const ml    = Number(document.getElementById('io-in-ml')?.value||0);
+    const note  = document.getElementById('io-in-note')?.value?.trim()||'';
+    const time  = document.getElementById('io-in-time')?.value || nowTime();
+ 
+    if(!ml) return toast('Enter the amount in mL');
+ 
+    p.io.push({
+      time,
+      direction: 'in',
+      type:      typeLabel.replace(/^✓ /,'').replace(/^⚠ /,''),
+      amount:    ml,
+      note,
+      by:        'Student Nurse',
+    });
+    persist(); render();
+    toast(`Intake added: ${ml} mL`);
+  });
+ 
+  // ── OUTPUT add ─────────────────────────────────────────────────────────────
+  document.getElementById('add-io-output')?.addEventListener('click',()=>{
+    const typeEl  = document.getElementById('io-out-type');
+    const typeVal = typeEl?.value;
+    if(!typeVal) return toast('Select an output type');
+ 
+    const OUTPUT_TYPES_LOCAL = {
+      urine_voided:'urinChar', urine_catheter:'urinChar', urine_straight:'urinChar',
+      urine_ostomy:'urinChar', urine_condom_cath:'urinChar',
+      emesis:'emesisChar+count',
+      bm_toilet:'stool+count', bm_bedpan:'stool+count',
+      bm_diaper:'stool+count', bm_commode:'stool+count',
+      bm_colostomy:'stool+mL', bm_ileostomy:'stool+mL',
+    };
+    const meta   = window._IO_OUTPUT_META?.[typeVal] || {};
+    const typeLabel = typeEl?.options[typeEl.selectedIndex]?.text || typeVal;
+    const cleanLabel = typeLabel.replace(/^✓ /,'').replace(/^⚠ /,'');
+    const time   = document.getElementById('io-out-time')?.value || nowTime();
+    const note   = document.getElementById('io-out-note')?.value?.trim()||'';
+ 
+    // Collect amounts
+    const ml    = Number(document.getElementById('io-out-ml')?.value||0);
+    const count = Number(document.getElementById('io-out-count')?.value||0);
+ 
+    // Validation
+    if(meta.mL && !ml) return toast('Enter the amount in mL');
+    if(meta.count && !count) return toast('Enter the number of episodes');
+    if(meta.countable && !ml && !count) return toast('Enter mL or episode count');
+ 
+    // Characteristic
+    let char = '';
+    if(meta.urinChar){
+      const v = document.getElementById('io-out-urine-char')?.value||'';
+      if(v && !v.startsWith('—')) char = v;
+    }
+    if(meta.emesisChar){
+      const v = document.getElementById('io-out-emesis-char')?.value||'';
+      if(v && !v.startsWith('—')) char = v;
+    }
+    if(meta.stoolChar){
+      const sc = document.getElementById('io-out-stool-char')?.value||'';
+      const sr = document.getElementById('io-out-stool-route')?.value||'';
+      if(sc && !sc.startsWith('—')) char = sc;
+      if(sr) char += (char?', ':'') + 'Route: ' + sr;
+    }
+ 
+    // Build entry
+    const entry = {
+      time,
+      direction: 'out',
+      type:      cleanLabel,
+      amount:    ml || 0,
+      note:      [char, note].filter(Boolean).join(' | '),
+      by:        'Student Nurse',
+    };
+    if(count){
+      entry.count    = count;
+      entry.countOnly= !ml;
+      entry.unit     = meta.stoolChar ? 'bowel movement(s)' : 'episode(s)';
+    }
+    if(char) entry.characteristic = char;
+ 
+    p.io.push(entry);
+    persist(); render();
+    toast(`Output added: ${cleanLabel}${ml ? ' — ' + ml + ' mL' : count ? ' — ' + count + 'x' : ''}`);
+  });
   document.getElementById('insert-note-template')?.addEventListener('click',()=>{const ta=document.getElementById('note-body');ta.value=`HCT Focused Progress Note\nPatient: ${p.lastName}, ${p.firstName} | Diagnosis: ${p.diagnosis}\n\nAssessment cues:\n- Neuro: ${p.assessment.neuro}\n- Respiratory: ${p.assessment.resp}\n- Cardiac/perfusion: ${p.assessment.cardiac}\n- Priority concern:\n\nInterventions completed:\n- \n\nPatient response / reassessment:\n- \n\nPlan / follow-up:\n- `;ta.focus();});
   document.getElementById('save-note')?.addEventListener('click',()=>{const body=val('note-body');if(!body)return toast('Note body required');p.notes.push({type:val('note-type'),time:val('note-time'),body,by:'Student Nurse'});persist();render();});
   document.querySelectorAll('[data-del-note]').forEach(b=>b.onclick=()=>{p.notes.splice(Number(b.dataset.delNote),1);persist();render();});
