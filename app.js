@@ -1895,7 +1895,7 @@ function rIO(){
       <div class="io-type-row">
         <div>
           <span class="input-label">Intake type</span>
-          <select id="io-in-type" onchange="hctIOUpdateIntakeFields(this.value)">
+          <select id="io-in-type">
             <option value="">— Select type —</option>
             ${groupOptions(INTAKE_TYPES)}
           </select>
@@ -1923,7 +1923,7 @@ function rIO(){
       <div class="io-type-row">
         <div>
           <span class="input-label">Output type</span>
-          <select id="io-out-type" onchange="hctIOUpdateOutputFields(this.value)">
+          <select id="io-out-type">
             <option value="">— Select type —</option>
             ${groupOptions(OUTPUT_TYPES)}
           </select>
@@ -2009,40 +2009,6 @@ function rIO(){
     }]))
   );
  
-  const clientJS = `
-    <script>
-    window._IO_OUTPUT_META = ${OUTPUT_META};
- 
-    window.hctIOUpdateIntakeFields = function(val){
-      const row = document.getElementById('io-in-fields');
-      row.style.display = val ? 'flex' : 'none';
-    };
- 
-    window.hctIOUpdateOutputFields = function(val){
-      const meta = window._IO_OUTPUT_META[val] || {};
-      function show(id, visible){ const el=document.getElementById(id); if(el) el.style.display=visible?'flex':'none'; }
- 
-      show('io-out-ml-row',     meta.mL || meta.countable);
-      show('io-out-count-row',  meta.count || meta.countable);
-      show('io-out-urine-row',  meta.urinChar);
-      show('io-out-emesis-row', meta.emesisChar);
-      show('io-out-stool-row',  meta.stoolChar);
- 
-      // Customise count label
-      const lbl = document.getElementById('io-out-count-label');
-      const unit = document.getElementById('io-out-count-unit');
-      if(lbl && unit){
-        if(meta.emesisChar){ lbl.textContent='Episodes:'; unit.textContent='times vomited'; }
-        else if(meta.stoolChar){ lbl.textContent='Episodes:'; unit.textContent='bowel movements'; }
-        else { lbl.textContent='Episodes:'; unit.textContent='times'; }
-      }
- 
-      // Pre-set stool route if specified in metadata
-      const routeSel = document.getElementById('io-out-stool-route');
-      if(routeSel && meta.stoolRoute) routeSel.value = meta.stoolRoute;
-    };
-    </script>`;
- 
   return `
     ${inlineStyles}
     ${metricRow}
@@ -2066,7 +2032,6 @@ function rIO(){
  
     ${section('Add I/O Entry', intakeForm + outputForm)}
  
-    ${clientJS}
   `;
 }
 document.querySelectorAll('[data-del-io]').forEach(b => {
@@ -2492,6 +2457,57 @@ function bindTabEvents(){
   document.querySelectorAll('[data-med-note]').forEach(i=>i.onchange=()=>{p.meds[Number(i.dataset.medNote)].note=i.value;persist();});
   document.querySelectorAll('[data-del-med]').forEach(b=>b.onclick=()=>{p.meds.splice(Number(b.dataset.delMed),1);persist();render();});
   document.getElementById('add-med')?.addEventListener('click',()=>{const name=val('med-name');if(!name)return toast('Medication required');p.meds.push({id:uid('med'),name,dose:val('med-dose'),route:val('med-route'),freq:val('med-freq'),priority:'Practice',status:'pending',time:'',note:'',warn:val('med-warn')});persist();render();});
+  // ── I/O dynamic field visibility ─────────────────────────────────────────
+  const IO_OUTPUT_META = {
+    urine_voided:    { mL:true,  urinChar:true },
+    urine_catheter:  { mL:true,  urinChar:true },
+    urine_straight:  { mL:true,  urinChar:true },
+    urine_ostomy:    { mL:true,  urinChar:true },
+    urine_condom_cath:{ mL:true, urinChar:true },
+    emesis:          { mL:true,  countable:true, emesisChar:true },
+    bm_toilet:       { count:true, stoolChar:true, stoolRoute:'toilet' },
+    bm_bedpan:       { count:true, stoolChar:true, stoolRoute:'bedpan' },
+    bm_diaper:       { count:true, stoolChar:true, stoolRoute:'diaper' },
+    bm_commode:      { count:true, stoolChar:true, stoolRoute:'commode' },
+    bm_colostomy:    { mL:true,  stoolChar:true, stoolRoute:'colostomy' },
+    bm_ileostomy:    { mL:true,  stoolChar:true, stoolRoute:'ileostomy' },
+    ng_drainage:     { mL:true }, jp_drain:        { mL:true },
+    chest_tube:      { mL:true }, wound_drain:     { mL:true },
+    biliary_drain:   { mL:true }, peritoneal_drain:{ mL:true },
+    lochia:          { mL:true }, amniotic_fluid:  { mL:true },
+    blood_loss:      { mL:true }, surgical_drain:  { mL:true },
+    lumbar_drain:    { mL:true }, sweat_insensible:{ mL:true },
+    dialysis_uf:     { mL:true },
+  };
+
+  function showEl(id, visible) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = visible ? 'flex' : 'none';
+  }
+
+  document.getElementById('io-in-type')?.addEventListener('change', function() {
+    showEl('io-in-fields', !!this.value);
+  });
+
+  document.getElementById('io-out-type')?.addEventListener('change', function() {
+    const meta = IO_OUTPUT_META[this.value] || {};
+    showEl('io-out-ml-row',     !!(meta.mL || meta.countable));
+    showEl('io-out-count-row',  !!(meta.count || meta.countable));
+    showEl('io-out-urine-row',  !!meta.urinChar);
+    showEl('io-out-emesis-row', !!meta.emesisChar);
+    showEl('io-out-stool-row',  !!meta.stoolChar);
+
+    const lbl  = document.getElementById('io-out-count-label');
+    const unit = document.getElementById('io-out-count-unit');
+    if (lbl && unit) {
+      if (meta.emesisChar) { lbl.textContent = 'Episodes:'; unit.textContent = 'times vomited'; }
+      else if (meta.stoolChar) { lbl.textContent = 'Episodes:'; unit.textContent = 'bowel movements'; }
+      else { lbl.textContent = 'Episodes:'; unit.textContent = 'times'; }
+    }
+
+    const routeSel = document.getElementById('io-out-stool-route');
+    if (routeSel && meta.stoolRoute) routeSel.value = meta.stoolRoute;
+  });
   document.getElementById('add-io-intake')?.addEventListener('click',()=>{
     const typeEl  = document.getElementById('io-in-type');
     const typeVal = typeEl?.value;
