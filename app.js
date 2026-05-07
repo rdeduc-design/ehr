@@ -120,7 +120,429 @@ const scenarios = [
     skills:['Neuro assessment','Antihypertensives','Fall prevention','Medication reconciliation'],
     patient:patientTemplate({id:'htn-default',scenarioId:'htn',firstName:'Aling',lastName:'Reyes',age:'74',sex:'Female',dob:'Jun 5',mrn:'884430',location:'Med-Surg Ward B6',diagnosis:'Hypertensive urgency with suspected hypertensive encephalopathy',acuity:'Urgent',allergies:'Sulfa drugs — rash',specialty:'Medical / Community',tags:['HTN','Fall risk','Neuro watch','HCT'],gestation:'N/A',chiefComplaint:'Severe headache, blurred vision, and dizziness',hpi:'2-day history of throbbing occipital headache and blurred vision. Ran out of amlodipine 5 days ago and did not refill. BP on triage 218/126 mmHg.',background:'Referred from barangay health center. No ECG changes on community 12-lead strip. Lives alone.',pastHistory:'Hypertension 15 years, type 2 diabetes mellitus, osteoarthritis bilateral knees.',social:'Retired schoolteacher. Lives alone. Daughter visits weekly. Medication adherence inconsistent due to cost and access.',familyContact:'Daughter Maria Reyes. Primary decision-maker.',objectives:['Prioritize neuro and cardiac assessment to rule out hypertensive emergency vs. urgency.','Safely administer antihypertensive and document BP response q15 minutes.','Identify fall risk factors and implement precautions.','Reconcile home medications and identify adherence gaps.','Plan discharge teaching addressing medication access and barangay health center follow-up.'],orders:[['Nursing','Neuro check q1h','GCS, pupil response, grip strength, speech clarity','Active'],['Nursing','BP both arms on admission, then q15 min x4, then q1h','Notify if SBP>220 or drops >25% in 1 hr','Active'],['Nursing','Fall precautions','Bed lowest, call light within reach, non-slip footwear','Active'],['Medication','Amlodipine 5 mg PO now','Resume home dose; max 25% reduction in first hour','Active'],['Medication','Captopril 25 mg SL once','For BP>200/120 before amlodipine takes effect; monitor for hypotension','PRN'],['Lab','CBC, CMP, BUN/Cr, urinalysis, 12-lead ECG','Assess for target organ damage','STAT'],['Imaging','CT head without contrast','If new neuro deficits develop','PRN']],labs:[['09:40','BP right arm','218/126 mmHg','<130/80','High','Hypertensive urgency threshold'],['09:45','BP left arm','214/122 mmHg','<130/80','High','Symmetric'],['09:50','Creatinine','1.4 mg/dL','0.5-1.1','High','Mild CKD'],['09:50','Glucose','148 mg/dL','70-110','High','Known DM2; not fasting'],['09:55','Urinalysis protein','2+','Negative/trace','High','Possible hypertensive nephropathy'],['10:00','12-lead ECG','LVH pattern, no ST changes','Normal','Abnormal','Consistent with chronic hypertension']],vitals:[{time:'09:35',hr:88,bps:218,bpd:126,rr:18,temp:'97.9',spo2:97,pain:'6',fetal:'N/A',note:'Occipital headache, blurred vision; alert x3',by:'Ward RN'}],meds:[['Amlodipine','5 mg','PO','Once (resume home)','Scheduled','pending','Goal: reduce MAP ≤25% in first hour.'],['Captopril','25 mg','Sublingual','Once PRN','PRN','pending','Hold if SBP<160 or symptomatic hypotension.'],['Aspirin','80 mg','PO','Daily (home dose)','Scheduled','pending','Resume only after BP controlled.']]})
   }
-];
+// ═══════════════════════════════════════════════════════════════════════════
+// HCT UbiSim Scenario Patch — 6 cases from UbiSim VR platform
+// Paste these entries inside the scenarios = [ ... ] array in app.js
+// Add a comma after the last existing scenario object, then paste this block
+// ═══════════════════════════════════════════════════════════════════════════
+
+  // ── UBISIM 1: VLAD KRONISKI — Crohn's Disease / Fluid & Electrolyte Imbalance ──
+  {
+    id: 'vlad_crohns', name: "Crohn's Disease: Fluid & Electrolyte Imbalance",
+    focus: 'Medical-Surgical / Emergency', level: 'Intermediate',
+    summary: "38-year-old male with 10-year Crohn's history presenting to ED with 8–10 liquid stools/day, hypokalemia (K 2.1), hypomagnesemia (Mg 1.5), dehydration, PVCs on EKG, and muscle weakness.",
+    skills: ['Electrolyte replacement', 'IV push safety', 'SBAR', 'EKG interpretation'],
+    patient: patientTemplate({
+      id: 'vlad-default', scenarioId: 'vlad_crohns',
+      firstName: 'Vlad', lastName: 'Kroniski', age: '38', sex: 'Male',
+      dob: 'Mar 6', mrn: '10-23481', location: 'Emergency Department — ED-07',
+      diagnosis: "Exacerbation of Crohn's Disease / Fluid & Electrolyte Imbalance / Iron Deficiency Anemia",
+      acuity: 'Urgent', allergies: 'NKA', specialty: 'ED / Medical-Surgical',
+      tags: ['Crohns', 'Electrolytes', 'HIGH-ALERT KCl', 'EKG-monitor', 'HCT'],
+      gestation: 'N/A',
+      chiefComplaint: '1-week bout of diarrhea, bloating, abdominal pain, nausea',
+      hpi: "Patient arrived at 1045 with a week-long bout of diarrhea (8–10 liquid/mucus stools/day), bloating, abdominal pain, and nausea. Returned from a 2-week family visit out of state. Self-placed on full liquid diet believing it was a Crohn's flare. Took OTC loperamide with minimal improvement. Past 3 days: extreme fatigue, weakness, loss of appetite, and new mouth sores. Referred to ED by gastroenterologist for workup.",
+      background: "10-year history of Crohn's Disease and iron deficiency anemia. Unable to take morning medications today due to nausea. Triage weight 54.5 kg — reported 4 lb loss. Triage vitals: T 101.2°F, HR 88 irregular, BP 94/60, RR 24, SpO2 92% RA. 12-lead EKG performed — shows occasional PVCs with wide QRS and prolonged QT. IV of 1 L 0.9% NaCl running at 150 mL/hr initiated by triage RN. Labs sent STAT.",
+      pastHistory: "Crohn's Disease (dx age 28), Iron Deficiency Anemia",
+      social: "Currently unemployed due to frequent Crohn's flare-related absenteeism. Single. Shares apartment with a friend. Recently started escitalopram for depression and anxiety. Smokes ½ ppd. Occasional marijuana and social alcohol use. Follows gluten-free, lactose-free diet to reduce cramping.",
+      familyContact: 'No family present in ED. Emergency contact on file.',
+      objectives: [
+        'Conduct a focused nursing assessment for electrolyte imbalances secondary to Crohn\'s Disease.',
+        'Identify abnormal findings: hypokalemia, hypomagnesemia, dehydration, PVCs, muscle weakness.',
+        'Prioritize and implement interventions for fluid and electrolyte imbalances.',
+        'Communicate the patient\'s condition to the provider using a clear, concise, structured SBAR format.',
+        'Administer IV metoclopramide, magnesium sulfate, and potassium chloride safely with required dual verification.'
+      ],
+      orders: [
+        ['Nursing', 'Admit to Emergency Department', 'Standard precautions', 'Active'],
+        ['IV Fluids', '0.9% NaCl IV continuous 150 mL/hr', 'Currently running; initiated by triage RN', 'Active'],
+        ['Medication', 'Metoclopramide 10 mg IV push NOW', 'Administer undiluted over 1–2 min; for nausea/vomiting', 'STAT'],
+        ['Nursing', 'Continuous 5-lead EKG and SpO2 monitoring', 'Required during KCl infusion', 'Active'],
+        ['Nursing', 'Vital signs every 1 hour and PRN', 'Notify for change in cardiac rhythm or hemodynamics', 'Active'],
+        ['Nursing', 'NPO', 'Nothing by mouth', 'Active'],
+        ['Nursing', 'OOB as tolerated', 'Fall risk — assess before ambulation', 'Active'],
+        ['Nursing', 'Monitor intake and output', 'Notify if output < 30 mL/hr', 'Active'],
+        ['Nursing', 'Capillary blood glucose PRN', 'Check for signs/symptoms of hypoglycemia only', 'Active'],
+        ['Diagnostic', '12-Lead EKG', 'Completed on arrival — see results', 'Complete'],
+        ['Respiratory', 'Titrate O2 to maintain SpO2 ≥ 92%', 'Apply NC if SpO2 drops below 88%', 'Active'],
+        ['Imaging', 'Chest X-Ray', 'Pending', 'Active'],
+        ['Labs', 'CBC, CMP, CRP, ESR, Vit D3, Vit B12, Magnesium — STAT', 'Completed by triage RN', 'Complete'],
+        ['NEW ORDER', 'Magnesium Sulfate 2 g in 0.9% NaCl 50 mL — IV infusion over 1 hr NOW', 'After provider notified of lab results', 'STAT'],
+        ['NEW ORDER', 'Potassium Chloride 10 mEq in 0.9% NaCl 100 mL — IV infusion over 1 hr STAT', 'HIGH-ALERT: dual verification required; continuous cardiac monitoring mandatory', 'STAT']
+      ],
+      labs: [
+        ['11:20', 'Potassium (K)', '2.1 mmol/L', '3.5–5.2 mmol/L', 'Critical', 'CRITICAL LOW — cardiac risk'],
+        ['11:20', 'Magnesium (Mg)', '1.5 mEq/L', '1.7–2.2 mEq/L', 'Low', 'Replace Mg before K to correct hypokalemia'],
+        ['11:20', 'Sodium (Na)', '132 mmol/L', '135–145 mmol/L', 'Low', 'Mild hyponatremia'],
+        ['11:20', 'WBC', '18.1 x10⁹/L', '5.0–10.0 x10⁹/L', 'High', 'Elevated — inflammatory process'],
+        ['11:20', 'Hemoglobin', '7 g/dL', '14–18 g/dL (M)', 'Critical', 'CRITICAL — known iron deficiency anemia'],
+        ['11:20', 'Hematocrit', '19%', '42–52% (M)', 'Critical', 'CRITICAL — hemoconcentration from dehydration'],
+        ['11:20', 'BUN', '33 mg/dL', '8–21 mg/dL', 'High', 'Elevated — dehydration'],
+        ['11:20', 'Creatinine', '1.02 mg/dL', '0.74–1.35 mg/dL', 'Normal', ''],
+        ['11:20', 'CRP', '3 mg/L', '< 1 mg/L', 'High', 'Elevated — active inflammation'],
+        ['11:20', 'Vitamin D3', '20 ng/mL', '30–100 ng/mL', 'Low', 'Supplementation indicated'],
+        ['11:15', '12-Lead EKG', 'Occasional PVCs, wide QRS, prolonged QT interval', 'Normal sinus rhythm', 'Critical', 'Consistent with hypokalemia — cardiac monitoring required']
+      ],
+      vitals: [{
+        time: '10:50', hr: 88, bps: 94, bpd: 60, rr: 24, temp: '101.2',
+        spo2: 92, pain: '5', fetal: 'N/A',
+        note: 'HR irregular on assessment. Muscle weakness noted bilaterally. Nauseous — emesis bag at bedside.',
+        by: 'Triage RN'
+      }],
+      meds: [
+        ['Metoclopramide', '10 mg (5 mg/mL)', 'IV push', 'NOW once', 'STAT', 'pending', 'Administer undiluted over 1–2 min. Antiemetic — dopamine antagonist. Monitor for tardive dyskinesia with prolonged use.'],
+        ['Magnesium Sulfate', '2 g in 0.9% NaCl 50 mL', 'IV infusion', 'Over 1 hr NOW', 'STAT', 'pending', 'NEW ORDER. Must correct Mg before K. Monitor DTRs and respiratory rate. Have calcium gluconate at bedside.'],
+        ['Potassium Chloride', '10 mEq in 0.9% NaCl 100 mL', 'IV infusion', 'Over 1 hr STAT', 'STAT', 'pending', 'HIGH-ALERT MEDICATION — dual verification required. Continuous cardiac monitoring mandatory during infusion. Max peripheral rate: 10 mEq/hr.'],
+        ['0.9% Sodium Chloride', '1 L', 'IV continuous', '150 mL/hr', 'Active', 'given', 'Initiated by triage RN at 1045.'],
+        ['Azathioprine', '100 mg', 'PO', 'Daily (home med)', 'Scheduled', 'hold', 'HELD — NPO, nausea. Resume when tolerating PO.'],
+        ['Infliximab', '120 mg', 'SQ', 'Every 2 weeks (home)', 'Scheduled', 'hold', 'HELD — biologic therapy. Coordinate with GI for next dose timing.'],
+        ['Escitalopram', '10 mg', 'PO', 'Daily (home med)', 'Scheduled', 'hold', 'HELD — NPO. Resume when tolerating PO.']
+      ]
+    })
+  },
+
+  // ── UBISIM 2: GRACE GREEN — Deep Vein Thrombosis ──
+  {
+    id: 'grace_dvt', name: 'Deep Vein Thrombosis',
+    focus: 'Orthopedic Clinic / Medical-Surgical', level: 'Intermediate',
+    summary: '43-year-old active female presenting to orthopedic clinic with 6-day history of left lower leg pain, swelling, and redness. DVT confirmed by duplex ultrasound. On OCP — high-risk combination.',
+    skills: ['Anticoagulation safety', 'Limb assessment', 'PE surveillance', 'Discharge teaching'],
+    patient: patientTemplate({
+      id: 'grace-default', scenarioId: 'grace_dvt',
+      firstName: 'Grace', lastName: 'Green', age: '43', sex: 'Female',
+      dob: 'Aug 12', mrn: '20-58312', location: 'Orthopedic Clinic — Room 3',
+      diagnosis: 'Left Lower Extremity Deep Vein Thrombosis (DVT)',
+      acuity: 'Urgent', allergies: 'NKA', specialty: 'Orthopedic Clinic / Ambulatory',
+      tags: ['DVT', 'HIGH-ALERT DOAC', 'PE risk', 'OCP', 'HCT'],
+      gestation: 'N/A',
+      chiefComplaint: 'Left lower leg pain, swelling, and redness for 6 days',
+      hpi: 'Grace Green presents to the orthopedic clinic with a 6-day history of left lower leg pain, swelling, and redness that began gradually. She returned home 5 days ago from a 2-week skiing trip in the Swiss Alps. She initially hoped symptoms were from an old ski injury but sought evaluation "to be safe." Left lower leg is erythematous and edematous on inspection.',
+      background: 'Duplex ultrasound completed on arrival per provider order. Provider is evaluating imaging — results available. Left leg circumference 43.1 cm vs. right 39.2 cm. Vital signs not yet obtained on current nursing encounter.',
+      pastHistory: 'Left ankle fracture 10 years ago (non-surgical, healed). No other chronic conditions.',
+      social: 'Marketing director. Married with 2 children (ages 9 and 7). Very active — skiing and hiking 3× weekly. High-stress job. Denies alcohol and illicit drugs.',
+      familyContact: 'Husband reachable by phone. Children at school.',
+      objectives: [
+        'Conduct a focused nursing assessment for a patient presenting with lower leg swelling, including leg circumference comparison.',
+        'Assess for signs and symptoms of pulmonary embolism — the primary life-threatening complication.',
+        'Review ultrasound results with the provider and obtain new orders.',
+        'Obtain pre-anticoagulation labs and assess for contraindications before administering rivaroxaban.',
+        'Provide patient-centered education on DVT diagnosis, anticoagulant therapy, warning signs of PE, and OCP discussion.'
+      ],
+      orders: [
+        ['Nursing', 'Review health history', 'Include DVT risk factors and medication review', 'Active'],
+        ['Nursing', 'Obtain vital signs and physical assessment', 'Include bilateral leg measurements and PE symptom screen', 'Active'],
+        ['Nursing', 'Pain management assessment', 'Acetaminophen 650 mg PO PRN per standing order', 'Active'],
+        ['Lab', 'CBC, PT/INR, PTT — obtain before anticoagulation', 'NEW ORDER — draw now before rivaroxaban', 'STAT'],
+        ['Nursing', 'Assess for contraindications to anticoagulation', 'Active bleeding, recent surgery, bleeding disorder, pregnancy', 'Active'],
+        ['Medication', 'Rivaroxaban 15 mg PO with food — NEW ORDER', 'HIGH-ALERT DOAC — dual verification required. Take with evening meal.', 'STAT'],
+        ['Nursing', 'Patient education: DVT, PE warning signs, activity, medication adherence', 'Provide written instructions before discharge', 'Active'],
+        ['Nursing', 'Notify provider for emergent changes in condition', 'Chest pain, SOB, tachycardia, decreased SpO2 — call immediately', 'Active']
+      ],
+      labs: [
+        ['16:20', 'Duplex Ultrasound — Left Leg', 'NON-COMPRESSIBLE left popliteal vein — DVT CONFIRMED', 'Normal venous compressibility', 'Critical', 'Result phoned to provider at 16:18'],
+        ['16:25', 'Left Leg Circumference', '43.1 cm', 'Equal to right leg', 'High', 'Right leg: 39.2 cm — 3.9 cm difference'],
+        ['16:30', 'PT', '12.5 sec', '11.2–13.2 sec', 'Normal', 'Pre-anticoagulation baseline'],
+        ['16:30', 'INR', '1.1', '1–2', 'Normal', 'Pre-anticoagulation baseline'],
+        ['16:30', 'PTT', '30 sec', '22.1–34.1 sec', 'Normal', 'Pre-anticoagulation baseline'],
+        ['16:30', 'CBC — WBC', '8.2 K/uL', '5.0–10.0', 'Normal', ''],
+        ['16:30', 'CBC — Hemoglobin', '13.8 g/dL', '12–16 g/dL (F)', 'Normal', ''],
+        ['16:30', 'CBC — Platelets', '210 K/uL', '150–400 K/uL', 'Normal', 'Adequate for anticoagulation']
+      ],
+      vitals: [{
+        time: '16:20', hr: 82, bps: 118, bpd: 72, rr: 16, temp: '37.1',
+        spo2: 98, pain: '5', fetal: 'N/A',
+        note: 'Left lower leg: erythematous, edematous, warm to touch. Pain 5/10. Heart and lung sounds normal. No signs of PE at this time.',
+        by: 'Clinic RN'
+      }],
+      meds: [
+        ['Rivaroxaban', '15 mg', 'PO with food', 'Daily × 21 days, then 20 mg daily', 'STAT', 'pending', 'HIGH-ALERT DOAC — dual verification required. Assess for contraindications FIRST. Take with evening meal to maximize absorption. Monitor for bleeding signs.'],
+        ['Acetaminophen', '650 mg', 'PO', 'PRN for pain', 'PRN', 'pending', 'Do NOT use NSAIDs (ibuprofen) — increased bleeding risk with anticoagulation.'],
+        ['Ethinyl Estradiol/Drospirenone (OCP)', 'Per home regimen', 'PO', 'Daily (home)', 'Scheduled', 'hold', 'HOLD — provider to counsel patient on OCP discontinuation given DVT + OCP = major DVT risk factor combination.']
+      ]
+    })
+  },
+
+  // ── UBISIM 3: MEREDITH WILLIAMS — Coronary Artery Disease Assessment ──
+  {
+    id: 'meredith_cad', name: 'Coronary Artery Disease: Assessment',
+    focus: 'Medical-Surgical / Telemetry', level: 'Beginner (Fundamentals)',
+    summary: '71-year-old female with CAD, stable angina, peripheral vascular disease, and a chronic arterial ulcer, admitted after chest pain during pickleball. Serial troponins negative. Scheduled for discharge today.',
+    skills: ['Cardiovascular assessment', 'SBAR', 'Nitroglycerin safety', 'PVD assessment'],
+    patient: patientTemplate({
+      id: 'meredith-default', scenarioId: 'meredith_cad',
+      firstName: 'Meredith', lastName: 'Williams', age: '71', sex: 'Female',
+      dob: 'May 27', mrn: '30-77215', location: 'Med-Surg/Telemetry Unit — 4B-12',
+      diagnosis: 'Stable Angina / Coronary Artery Disease / Peripheral Vascular Disease',
+      acuity: 'Stable', allergies: 'Penicillin (rash)', specialty: 'Med-Surg / Telemetry',
+      tags: ['CAD', 'Telemetry', 'Allergy:PCN', 'Discharge today', 'HCT'],
+      gestation: 'N/A',
+      chiefComplaint: 'New onset substernal chest pain during pickleball',
+      hpi: 'Mrs. Williams was admitted yesterday after new onset substernal chest pain that occurred during a morning pickleball game at her senior living facility. Chest pain was relieved after one dose of sublingual nitroglycerin in the ED. No further chest pain episodes during hospital stay. Troponins ×3 negative. Stress test negative. EKG and CXR within normal limits. Provider diagnosed stable angina. Anticipated discharge today with outpatient cardiology follow-up.',
+      background: 'History of hypertension, hyperlipidemia, CAD, and peripheral vascular disease. Allergic to penicillin. IV saline locked in left wrist — soft and patent. Night shift vitals 4 hours ago: HR 88, BP 132/80, RR 16, SpO2 97%, T 98.8°F. Had a restful night. Chronic arterial ulcer on dorsal right foot, open to air. Wound care nurse consulted.',
+      pastHistory: 'Hypertension, Hyperlipidemia, Coronary Artery Disease, Peripheral Vascular Disease, Chronic Arterial Ulcer (right dorsal foot)',
+      social: 'Lives in senior living facility. Previously enjoyed active lifestyle but now afraid to exercise due to fear of chest pain recurrence. Family visits weekly.',
+      familyContact: 'Family visits weekly. Contact information on file.',
+      objectives: [
+        'Conduct a complete physical assessment for a patient with CAD: general survey, skin, cardiovascular, respiratory, GI, and pain.',
+        'Identify abnormal assessment findings consistent with peripheral vascular disease: carotid bruits, 1+ pedal pulses, cold lower extremities, arterial ulcer.',
+        'Provide therapeutic communication and support regarding activity fear and discharge instructions.',
+        'Communicate assessment findings to the provider using SBAR.',
+        'Provide patient-centered education on stable angina, NTG use, cardiac diet, and outpatient follow-up.'
+      ],
+      orders: [
+        ['Nursing', 'Continuous 5-lead ECG telemetry + SpO2 monitoring', 'Per unit protocol', 'Active'],
+        ['Nursing', 'Vital signs every 4 hours and PRN', 'Call provider for changes in condition', 'Active'],
+        ['Diet', 'Cardiac diet', 'Low sodium, low saturated fat', 'Active'],
+        ['Activity', 'Regular activity as tolerated', 'Ambulate with assistance if needed', 'Active'],
+        ['Consult', 'Wound care nurse — arterial ulcer right foot', 'Expected this morning', 'Active'],
+        ['Medication', 'Metoprolol Succinate 100 mg PO daily', 'Beta-blocker; new medication (replaced losartan)', 'Active'],
+        ['Medication', 'Atorvastatin 80 mg PO daily', 'Statin; continue home dose', 'Active'],
+        ['Medication', 'Aspirin 81 mg PO daily', 'New addition for antiplatelet therapy', 'Active'],
+        ['Medication', 'Nitroglycerin 0.4 mg SL PRN', '1 tablet q5min × 3 for chest pain; notify provider if administered', 'PRN'],
+        ['Discharge', 'Discharge today if remains stable', 'Follow-up with outpatient cardiologist ordered', 'Active']
+      ],
+      labs: [
+        ['Yesterday', 'Serial Troponin ×3', '0.02 / 0.03 / 0.02 ng/mL', '< 0.04 ng/mL', 'Normal', 'Rule-out ACS — all negative'],
+        ['Yesterday', '12-Lead EKG', 'Normal sinus rhythm, rate 86 bpm, no ST elevation', 'Normal', 'Normal', 'Read by Dr. Thomas, cardiologist'],
+        ['Yesterday', 'Stress Test', 'NEGATIVE — no exercise-induced angina, no EKG changes', 'Negative (normal)', 'Normal', 'Negative stress test; exercised 12 min Bruce protocol'],
+        ['Yesterday', 'Chest X-Ray', 'Lungs and pleural spaces clear bilaterally; normal cardiomediastinal contour', 'Normal', 'Normal', 'Read by Dr. Gonzalez, radiologist'],
+        ['Yesterday', 'PT', '12.2 sec', '11.2–13.2 sec', 'Normal', ''],
+        ['Yesterday', 'INR', '1.5', '1–2', 'Normal', ''],
+        ['Yesterday', 'Glucose', '92 mg/dL', '70–99 mg/dL', 'Normal', ''],
+        ['Yesterday', 'Hemoglobin', '14 g/dL', '12–16 g/dL (F)', 'Normal', '']
+      ],
+      vitals: [{
+        time: '04:00', hr: 88, bps: 132, bpd: 80, rr: 16, temp: '98.8',
+        spo2: 97, pain: '0', fetal: 'N/A',
+        note: 'Night shift entry. Patient denies pain. Resting comfortably. IV saline lock left wrist patent.',
+        by: 'Night shift RN'
+      }],
+      meds: [
+        ['Metoprolol Succinate', '100 mg', 'PO', 'Daily', 'Scheduled', 'pending', 'Beta-blocker. New medication started this admission. Monitor HR and BP before administration.'],
+        ['Atorvastatin', '80 mg', 'PO', 'Daily', 'Scheduled', 'pending', 'HMG-CoA reductase inhibitor. Monitor for myopathy.'],
+        ['Aspirin', '81 mg', 'PO', 'Daily', 'Scheduled', 'pending', 'New antiplatelet therapy added this admission.'],
+        ['Nitroglycerin', '0.4 mg SL', 'Sublingual tablet', 'q5min × 3 PRN chest pain', 'PRN', 'pending', 'Hold if SBP < 90. CONTRAINDICATED with PDE5 inhibitors (sildenafil). Notify provider if administered.'],
+        ['Losartan', '50 mg PO daily', 'PO', 'Daily (home med)', 'Scheduled', 'hold', 'DISCONTINUED this admission — replaced by metoprolol succinate.']
+      ]
+    })
+  },
+
+  // ── UBISIM 4: MORGAN THERIN — Alzheimer's Disease: Safe Medication Administration ──
+  {
+    id: 'morgan_alzheimers', name: "Alzheimer's Disease: Safe Medication Administration",
+    focus: 'Medical-Surgical / Telemetry', level: 'Beginner (Fundamentals)',
+    summary: '68-year-old male with Alzheimer\'s disease admitted for failure to thrive secondary to medication non-compliance, dehydration, and weight loss. Agitated, occasional memory impairment. Environmental safety and medication administration are priority.',
+    skills: ['Safe med administration', 'Therapeutic communication', 'Environmental safety', 'Fall prevention'],
+    patient: patientTemplate({
+      id: 'morgan-default', scenarioId: 'morgan_alzheimers',
+      firstName: 'Morgan', lastName: 'Therin', age: '68', sex: 'Male',
+      dob: 'Mar 15', mrn: '40-33219', location: 'Med-Surg/Telemetry Unit — 4A-08',
+      diagnosis: "Failure to Thrive secondary to Alzheimer's Disease / Dehydration",
+      acuity: 'Stable', allergies: 'NKDA', specialty: 'Med-Surg / Geriatrics',
+      tags: ['Alzheimers', 'HIGH-ALERT Enoxaparin', 'Fall risk', 'Agitated', 'HCT'],
+      gestation: 'N/A',
+      chiefComplaint: 'Deteriorating living conditions, weight loss, medication non-compliance',
+      hpi: "Morgan Therin was admitted yesterday after his niece reported deteriorating living conditions, weight loss, decreased ADL performance, and suspected medication non-compliance due to impaired memory. Patient is currently irritable, stating 'This is ridiculous. I don't even know why I'm here.' Niece Ruby visits 2× weekly to organize his medications. Niece stated he seemed dehydrated and 'worse than before' on admission. Patient initially refused some morning medications stating he already took them at home.",
+      background: "Night shift vitals 4 hours ago: HR 98, BP 145/84, RR 18, SpO2 96%, T 98.9°F. Patient appears agitated with occasional memory impairment. IV saline locked in left forearm — IV fluids discontinued per provider order. Provider Dr. Lane recently seen patient and ordered enoxaparin SQ. Previous nurse discontinued IV fluids.",
+      pastHistory: "Alzheimer's Disease, Hypertension, Hyperlipidemia, Paroxysmal Atrial Fibrillation, COVID-19 ×2 (most recent 1 month ago — periodic SOB on exertion)",
+      social: "Widower — wife passed 13 years ago. Lives alone, no children. Niece Ruby visits 2× weekly for medication organization. Currently unable to consistently care for himself.",
+      familyContact: "Niece Ruby Therin — primary contact and caregiver. Phone number on file.",
+      objectives: [
+        'Identify and address environmental safety concerns: raise bilateral head-of-bed side rails, place call light within reach.',
+        'Use therapeutic communication and verbal cues to gain patient cooperation for medication administration.',
+        'Demonstrate safe medication administration using the rights of medication administration.',
+        'Correctly administer enoxaparin 40 mg SQ using proper subcutaneous injection technique.',
+        'Assess and document cardiovascular and respiratory systems, vital signs, and safety environment.'
+      ],
+      orders: [
+        ['Safety', 'Raise BOTH head-of-bed side rails immediately', 'Priority safety action on entering room', 'STAT'],
+        ['Safety', 'Place call light within reach before leaving', 'Review each visit', 'Active'],
+        ['Nursing', 'Vital signs every 4 hours and PRN', 'Notify for BP > 160/100 or changes in neuro status', 'Active'],
+        ['Diet', 'Cardiac diet', 'Low sodium, encourage adequate oral hydration', 'Active'],
+        ['Activity', 'Activity as tolerated', 'Fall precautions — assist with ambulation', 'Active'],
+        ['Monitoring', 'Continuous ECG monitoring', 'History of paroxysmal A-fib', 'Active'],
+        ['Medication', 'Enoxaparin 40 mg SQ daily', 'HIGH-ALERT LMWH — NEW ORDER. Dual verification required. Subcutaneous only.', 'STAT'],
+        ['Medication', 'Metoprolol Succinate 100 mg PO daily', 'Beta-blocker for HTN and A-fib rate control', 'Scheduled'],
+        ['Medication', 'Atorvastatin 80 mg PO daily', 'Statin — administer with evening meal', 'Scheduled'],
+        ['Medication', 'Donepezil 5 mg PO daily', "Cholinesterase inhibitor for Alzheimer's", 'Scheduled'],
+        ['IV Fluids', '0.9% NaCl continuous infusion', 'DISCONTINUED by provider — do not restart', 'Complete'],
+        ['Nursing', 'Call provider for changes in condition', 'Especially neuro status or cardiac rhythm changes', 'Active']
+      ],
+      labs: [
+        ['Yesterday', 'BUN', '33 mg/dL', '8–27 mg/dL', 'High', 'Elevated — dehydration'],
+        ['Yesterday', 'Creatinine', '1.5 mg/dL', '0.57–1.00 mg/dL', 'High', 'Mild AKI — monitor renal function; affects enoxaparin dosing'],
+        ['Yesterday', 'Sodium', '146 mmol/L', '134–144 mmol/L', 'High', 'Hypernatremia — dehydration'],
+        ['Yesterday', 'Potassium', '5.1 mmol/L', '3.5–5.2 mmol/L', 'Normal', 'Upper limit of normal'],
+        ['Yesterday', 'Glucose', '92 mg/dL', '70–99 mg/dL', 'Normal', ''],
+        ['Yesterday', 'Hematocrit', '56%', '42–52% (M)', 'High', 'Hemoconcentration from dehydration'],
+        ['Yesterday', 'Hemoglobin', '20 g/dL', '14–18 g/dL (M)', 'High', 'Hemoconcentration from dehydration'],
+        ['Yesterday', 'INR', '2.0', '1–2', 'Normal', 'Upper limit — on anticoagulation history'],
+        ['Yesterday', 'PTT', '32.1 sec', '22.1–34.1 sec', 'Normal', '']
+      ],
+      vitals: [{
+        time: '03:10', hr: 98, bps: 145, bpd: 84, rr: 18, temp: '98.9',
+        spo2: 96, pain: '0', fetal: 'N/A',
+        note: 'Night shift entry. Patient agitated, occasional memory impairment. Saline lock left forearm patent. IV fluids discontinued.',
+        by: 'Night shift RN'
+      }],
+      meds: [
+        ['Enoxaparin', '40 mg / 0.4 mL', 'Subcutaneous injection', 'Daily', 'STAT', 'pending', 'HIGH-ALERT LMWH — NEW ORDER. Dual verification required. SQ route ONLY (NOT IM). Inject into abdomen at 90°. Do not aspirate. Monitor renal function (Cr 1.5 — dose may require adjustment).'],
+        ['Metoprolol Succinate', '100 mg', 'PO', 'Daily', 'Scheduled', 'pending', 'Administer with water. Monitor HR and BP before giving. Patient may need encouragement to take medications.'],
+        ['Donepezil', '5 mg', 'PO', 'Daily (bedtime preferred)', 'Scheduled', 'pending', "Cholinesterase inhibitor for Alzheimer's. May cause nausea if given on empty stomach. Therapeutic: slows cognitive decline."],
+        ['Atorvastatin', '80 mg', 'PO', 'Daily (evening)', 'Scheduled', 'pending', 'Administer with evening meal for best absorption. Monitor for myopathy.'],
+        ['Cyanocobalamin (B12)', '1000 mcg', 'PO', 'Daily', 'Scheduled', 'pending', 'Vitamin B12 supplement for cognitive support.'],
+        ['Pyridoxine (B6)', '25 mg', 'PO', 'Daily', 'Scheduled', 'pending', ''],
+        ['Folic Acid', '400 mcg', 'PO', 'Daily', 'Scheduled', 'pending', ''],
+        ['Vitamin E', '450 mg', 'PO', 'Daily', 'Scheduled', 'pending', 'May slow Alzheimer\'s disease progression.'],
+        ['Apixaban 5 mg', 'Home dose', 'PO', 'BID (home med)', 'Scheduled', 'hold', 'HELD this admission — replaced by enoxaparin 40 mg SQ per provider order. Do not give both.'],
+        ['0.9% NaCl infusion', '—', 'IV', 'Continuous', 'Active', 'hold', 'DISCONTINUED by provider. Do not restart without new order.']
+      ]
+    })
+  },
+
+  // ── UBISIM 5: ELOISE JENNINGS — Type 2 Diabetes: Safe Medication Administration ──
+  {
+    id: 'eloise_diabetes', name: 'Type 2 Diabetes: Safe Medication Administration',
+    focus: 'Medical-Surgical', level: 'Beginner (Fundamentals)',
+    summary: '62-year-old female admitted 3 days ago for influenza and dehydration, improving for discharge. Morning blood glucose 216 mg/dL requires insulin sliding scale administration. Droplet precautions in effect.',
+    skills: ['Insulin safety', 'Sliding scale', 'Blood glucose monitoring', 'PPE (Droplet)'],
+    patient: patientTemplate({
+      id: 'eloise-default', scenarioId: 'eloise_diabetes',
+      firstName: 'Eloise', lastName: 'Jennings', age: '62', sex: 'Female',
+      dob: 'May 23', mrn: '50-41092', location: 'Medical-Surgical Unit — 3C-05',
+      diagnosis: 'Influenza / Dehydration / Type 2 Diabetes Mellitus (uncontrolled)',
+      acuity: 'Stable', allergies: 'NKA', specialty: 'Medical-Surgical',
+      tags: ['T2DM', 'HIGH-ALERT Insulin', 'Droplet precautions', 'Discharge today', 'HCT'],
+      gestation: 'N/A',
+      chiefComplaint: 'Influenza with dehydration, fever — admitted 3 days ago',
+      hpi: 'Eloise Jennings presented to the ED 3 days ago with dyspnea, myalgia, and fever of 101.8°F. Diagnosed with influenza and dehydration, admitted to medical-surgical unit. Condition has improved — scheduled for discharge this afternoon if remains stable. Due for morning medications. Breakfast tray arriving in approximately 30 minutes. Husband Earl will visit later today.',
+      background: "Diabetes poorly self-managed — only checks blood sugars 'when she feels like it.' A1c 7.8% on admission. Metformin discontinued on admission; provider prescribed regular insulin sliding scale for hospital stay. Last blood glucose checked at 2100 last night: 130 mg/dL — insulin held per sliding scale. IV saline lock left wrist, soft and patent.",
+      pastHistory: 'Type 2 Diabetes Mellitus (5 years, poorly controlled), Hypertension, Hyperlipidemia, Depression (no medication currently)',
+      social: 'Part-time florist. Married to Earl. Two adult children. Ex-smoker (½ ppd × 30 years, quit last year). Occasional glass of wine (1/week). Up-to-date vaccinations.',
+      familyContact: 'Husband Earl Jennings — primary support. Visiting later today.',
+      objectives: [
+        'Don appropriate PPE (mask) before entering room — droplet precautions in effect.',
+        'Perform focused physical assessment for type 2 diabetes patient with influenza.',
+        'Check capillary blood glucose and correctly identify the required insulin dose using the sliding scale.',
+        'Administer Regular Insulin 10 units SQ safely, following the rights of medication administration.',
+        'Communicate patient condition to provider using SBAR and provide diabetes discharge education.'
+      ],
+      orders: [
+        ['Precautions', 'Droplet + Standard Precautions', 'Mask required before entering room', 'Active'],
+        ['Nursing', 'Saline IV lock', 'Currently locked in left wrist', 'Active'],
+        ['Nursing', 'Vital signs every 4 hours and PRN', 'Notify for changes in condition', 'Active'],
+        ['Respiratory', 'O2 by nasal cannula if SpO2 < 92%', 'Titrate to 5 L/min; notify provider if < 92% on 4 L/min', 'Active'],
+        ['Diet', 'Diabetic diet', 'Low-glycemic; breakfast arriving in 30 min', 'Active'],
+        ['Nursing', 'Daily weight + Monitor I&O every 4 hours', '', 'Active'],
+        ['Lab', 'Capillary blood glucose: AC 0730/1200/1730, HS 2100, PRN for hypo/hyperglycemia symptoms', '', 'Active'],
+        ['Medication', 'Regular Insulin per sliding scale AC and HS', 'Check BG BEFORE administering; see scale below', 'Active'],
+        ['Medication', 'Follow hypoglycemia protocol for BG < 70 mg/dL', 'See MAR for protocol steps', 'Active'],
+        ['Medication', 'Lisinopril 40 mg PO daily', 'Antihypertensive', 'Scheduled'],
+        ['Medication', 'Atorvastatin 20 mg PO daily', 'Statin', 'Scheduled'],
+        ['Discharge', 'Discharge home today if stable', 'Provide diabetes education before discharge', 'Active'],
+        ['Notify', 'Provider: changes in condition or BG ≥ 200 mg/dL', '', 'Active']
+      ],
+      labs: [
+        ['05:30 today', 'Blood Glucose (CMP)', '216 mg/dL', '70–99 mg/dL', 'High', 'BG 241–300 → 10 units Regular Insulin per sliding scale'],
+        ['05:30 today', 'HbA1c (on admission)', '7.8%', '4.4–6.5%', 'High', 'Poor diabetes control — discharge education priority'],
+        ['05:30 today', 'BUN', '22 mg/dL', '8–27 mg/dL', 'Normal', ''],
+        ['05:30 today', 'Creatinine', '0.8 mg/dL', '0.57–1.00 mg/dL', 'Normal', ''],
+        ['05:30 today', 'Sodium', '136 mmol/L', '134–144 mmol/L', 'Normal', ''],
+        ['05:30 today', 'Potassium', '4.9 mmol/L', '3.5–5.2 mmol/L', 'Normal', '']
+      ],
+      vitals: [{
+        time: '03:00', hr: 92, bps: 138, bpd: 86, rr: 18, temp: '99.2',
+        spo2: 92, pain: '1', fetal: 'N/A',
+        note: 'Night shift entry. SpO2 92% on RA — borderline. No supplemental O2 applied. Patient sleeping comfortably. BP elevated — known hypertension.',
+        by: 'Night shift RN'
+      }],
+      meds: [
+        ['Regular Insulin (sliding scale)', '10 units', 'Subcutaneous', 'NOW — BG 216 mg/dL (scale: 241–300 → 10 units)', 'STAT', 'pending', 'HIGH-ALERT MEDICATION — dual verification required. CURRENT BG: 216 mg/dL (per 05:30 CMP — administer 8 units for 181–240 range; verify against bedside fingerstick before injecting). Inject SQ in abdomen. Have dextrose or glucagon available.'],
+        ['Lisinopril', '40 mg', 'PO', 'Daily', 'Scheduled', 'pending', 'Hold if SBP < 100 or patient symptomatic from hypotension. Monitor K (currently 4.9).'],
+        ['Atorvastatin', '20 mg', 'PO', 'Daily', 'Scheduled', 'pending', 'Administer with evening meal for best absorption.'],
+        ['Acetaminophen', '650 mg', 'PO', 'q4h PRN T > 101°F (38.3°C)', 'PRN', 'pending', 'Current T 99.2°F — does not meet threshold for acetaminophen.'],
+        ['Dextrose 50%', '50 mL (25 g)', 'IV push (slow)', 'PRN — hypoglycemia with IV access', 'PRN', 'pending', 'Hypoglycemia protocol: BG < 70 mg/dL with IV access available.'],
+        ['Glucagon', '1 mg', 'Subcutaneous or IM', 'PRN — hypoglycemia without IV access', 'PRN', 'pending', 'Give if BG < 70 and unable to take PO and no IV access.'],
+        ['Glucose Tablets (3)', '15 g carbohydrate', 'PO', 'PRN — BG < 70 mg/dL + can take PO', 'PRN', 'pending', 'Hypoglycemia protocol: recheck BG in 15 min. Repeat if still < 70.'],
+        ['Metformin', '1000 mg PO daily', 'PO', 'Home dose', 'Scheduled', 'hold', 'DISCONTINUED on admission — resumed on discharge. Held during acute illness and contrast studies.']
+      ]
+    })
+  },
+
+  // ── UBISIM 6: STACEY JONES — Post-Op Pain Management ──
+  {
+    id: 'stacey_postop', name: 'Post-Op Pain Management',
+    focus: 'Surgical Observation / Medical-Surgical', level: 'Beginner (Fundamentals)',
+    summary: '39-year-old female, post-vaginal hysterectomy POD-0 at 1900, pain 9/10. Hemoglobin slightly low at 11 g/dL (expected post-surgical). Opioid administration safety, incentive spirometry, and non-pharmacologic comfort measures.',
+    skills: ['Post-op assessment', 'Opioid safety', 'Pain scale', 'Incentive spirometry'],
+    patient: patientTemplate({
+      id: 'stacey-default', scenarioId: 'stacey_postop',
+      firstName: 'Stacey', lastName: 'Jones', age: '39', sex: 'Female',
+      dob: 'Aug 29', mrn: '60-92817', location: 'Surgical Observation Unit — SOU-11',
+      diagnosis: 'Status Post Vaginal Hysterectomy (uterine fibroids) — Post-Op Day 0',
+      acuity: 'Stable', allergies: 'NKA', specialty: 'Surgical Observation',
+      tags: ['Post-op', 'HIGH-ALERT Opioid', 'Pain mgmt', 'POD-0', 'HCT'],
+      gestation: 'S/P vaginal hysterectomy today at 1200',
+      chiefComplaint: 'Post-operative pain 9/10 at surgical site',
+      hpi: 'Stacey Jones underwent vaginal hysterectomy at 1200 today for recurrent uterine fibroids unresponsive to prior medical management (including transcervical radiofrequency ablation last year which provided 1-year relief). Surgery uncomplicated — estimated blood loss 50 mL. Transferred from PACU to Surgical Observation Unit at 1500 for 23-hour observation. Scheduled discharge tomorrow afternoon. Now at 1900 — patient ambulated to bathroom and voided 350 mL clear yellow urine, tolerating PO (full liquids + crackers), but reports pain 9/10.',
+      background: 'In PACU at 1300: received morphine sulfate 3 mg IV push ×1 for pain 8/10 — good effect (morphine now discontinued). IV saline lock left arm, soft and patent. Vaginal site assessed by surgeon 1 hour ago — no swelling or discharge. Has been sleeping most of afternoon. Husband and 2 teenage sons at home.',
+      pastHistory: 'Hypertension (8 years), Vitamin D Deficiency, Uterine Fibroids (5 years, recurrent)',
+      social: 'Financial planner. Married, 2 sons ages 13 and 14. Denies alcohol and tobacco. Occasional marijuana use.',
+      familyContact: 'Husband at home with children. Phone number on file.',
+      objectives: [
+        'Conduct a focused post-operative nursing assessment: pain, vital signs, surgical site, respiratory status, bowel sounds, urine output.',
+        'Identify the correct pain medication from the PRN order based on the patient\'s pain level of 9/10.',
+        'Administer hydrocodone/acetaminophen 10/325 mg PO safely using the rights of medication administration.',
+        'Provide non-pharmacologic pain management measures and incentive spirometry education.',
+        'Teach post-operative expectations, discharge planning, and when to call provider after discharge.'
+      ],
+      orders: [
+        ['Nursing', 'Normal saline IV lock', 'Left arm, soft and patent', 'Active'],
+        ['Nursing', 'Vital signs with SpO2 every 4 hours and PRN', 'Call provider for changes in condition', 'Active'],
+        ['Diet', 'Clear liquids, advance as tolerated', 'Patient currently tolerating PO — full liquids', 'Active'],
+        ['Activity', 'Up with assistance — POD 0', 'Fall risk post-anesthesia', 'Active'],
+        ['Nursing', 'Encourage coughing and deep breathing', '', 'Active'],
+        ['Respiratory', 'Apply/titrate O2 PRN to maintain SpO2 > 92%', '', 'Active'],
+        ['Respiratory', 'Incentive Spirometer × 10 every 1 hour while awake', 'Prevent atelectasis post-anesthesia', 'Active'],
+        ['Medication', 'Hydrocodone/APAP 10/325 mg PO q6h PRN for pain 7–10', 'HIGH-ALERT opioid — dual verification recommended. Assess RR and sedation.', 'PRN'],
+        ['Medication', 'Hydrocodone/APAP 5/325 mg PO q6h PRN for pain 5–7', '', 'PRN'],
+        ['Medication', 'Ibuprofen 800 mg PO q6h PRN for pain 1–4', 'Take with food', 'PRN'],
+        ['Medication', 'Amlodipine 5 mg PO daily', 'RESUME tomorrow (POD 1)', 'Scheduled'],
+        ['Medication', 'HCTZ 25 mg PO daily', 'RESUME tomorrow (POD 1)', 'Scheduled'],
+        ['Medication', 'Docusate Sodium 100 mg PO daily', 'START tomorrow (POD 1) — opioid-induced constipation prevention', 'Scheduled'],
+        ['Medication', 'Morphine Sulfate 3 mg IV push', 'ONE-TIME dose given at 1300 in PACU — DISCONTINUED', 'Complete']
+      ],
+      labs: [
+        ['Pre-op today', 'Hemoglobin', '11 g/dL', '12–16 g/dL (F)', 'Low', 'Slightly below normal — expected post-surgical. Monitor. Pre-op 11.4.'],
+        ['Pre-op today', 'Hematocrit', '36%', '37–47% (F)', 'Low', 'Borderline — expected. EBL only 50 mL intraop.'],
+        ['Pre-op today', 'Glucose', '98 mg/dL', '70–99 mg/dL', 'Normal', ''],
+        ['Pre-op today', 'BUN', '21 mg/dL', '8–27 mg/dL', 'Normal', ''],
+        ['Pre-op today', 'Creatinine', '0.8 mg/dL', '0.57–1.00 mg/dL', 'Normal', ''],
+        ['Pre-op today', 'WBC', '8.5 K/uL', '5.0–10.0 K/uL', 'Normal', ''],
+        ['Pre-op today', 'Platelets', '238 K/uL', '150–400 K/uL', 'Normal', '']
+      ],
+      vitals: [{
+        time: '18:00', hr: 88, bps: 138, bpd: 78, rr: 18, temp: '98.8',
+        spo2: 96, pain: '9', fetal: 'S/P hysterectomy',
+        note: 'Day shift vitals 1 hour ago. Patient sleeping most of afternoon. Just ambulated to bathroom — good effort. Voided 350 mL clear yellow. Reports pain 9/10 at lower abdominal incision site — requesting pain medication.',
+        by: 'Day shift RN'
+      }],
+      meds: [
+        ['Hydrocodone/Acetaminophen', '10 mg / 325 mg', 'PO tablet', 'q6h PRN pain 7–10', 'PRN', 'pending', 'HIGH-ALERT opioid. CURRENT PAIN: 9/10 — this dose is appropriate per order. Assess RR (must be ≥ 10) and sedation level before administering. Document pain score before and reassess in 30–60 min. Last morphine was at 1300 (6 hrs ago — safe to give opioid).'],
+        ['Hydrocodone/Acetaminophen', '5 mg / 325 mg', 'PO tablet', 'q6h PRN pain 5–7', 'PRN', 'pending', 'Do NOT give if RR < 10 or excessive sedation. Use for pain 5–7.'],
+        ['Ibuprofen', '800 mg', 'PO', 'q6h PRN pain 1–4', 'PRN', 'pending', 'Take with food. For mild pain only. Avoid if significant bleeding or renal concerns.'],
+        ['Amlodipine', '5 mg', 'PO', 'Daily (RESUME tomorrow POD 1)', 'Scheduled', 'hold', 'Held today. Resume with morning medications POD 1.'],
+        ['Hydrochlorothiazide', '25 mg', 'PO', 'Daily (RESUME tomorrow POD 1)', 'Scheduled', 'hold', 'Held today. Resume with morning medications POD 1.'],
+        ['Docusate Sodium', '100 mg', 'PO', 'Daily (START tomorrow POD 1)', 'Scheduled', 'hold', 'Start tomorrow to prevent opioid-induced constipation.'],
+        ['Vitamin D Supplement', 'Per home dose', 'PO', 'Daily (home)', 'Scheduled', 'pending', 'Resume home dose.'],
+        ['Morphine Sulfate', '3 mg', 'IV push', '×1 at 1300 — PACU (DISCONTINUED)', 'Scheduled', 'hold', 'ONE-TIME dose given in PACU. DISCONTINUED. Do not re-administer without new order.']
+      ]
+    })
+  }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// END OF UBISIM PATCH
+// ═══════════════════════════════════════════════════════════════════════════];
 
 function patientTemplate(input) {
   return {
