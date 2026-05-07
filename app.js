@@ -4,10 +4,18 @@ const LOGO_NAVY = 'data:image/png;base64,/9j/4AAQSkZJRgABAgAAAQABAAD/wAARCAGkAaQ
 
 // ── CLINICAL DECISION RULES ───────────────────────────────────────────────
 const VITAL_RULES = [
-  { key:'hr',  lo:60,  hi:100, msg:'Heart rate is outside normal range (60–100 bpm). Assess rhythm and perfusion. Notify provider per policy.' },
-  { key:'bps', lo:90,  hi:180, msg:'Systolic BP is outside normal range (90–180 mmHg). Assess symptoms. Verify cuff size and position.' },
-  { key:'rr',  lo:12,  hi:20,  msg:'Respiratory rate is outside normal range (12–20 breaths/min). Assess work of breathing and oxygen status.' },
-  { key:'spo2',lo:95,  hi:100, msg:'SpO2 is below 95%. Apply supplemental oxygen and reassess immediately. Notify provider.' },
+  { key:'hr',   lo:60,  hi:100, label:'Heart Rate',          unit:'bpm',
+    msg:'Heart rate is outside normal range (60–100 bpm). Assess rhythm and perfusion. Notify provider per policy.' },
+  { key:'bps',  lo:90,  hi:140, label:'Systolic BP',         unit:'mmHg',
+    msg:'Systolic BP is outside normal range (90–140 mmHg). Assess symptoms. Verify cuff size and position.' },
+  { key:'bpd',  lo:60,  hi:90,  label:'Diastolic BP',        unit:'mmHg',
+    msg:'Diastolic BP is outside normal range (60–90 mmHg). Wide pulse pressure may indicate increased cardiac output or aortic regurgitation. Narrow pulse pressure may indicate cardiac tamponade or severe heart failure.' },
+  { key:'rr',   lo:12,  hi:20,  label:'Respiratory Rate',    unit:'breaths/min',
+    msg:'Respiratory rate is outside normal range (12–20 breaths/min). Assess work of breathing, accessory muscle use, and oxygen status.' },
+  { key:'spo2', lo:95,  hi:100, label:'SpO\u2082',           unit:'%',
+    msg:'SpO\u2082 is below 95%. Apply supplemental oxygen and reassess immediately. Notify provider.' },
+  { key:'tempc',lo:36.1,hi:37.9,label:'Temperature',         unit:'°C',
+    msg:'Temperature is outside normal range (36.1–37.9 °C). Below 36.0 °C = hypothermia; above 38.0 °C = fever. Assess for infection, environmental causes, and treat per protocol.' },
 ];
 const ALLERGY_PAIRS = [
   { allergen:'penicillin', drugs:['amoxicillin','ampicillin','piperacillin','cephalexin','ceftriaxone'] },
@@ -871,10 +879,136 @@ function rLabs(){
 }
 
 function rVitals(){
-  const p=currentPatient();const last=p.vitals[p.vitals.length-1]||{};
-  const lastAlerts=renderVitalAlerts(last);
-  const rows=p.vitals.map((v,i)=>`<tr><td>${esc(v.time)}</td><td>${esc(v.hr)}</td><td>${esc(v.bps)}/${esc(v.bpd)}</td><td>${esc(v.rr)}</td><td>${esc(v.temp)}</td><td>${esc(v.spo2)}%</td><td>${esc(v.pain)}</td><td>${esc(v.fetal)}</td><td>${esc(v.note)}</td><td><button class="btn small danger" data-del-vital="${i}">Delete</button></td></tr>`).join('');
-  return`<div class="metric-row"><div class="metric"><div class="num">${esc(last.hr||'--')}</div><div class="lbl">HR</div></div><div class="metric"><div class="num">${esc(last.bps||'--')}/${esc(last.bpd||'--')}</div><div class="lbl">BP</div></div><div class="metric"><div class="num">${esc(last.rr||'--')}</div><div class="lbl">RR</div></div><div class="metric"><div class="num">${esc(last.spo2||'--')}%</div><div class="lbl">SpO2</div></div></div>${lastAlerts?section('⚠ Clinical decision alerts',lastAlerts):''} ${section('Vital trend',`<svg class="vital-chart" viewBox="0 0 760 200">${vitalSvg(p.vitals)}</svg><div class="vital-legend"><span class="vl-hr">■ HR</span><span class="vl-bp">■ SBP</span><span class="vl-spo2">■ SpO2</span></div>`)}${section('Flowsheet',table(['Time','HR','BP','RR','Temp','SpO2','Pain','Specialty','Note',''],rows))}${section('Add vital signs',`<div class="form-grid"><input id="vt-time" type="time" value="${nowTime()}"><input id="vt-hr" type="number" placeholder="HR"><input id="vt-bps" type="number" placeholder="SBP"><input id="vt-bpd" type="number" placeholder="DBP"><input id="vt-rr" type="number" placeholder="RR"><input id="vt-temp" placeholder="Temp F"><input id="vt-spo2" type="number" placeholder="SpO2"><input id="vt-pain" placeholder="Pain"></div><div class="form-row"><label>Specialty / note</label><div class="grid-2"><input id="vt-fetal" placeholder="FHR, peak flow, neuro, or N/A"><input id="vt-note" placeholder="Response or cue"></div></div><div class="actions"><button class="btn primary" id="add-vital">Add vital signs</button></div>`)}`;
+  const p = currentPatient();
+  const last = p.vitals[p.vitals.length - 1] || {};
+ 
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function fToC(f){
+    const n = parseFloat(f);
+    return isNaN(n) ? null : Math.round((n - 32) * 5/9 * 10) / 10;
+  }
+  function displayC(v){
+    const c = fToC(v);
+    return c !== null ? c.toFixed(1) + ' °C' : '--';
+  }
+ 
+  // ── Build alert set from last vitals ──────────────────────────────────────
+  function vitalAlertsFull(vital){
+    if(!vital || !Object.keys(vital).length) return [];
+    const check = {
+      hr:    Number(vital.hr),
+      bps:   Number(vital.bps),
+      bpd:   Number(vital.bpd),
+      rr:    Number(vital.rr),
+      spo2:  Number(vital.spo2),
+      tempc: fToC(vital.temp),
+    };
+    return VITAL_RULES
+      .filter(r => {
+        const v = check[r.key];
+        return v !== null && !isNaN(v) && (v < r.lo || v > r.hi);
+      })
+      .map(r => ({
+        label: r.label,
+        value: r.key === 'tempc'
+          ? (check.tempc !== null ? check.tempc.toFixed(1) + ' °C' : '--')
+          : (check[r.key] + ' ' + r.unit),
+        msg: r.msg,
+        critical: r.key === 'spo2' || r.key === 'hr' || r.key === 'bps',
+      }));
+  }
+ 
+  const alerts = vitalAlertsFull(last);
+  const alertHTML = alerts.length
+    ? alerts.map(a => `
+        <div class="notice ${a.critical ? 'danger' : 'warning'}" style="margin-bottom:6px;">
+          <span class="mark">⚠ ${esc(a.label)}: ${esc(a.value)}</span>
+          <span>${esc(a.msg)}</span>
+        </div>`).join('')
+    : '';
+ 
+  // ── Metric tiles ──────────────────────────────────────────────────────────
+  const tempC = fToC(last.temp);
+  const tempOk = tempC !== null && tempC >= 36.1 && tempC <= 37.9;
+  const tempColor = tempC !== null && !tempOk ? 'color:var(--danger);' : '';
+ 
+  const metricTiles = `
+    <div class="metric"><div class="num">${esc(last.hr || '--')}</div><div class="lbl">HR (bpm)</div></div>
+    <div class="metric"><div class="num">${esc(last.bps || '--')}/${esc(last.bpd || '--')}</div><div class="lbl">BP (mmHg)</div></div>
+    <div class="metric"><div class="num">${esc(last.rr || '--')}</div><div class="lbl">RR (br/min)</div></div>
+    <div class="metric"><div class="num">${esc(last.spo2 || '--')}%</div><div class="lbl">SpO₂</div></div>
+    <div class="metric"><div class="num" style="${tempColor}">${tempC !== null ? tempC.toFixed(1) : '--'} °C</div><div class="lbl">Temp (°C)</div></div>
+    <div class="metric"><div class="num">${esc(last.pain || '--')}</div><div class="lbl">Pain (0–10)</div></div>
+  `;
+ 
+  // ── Flowsheet rows ────────────────────────────────────────────────────────
+  const rows = p.vitals.map((v, i) => {
+    const tc = fToC(v.temp);
+    return `<tr>
+      <td>${esc(v.time)}</td>
+      <td>${esc(v.hr)}</td>
+      <td>${esc(v.bps)}/${esc(v.bpd)}</td>
+      <td>${esc(v.rr)}</td>
+      <td>${esc(v.spo2)}%</td>
+      <td>${tc !== null ? tc.toFixed(1) + ' °C' : '--'}</td>
+      <td>${esc(v.pain)}</td>
+      <td>${esc(v.fetal)}</td>
+      <td style="font-size:11px;color:var(--muted);">${esc(v.note)}</td>
+      <td><button class="btn small danger" data-del-vital="${i}">Delete</button></td>
+    </tr>`;
+  }).join('');
+ 
+  // ── Legend items for the expanded chart ───────────────────────────────────
+  const chartLegend = `
+    <div class="vital-legend">
+      <span class="vl-hr">■ HR</span>
+      <span class="vl-bp">■ SBP</span>
+      <span class="vl-dbp">■ DBP</span>
+      <span class="vl-rr">■ RR</span>
+      <span class="vl-temp">■ Temp °C</span>
+      <span class="vl-spo2">■ SpO₂ %</span>
+    </div>`;
+ 
+  return `
+    <div class="metric-row" style="grid-template-columns:repeat(6,minmax(100px,1fr));">
+      ${metricTiles}
+    </div>
+ 
+    ${alerts.length ? section('⚠ Clinical decision alerts', alertHTML) : ''}
+ 
+    ${section('Vital trend — 6-parameter chart', `
+      <svg class="vital-chart" viewBox="0 0 760 260" style="height:240px;">${vitalSvg(p.vitals)}</svg>
+      ${chartLegend}
+    `)}
+ 
+    ${section('Flowsheet', table(
+      ['Time','HR','BP','RR','SpO₂','Temp','Pain','Specialty','Note',''],
+      rows
+    ))}
+ 
+    ${section('Add vital signs', `
+      <div class="form-grid">
+        <input id="vt-time" type="time" value="${nowTime()}">
+        <input id="vt-hr"   type="number" placeholder="HR (bpm)">
+        <input id="vt-bps"  type="number" placeholder="SBP (mmHg)">
+        <input id="vt-bpd"  type="number" placeholder="DBP (mmHg)">
+        <input id="vt-rr"   type="number" placeholder="RR (br/min)">
+        <input id="vt-temp" placeholder="Temp — enter °C (e.g. 37.2)">
+        <input id="vt-spo2" type="number" placeholder="SpO₂ (%)">
+        <input id="vt-pain" placeholder="Pain (0–10)">
+      </div>
+      <div class="form-row">
+        <label>Specialty / note</label>
+        <div class="grid-2">
+          <input id="vt-fetal" placeholder="FHR, peak flow, neuro, or N/A">
+          <input id="vt-note"  placeholder="Patient response or cue">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="add-vital">Add vital signs</button>
+      </div>
+    `)}
+  `;
 }
 
 function rAssessment(){const a=currentPatient().assessment;const inp=(k,ph='')=>`<input id="as-${k}" value="${esc(a[k]||'')}" placeholder="${esc(ph)}">`;return section('Focused assessment template',`<div class="form-row"><label>Neuro</label>${inp('neuro')}</div><div class="form-row"><label>Respiratory</label>${inp('resp')}</div><div class="form-row"><label>Cardiac / perfusion</label>${inp('cardiac')}</div><div class="form-row"><label>GI</label>${inp('gi')}</div><div class="form-row"><label>GU / output</label>${inp('gu')}</div><div class="form-row"><label>Skin / hydration</label>${inp('skin')}</div><div class="form-row"><label>Safety</label>${inp('safety')}</div><div class="form-row"><label>Pain</label>${inp('pain')}</div><div class="form-row"><label>Specialty cues</label>${inp('specialty','FHR, fundus, peak flow, neuro checks, etc.')}</div><div class="form-row"><label>Psychosocial</label>${inp('psychosocial')}</div><div class="form-row"><label>Narrative</label><textarea id="as-narrative">${esc(a.narrative||'')}</textarea></div><div class="actions"><button class="btn primary" id="save-assessment">Save assessment</button></div>`);}
@@ -1115,16 +1249,120 @@ function rStatusBoard(){
 
 function table(headers,rows){return`<div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`;}
 function vitalSvg(vitals){
-  if(!vitals.length)return'<text x="380" y="92" text-anchor="middle" fill="#8b98aa" font-size="13">No vital signs charted</text>';
-  const px=42,py=22,w=690,h=140;
-  const vals=vitals.flatMap(v=>[Number(v.hr)||0,Number(v.bps)||0,Number(v.spo2)||0]).filter(Boolean);
-  const lo=Math.min(50,...vals)-5,hi=Math.max(140,...vals)+5;
-  const x=i=>vitals.length===1?px+w/2:px+i*(w/(vitals.length-1));
-  const y=v=>py+h-((Number(v)-lo)/(hi-lo))*h;
-  const path=k=>vitals.map((v,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(v[k]).toFixed(1)}`).join(' ');
-  const dots=(k,c)=>vitals.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v[k])}" r="3.5" fill="${c}"></circle>`).join('');
-  const labels=vitals.map((v,i)=>`<text x="${x(i)}" y="${py+h+18}" text-anchor="middle" fill="#8b98aa" font-size="10">${esc(v.time)}</text>`).join('');
-  return`<line x1="${px}" y1="${py+h}" x2="${px+w}" y2="${py+h}" stroke="rgba(23,41,70,0.18)"></line><path d="${path('hr')}" fill="none" stroke="#a33131" stroke-width="2"></path>${dots('hr','#a33131')}<path d="${path('bps')}" fill="none" stroke="#175f9e" stroke-width="2"></path>${dots('bps','#175f9e')}<path d="${path('spo2')}" fill="none" stroke="#13848a" stroke-width="2" stroke-dasharray="5,3"></path>${dots('spo2','#43c0c4')}${labels}`;
+  if(!vitals.length) return '<text x="380" y="120" text-anchor="middle" fill="#8b98aa" font-size="13">No vital signs charted yet</text>';
+ 
+  // ── helpers ───────────────────────────────────────────────────────────────
+  function fToC(f){ const n=parseFloat(f); return isNaN(n)?null:Math.round((n-32)*5/9*10)/10; }
+ 
+  const PAD_L=52, PAD_R=20, PAD_T=24, PAD_B=48;
+  const W=760-PAD_L-PAD_R;   // 688
+  const H=260-PAD_T-PAD_B;   // 188
+ 
+  const n = vitals.length;
+  const xOf = i => n===1 ? PAD_L+W/2 : PAD_L + i*(W/(n-1));
+ 
+  // Collect all finite values for auto-scaling
+  function finiteVals(arr){ return arr.filter(v=>v!==null&&!isNaN(v)&&isFinite(v)); }
+ 
+  const allHR   = vitals.map(v=>Number(v.hr));
+  const allSBP  = vitals.map(v=>Number(v.bps));
+  const allDBP  = vitals.map(v=>Number(v.bpd));
+  const allRR   = vitals.map(v=>Number(v.rr));
+  const allSPO2 = vitals.map(v=>Number(v.spo2));
+  const allTemp = vitals.map(v=>fToC(v.temp));
+ 
+  // Each series plotted on its own Y scale so all fit visibly
+  function makeScale(values, fixedLo, fixedHi){
+    const valid = finiteVals(values);
+    if(!valid.length) return {lo:0,hi:1};
+    const lo = fixedLo !== undefined ? fixedLo : Math.min(...valid) - 5;
+    const hi = fixedHi !== undefined ? fixedHi : Math.max(...valid) + 5;
+    return {lo, hi: hi===lo ? hi+1 : hi};
+  }
+ 
+  const scHR   = makeScale(allHR,   40,  200);
+  const scSBP  = makeScale(allSBP,  60,  220);
+  const scDBP  = makeScale(allDBP,  30,  130);
+  const scRR   = makeScale(allRR,   8,   40);
+  const scSPO2 = makeScale(allSPO2, 80,  102);
+  const scTemp = makeScale(allTemp, 34.5,41.0);
+ 
+  function yOf(val, sc){
+    if(val===null||isNaN(val)||!isFinite(val)) return null;
+    return PAD_T + H - ((val - sc.lo)/(sc.hi - sc.lo))*H;
+  }
+ 
+  // Build SVG polyline path from a value array + scale
+  function polyline(values, sc, color, dashed=false, dotColor=null){
+    const pts = values.map((v,i)=>{
+      const yv = yOf(v, sc);
+      if(yv===null) return null;
+      return {x: xOf(i), y: yv};
+    }).filter(Boolean);
+ 
+    if(pts.length < 1) return '';
+ 
+    const d = pts.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const dash = dashed ? `stroke-dasharray="5,3"` : '';
+    const line = pts.length>1
+      ? `<path d="${d}" fill="none" stroke="${color}" stroke-width="2" ${dash} opacity="0.9"></path>`
+      : '';
+    const dots = pts.map(p=>
+      `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="${dotColor||color}"></circle>`
+    ).join('');
+    return line + dots;
+  }
+ 
+  // ── Grid lines ─────────────────────────────────────────────────────────────
+  const gridLines = [0, 0.25, 0.5, 0.75, 1].map(frac => {
+    const gy = (PAD_T + H - frac*H).toFixed(1);
+    return `<line x1="${PAD_L}" y1="${gy}" x2="${PAD_L+W}" y2="${gy}" stroke="rgba(23,41,70,0.10)" stroke-width="1"></line>`;
+  }).join('');
+ 
+  // ── Time labels ────────────────────────────────────────────────────────────
+  const timeLabels = vitals.map((v,i)=>
+    `<text x="${xOf(i).toFixed(1)}" y="${PAD_T+H+18}" text-anchor="middle" fill="#8b98aa" font-size="10">${esc(v.time)}</text>`
+  ).join('');
+ 
+  // ── Y-axis tick labels (left side: HR scale) ───────────────────────────────
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(frac => {
+    const val = Math.round(scHR.lo + frac*(scHR.hi - scHR.lo));
+    const gy  = (PAD_T + H - frac*H).toFixed(1);
+    return `<text x="${PAD_L-6}" y="${(+gy+4).toFixed(1)}" text-anchor="end" fill="#8b98aa" font-size="9">${val}</text>`;
+  }).join('');
+ 
+  // ── Baseline axis ──────────────────────────────────────────────────────────
+  const axes = `
+    <line x1="${PAD_L}" y1="${PAD_T}" x2="${PAD_L}" y2="${PAD_T+H}" stroke="rgba(23,41,70,0.18)" stroke-width="1"></line>
+    <line x1="${PAD_L}" y1="${PAD_T+H}" x2="${PAD_L+W}" y2="${PAD_T+H}" stroke="rgba(23,41,70,0.18)" stroke-width="1"></line>
+  `;
+ 
+  // ── Series ─────────────────────────────────────────────────────────────────
+  //  HR     = red solid
+  //  SBP    = navy blue solid
+  //  DBP    = steel blue dashed
+  //  RR     = amber solid
+  //  Temp°C = orange solid
+  //  SpO2   = teal dashed
+  const seriesHR   = polyline(allHR,   scHR,   '#a33131', false, '#a33131');
+  const seriesSBP  = polyline(allSBP,  scSBP,  '#175f9e', false, '#175f9e');
+  const seriesDBP  = polyline(allDBP,  scDBP,  '#4a90d9', true,  '#4a90d9');
+  const seriesRR   = polyline(allRR,   scRR,   '#c68b00', false, '#c68b00');
+  const seriesTemp = polyline(allTemp, scTemp, '#e07b39', false, '#e07b39');
+  const seriesSPO2 = polyline(allSPO2, scSPO2, '#13848a', true,  '#43c0c4');
+ 
+  return `
+    ${gridLines}
+    ${axes}
+    ${yTicks}
+    ${seriesSPO2}
+    ${seriesDBP}
+    ${seriesTemp}
+    ${seriesRR}
+    ${seriesSBP}
+    ${seriesHR}
+    ${timeLabels}
+  `;
 }
 
 function val(id){return document.getElementById(id)?.value?.trim()||'';}
