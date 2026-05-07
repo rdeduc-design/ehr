@@ -47,6 +47,36 @@ const REASONING_PROMPTS = {
   psych: ['What is the priority intervention BEFORE administering haloperidol?','Name two side effects of haloperidol you must monitor for after administration.','What safety assessment must be completed within 15 minutes of a patient arriving with a psychiatric emergency?'],
   htn:   ['Why should you NOT reduce blood pressure more than 25% in the first hour of hypertensive urgency?','What three target organs are at risk in a hypertensive crisis?','What is the difference between hypertensive urgency and hypertensive emergency?'],
   scratch:['What is your priority nursing diagnosis for this patient?','What safety concern requires immediate intervention?','How would you communicate this patient status using SBAR?'],
+  vlad_crohns: [
+  'Why must magnesium be corrected BEFORE potassium in this patient?',
+  'What cardiac monitoring is required during IV KCl infusion and why?',
+  'What findings in the lab results and EKG indicate life-threatening risk in this patient?'
+],
+grace_dvt: [
+  'What combination of risk factors makes this patient high-risk for DVT?',
+  'What assessment findings must you check BEFORE administering rivaroxaban?',
+  'Name three warning signs of pulmonary embolism you would teach this patient before discharge.'
+],
+meredith_cad: [
+  'What abnormal physical findings in the lower extremities indicate peripheral vascular disease?',
+  'When is nitroglycerin contraindicated and what medication interaction is critical to screen for?',
+  'How would you address Mrs. Williams\' fear of exercise using therapeutic communication?'
+],
+morgan_alzheimers: [
+  'What are the FIRST two safety actions you take when entering Mr. Therin\'s room and why?',
+  'What route error could occur with enoxaparin and what are the consequences?',
+  'How do you gain cooperation for medication administration from an agitated patient with dementia?'
+],
+eloise_diabetes: [
+  'What PPE must you don BEFORE entering this patient\'s room and why?',
+  'Using the sliding scale, which insulin dose is correct for a blood glucose of 216 mg/dL?',
+  'What must you verify BEFORE administering insulin and what is your response if BG drops below 70?'
+],
+stacey_postop: [
+  'Which pain medication is correct for a pain score of 9/10 per the provider orders?',
+  'What respiratory assessment finding would cause you to withhold the ordered opioid?',
+  'What non-pharmacologic measures would you implement alongside pharmacologic pain management?'
+],
 };
 function getPrompts(scenarioId) {
   return REASONING_PROMPTS[scenarioId] || REASONING_PROMPTS['scratch'];
