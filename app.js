@@ -1303,7 +1303,13 @@ function renderPatientCard(p){
 }
 function renderPatientTools(){return`<div class="patient-tools"><label class="label" for="patient-select">Patient workspace</label><select id="patient-select">${state.patients.map(p=>`<option value="${esc(p.id)}" ${p.id===state.activeId?'selected':''}>${esc(p.lastName)}, ${esc(p.firstName)} — ${esc(p.diagnosis)}</option>`).join('')}</select><div class="quick-actions"><button class="btn small primary" data-tab-jump="newpatient">New patient</button><button class="btn small" data-tab-jump="scenarios">Samples</button></div></div>`;}
 function renderNav(){
-  const groups=[['Chart review',[['summary','PS','Patient summary'],['orders','PO','Provider orders'],['labs','LR','Labs / diagnostics']]],['Documentation',[['vitals','VS','Vital signs'],['assessment','FA','Focused assessment'],['meds','MR','MAR'],['io','IO','Intake / output'],['notes','NN','Nursing notes'],['careplan','CP','Care plan'],['education','ED','Education'],['sbar','SB','SBAR / handoff']]],['Learning tools',[['reasoning','CR','Clinical reasoning'],['peerreview','PR','Peer review mode'],['debriefing','DB','Debriefing'],['progress','PT','My progress'],['report','RP','Print report'],['scenarios','SC','Sample scenarios'],['newpatient','NP','Add patient']]],['Faculty tools',[['modulebuilder','MB','Faculty module builder']]]];
+  const isInstructor = cloud.profile?.role === 'instructor';
+  const groups=[
+    ['Chart review',   [['summary','PS','Patient summary'],['orders','PO','Provider orders'],['labs','LR','Labs / diagnostics']]],
+    ['Documentation',  [['vitals','VS','Vital signs'],['assessment','FA','Focused assessment'],['meds','MR','MAR'],['io','IO','Intake / output'],['notes','NN','Nursing notes'],['careplan','CP','Care plan'],['education','ED','Education'],['sbar','SB','SBAR / handoff']]],
+    ['Learning tools', [['reasoning','CR','Clinical reasoning'],['peerreview','PR','Peer review mode'],['debriefing','DB','Debriefing'],['progress','PT','My progress'],['report','RP','Print report'],['scenarios','SC','Sample scenarios'],['newpatient','NP','Add patient']]],
+    ...(isInstructor ? [['Faculty tools',[['modulebuilder','MB','Faculty module builder'],['dashboard','ID','Instructor dashboard'],['statusboard','SB','Status board']]]] : []),
+  ];
   return`<nav class="nav">${groups.map(([g,items])=>`<div class="group">${g}</div>${items.map(([tab,ic,label])=>`<button class="nav-btn ${state.tab===tab?'active':''}" data-tab="${tab}"><span class="nav-ic">${ic}</span>${label}</button>`).join('')}`).join('')}</nav>`;
 }
 function toolbarButtons(){return`<button class="btn small primary" id="save-local-btn">Save</button><button class="btn small" id="print-report-btn">${tr('printReport')}</button><button class="btn small danger" id="reset-btn">Reset local</button>`;}
