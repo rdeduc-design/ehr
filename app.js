@@ -3036,4 +3036,341 @@ applyTheme();
 render();
 initSupabase();
 
+const ONBOARDING_KEY = 'hct_ehr_onboarded_v1';
+ 
+const ONBOARDING_STEPS = [
+  {
+    icon: '🏥',
+    label: 'Welcome',
+    title: 'Welcome to HCT EHR Simulation',
+    subtitle: 'Your clinical practice environment',
+    body: `
+      <p>This is the <strong>HCT Student EHR</strong> — a simulation platform built for BSN students preparing for the PNLE and NCLEX-RN.</p>
+      <p>You'll practice charting, clinical reasoning, medication safety, and handoff communication in realistic patient scenarios — all without risk to real patients.</p>
+      <div class="ob-highlight-box">
+        <span class="ob-highlight-icon">💡</span>
+        <span>Everything you document here stays <strong>private to your account</strong>. Faculty can only see what you submit.</span>
+      </div>
+    `,
+    cta: 'Let\'s go →'
+  },
+  {
+    icon: '🗂️',
+    label: 'Navigation',
+    title: 'How the chart is organised',
+    subtitle: '3 areas, 15+ tabs',
+    body: `
+      <div class="ob-nav-grid">
+        <div class="ob-nav-group">
+          <div class="ob-nav-group-title">📋 Chart review</div>
+          <div class="ob-nav-items">
+            <span class="ob-nav-chip">Patient summary</span>
+            <span class="ob-nav-chip">Provider orders</span>
+            <span class="ob-nav-chip">Labs / diagnostics</span>
+          </div>
+          <p class="ob-nav-hint">Start here. Read the chart before touching anything.</p>
+        </div>
+        <div class="ob-nav-group">
+          <div class="ob-nav-group-title">✍️ Documentation</div>
+          <div class="ob-nav-items">
+            <span class="ob-nav-chip">Vital signs</span>
+            <span class="ob-nav-chip">Focused assessment</span>
+            <span class="ob-nav-chip">MAR</span>
+            <span class="ob-nav-chip">Nursing notes</span>
+            <span class="ob-nav-chip">Care plan</span>
+            <span class="ob-nav-chip">SBAR / handoff</span>
+          </div>
+          <p class="ob-nav-hint">Document as you go — like a real shift.</p>
+        </div>
+        <div class="ob-nav-group">
+          <div class="ob-nav-group-title">🧠 Learning tools</div>
+          <div class="ob-nav-items">
+            <span class="ob-nav-chip">Clinical reasoning</span>
+            <span class="ob-nav-chip">Peer review</span>
+            <span class="ob-nav-chip">Debriefing</span>
+            <span class="ob-nav-chip">My progress</span>
+          </div>
+          <p class="ob-nav-hint">These are graded by your instructor.</p>
+        </div>
+      </div>
+    `,
+    cta: 'Got it →'
+  },
+  {
+    icon: '🚨',
+    label: 'Safety',
+    title: 'Built-in safety systems',
+    subtitle: 'The EHR checks your work in real time',
+    body: `
+      <p>Three automated safety layers run every time you chart:</p>
+      <div class="ob-safety-list">
+        <div class="ob-safety-item">
+          <div class="ob-safety-badge red">⚠</div>
+          <div>
+            <strong>Vital sign alerts</strong>
+            <p>Any value outside normal range triggers a clinical alert with the correct nursing action. HR, BP, RR, SpO₂, and temperature are all monitored.</p>
+          </div>
+        </div>
+        <div class="ob-safety-item">
+          <div class="ob-safety-badge gold">🚨</div>
+          <div>
+            <strong>Allergy cross-reaction checker</strong>
+            <p>The MAR automatically flags medications that may cross-react with the patient's documented allergies — penicillin, sulfa, shellfish, ASA, opioids, and more.</p>
+          </div>
+        </div>
+        <div class="ob-safety-item">
+          <div class="ob-safety-badge teal">✓</div>
+          <div>
+            <strong>Assessment abnormal detection</strong>
+            <p>In the Focused Assessment tab, abnormal findings are highlighted in red the moment you select or type them — no need to second-guess.</p>
+          </div>
+        </div>
+      </div>
+    `,
+    cta: 'Understood →'
+  },
+  {
+    icon: '📋',
+    label: 'First scenario',
+    title: 'Your first scenario: pick one and start',
+    subtitle: 'All 13 cases are available from day one',
+    body: `
+      <p>Open any scenario from <strong>Sample scenarios</strong> in the sidebar. Each case includes:</p>
+      <div class="ob-scenario-preview-grid">
+        <div class="ob-scenario-preview-card ob-preview-beginner">
+          <div class="ob-sp-level">Beginner</div>
+          <div class="ob-sp-name">Post-Op Pain<br>Management</div>
+          <div class="ob-sp-focus">Opioid safety · Pain scale</div>
+        </div>
+        <div class="ob-scenario-preview-card ob-preview-intermediate">
+          <div class="ob-sp-level">Intermediate</div>
+          <div class="ob-sp-name">Hyperemesis<br>Gravidarum</div>
+          <div class="ob-sp-focus">IV sequencing · FHR · SBAR</div>
+        </div>
+        <div class="ob-scenario-preview-card ob-preview-advanced">
+          <div class="ob-sp-level">Advanced</div>
+          <div class="ob-sp-name">Sepsis from<br>Pneumonia</div>
+          <div class="ob-sp-focus">Sepsis bundle · Cultures · Lactate</div>
+        </div>
+      </div>
+      <div class="ob-highlight-box ob-highlight-recommend">
+        <span class="ob-highlight-icon">👆</span>
+        <span><strong>Recommended first case:</strong> Open <em>Post-Op Pain Management</em> (Stacey Jones). It covers the fundamentals without advanced critical-care complexity.</span>
+      </div>
+    `,
+    cta: 'Show me →'
+  },
+  {
+    icon: '📤',
+    label: 'Submitting',
+    title: 'Saving, submitting, and getting feedback',
+    subtitle: 'Your work lives in the cloud',
+    body: `
+      <div class="ob-workflow-steps">
+        <div class="ob-workflow-step">
+          <div class="ob-workflow-num">1</div>
+          <div>
+            <strong>Chart as you go</strong>
+            <p>Use the <strong>Save</strong> button in the toolbar anytime. All data syncs to Supabase automatically after each action.</p>
+          </div>
+        </div>
+        <div class="ob-workflow-step">
+          <div class="ob-workflow-num">2</div>
+          <div>
+            <strong>Answer the reasoning questions</strong>
+            <p>Go to <strong>Clinical reasoning</strong> after completing the chart. Your instructor reads these responses when grading.</p>
+          </div>
+        </div>
+        <div class="ob-workflow-step">
+          <div class="ob-workflow-num">3</div>
+          <div>
+            <strong>Submit for instructor review</strong>
+            <p>Click <strong>Submit chart</strong> in the top cloud panel. You'll see your status change to <em>Submitted</em>. You can still edit until your instructor locks it.</p>
+          </div>
+        </div>
+        <div class="ob-workflow-step">
+          <div class="ob-workflow-num">4</div>
+          <div>
+            <strong>Check your progress</strong>
+            <p>Go to <strong>My progress</strong> to see your completion score, reasoning responses, and self-assessment across all patients.</p>
+          </div>
+        </div>
+      </div>
+    `,
+    cta: 'I\'m ready →'
+  },
+  {
+    icon: '🎯',
+    label: 'Done',
+    title: 'You\'re all set',
+    subtitle: 'How Care Transforms',
+    body: `
+      <div class="ob-done-visual">
+        <div class="ob-done-checklist">
+          <div class="ob-done-item"><span class="ob-done-check">✓</span> Chart layout understood</div>
+          <div class="ob-done-item"><span class="ob-done-check">✓</span> Safety systems active</div>
+          <div class="ob-done-item"><span class="ob-done-check">✓</span> First scenario ready to open</div>
+          <div class="ob-done-item"><span class="ob-done-check">✓</span> Submission workflow clear</div>
+        </div>
+      </div>
+      <p style="text-align:center;font-size:13px;color:var(--muted);margin-top:16px;">You can reopen this guide anytime from the <strong>?</strong> button in the top-right corner of the app.</p>
+      <div class="ob-highlight-box ob-highlight-success">
+        <span class="ob-highlight-icon">💪</span>
+        <span>Good luck with your clinical simulations. The HCT R&D team built every scenario to mirror real PNLE and NCLEX-RN priorities.</span>
+      </div>
+    `,
+    cta: 'Open my first scenario'
+  }
+];
+ 
+// ── ONBOARDING MODAL RENDERER ────────────────────────────────────────────────
+ 
+function shouldShowOnboarding() {
+  return !localStorage.getItem(ONBOARDING_KEY);
+}
+ 
+function markOnboarded() {
+  localStorage.setItem(ONBOARDING_KEY, '1');
+}
+ 
+function showOnboarding() {
+  // Remove any existing modal
+  document.getElementById('hct-onboarding-overlay')?.remove();
+ 
+  let step = 0;
+  const total = ONBOARDING_STEPS.length;
+ 
+  const overlay = document.createElement('div');
+  overlay.id = 'hct-onboarding-overlay';
+  overlay.className = 'ob-overlay';
+ 
+  function renderStep() {
+    const s = ONBOARDING_STEPS[step];
+    const isLast = step === total - 1;
+    const progressPct = Math.round(((step + 1) / total) * 100);
+ 
+    overlay.innerHTML = `
+      <div class="ob-backdrop"></div>
+      <div class="ob-modal" role="dialog" aria-modal="true" aria-label="HCT EHR Onboarding">
+ 
+        <!-- Close button -->
+        <button class="ob-close" id="ob-close-btn" title="Skip introduction">✕</button>
+ 
+        <!-- Header -->
+        <div class="ob-header">
+          <div class="ob-step-icon">${s.icon}</div>
+          <div class="ob-step-meta">
+            <div class="ob-step-label">${s.label}</div>
+            <h2 class="ob-step-title">${s.title}</h2>
+            <p class="ob-step-subtitle">${s.subtitle}</p>
+          </div>
+        </div>
+ 
+        <!-- Progress bar -->
+        <div class="ob-progress-track">
+          <div class="ob-progress-fill" style="width:${progressPct}%"></div>
+        </div>
+        <div class="ob-step-count">${step + 1} of ${total}</div>
+ 
+        <!-- Body -->
+        <div class="ob-body">${s.body}</div>
+ 
+        <!-- Footer -->
+        <div class="ob-footer">
+          <!-- Step dots -->
+          <div class="ob-dots">
+            ${ONBOARDING_STEPS.map((_, i) =>
+              `<button class="ob-dot ${i === step ? 'ob-dot-active' : ''}" data-ob-step="${i}" title="Go to step ${i + 1}"></button>`
+            ).join('')}
+          </div>
+ 
+          <!-- Nav buttons -->
+          <div class="ob-nav-btns">
+            ${step > 0
+              ? `<button class="ob-btn ob-btn-back" id="ob-back-btn">← Back</button>`
+              : ''
+            }
+            <button class="ob-btn ob-btn-primary" id="ob-cta-btn">
+              ${s.cta}
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+ 
+    // Bind events
+    overlay.querySelector('#ob-close-btn').onclick = closeOnboarding;
+    overlay.querySelector('.ob-backdrop').onclick = closeOnboarding;
+ 
+    overlay.querySelector('#ob-cta-btn').onclick = () => {
+      if (isLast) {
+        closeOnboarding(true); // true = open scenarios tab
+      } else {
+        step++;
+        renderStep();
+      }
+    };
+ 
+    overlay.querySelector('#ob-back-btn')?.addEventListener('click', () => {
+      step--;
+      renderStep();
+    });
+ 
+    overlay.querySelectorAll('[data-ob-step]').forEach(dot => {
+      dot.onclick = () => {
+        step = Number(dot.dataset.obStep);
+        renderStep();
+      };
+    });
+ 
+    // Entrance animation trigger
+    requestAnimationFrame(() => {
+      const modal = overlay.querySelector('.ob-modal');
+      if (modal) modal.classList.add('ob-modal-visible');
+    });
+  }
+ 
+  function closeOnboarding(openScenarios = false) {
+    const modal = overlay.querySelector('.ob-modal');
+    if (modal) modal.classList.add('ob-modal-exit');
+    setTimeout(() => {
+      overlay.remove();
+      markOnboarded();
+      if (openScenarios === true) {
+        setTab('scenarios');
+      }
+    }, 280);
+  }
+ 
+  document.body.appendChild(overlay);
+  renderStep();
+}
+ 
+// ── HELP BUTTON (re-opens onboarding anytime) ────────────────────────────────
+ 
+function injectHelpButton() {
+  if (document.getElementById('hct-help-btn')) return;
+  const btn = document.createElement('button');
+  btn.id = 'hct-help-btn';
+  btn.className = 'hct-help-btn';
+  btn.title = 'Reopen onboarding guide';
+  btn.textContent = '?';
+  btn.onclick = () => showOnboarding();
+  document.body.appendChild(btn);
+}
+ 
+// ── HOOK INTO EXISTING RENDER FLOW ──────────────────────────────────────────
+// Wrap the existing render() so onboarding fires once after first login render.
+ 
+const _originalRender = render;
+window.render = function() {
+  _originalRender.apply(this, arguments);
+  injectHelpButton();
+  // Only trigger once, and only when the user is signed in (auth gate check)
+  if (cloud.session && shouldShowOnboarding()) {
+    // Small delay so the EHR renders fully first
+    setTimeout(() => showOnboarding(), 600);
+  }
+};
+
 /* ── APPEND this block to styles.css ─────────────────────────────────────── */
