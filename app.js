@@ -725,20 +725,28 @@ let _onboardSlide = 0;
  
 function showOnboarding(){
   _onboardSlide = 0;
-  const el = document.getElementById('onboarding-overlay');
-  if(el){ el.style.display = 'flex'; renderOnboardSlide(); return; }
-  // Mount overlay
-  const div = document.createElement('div');
-  div.id = 'onboarding-overlay';
-  div.innerHTML = renderOnboardingHTML();
-  document.body.appendChild(div);
-  bindOnboardEvents();
+  let el = document.getElementById('onboarding-overlay');
+  if(!el){
+    // Safety fallback: mount if somehow missing
+    el = document.createElement('div');
+    el.id = 'onboarding-overlay';
+    el.innerHTML = renderOnboardingHTML();
+    document.body.appendChild(el);
+    bindOnboardEvents();
+  }
+  el.style.display = 'flex';
+  el.style.opacity = '1';
+  renderOnboardSlide();
 }
  
 function closeOnboarding(){
   markOnboarded();
   const el = document.getElementById('onboarding-overlay');
-  if(el){ el.style.opacity='0'; setTimeout(()=>el.style.display='none', 300); }
+  if(el){
+    el.style.transition = 'opacity 0.3s ease';
+    el.style.opacity = '0';
+    setTimeout(()=>{ el.style.display='none'; el.style.opacity='1'; }, 310);
+  }
 }
  
 function renderOnboardingHTML(){
@@ -1050,22 +1058,31 @@ async function initSupabase(){
   const{data}=await cloud.client.auth.getSession();
   cloud.session=data.session;
   if(cloud.session)await loadProfile();
+  let _prevSession = cloud.session;
   cloud.client.auth.onAuthStateChange(async (_, session) => {
+    const isNewLogin = !_prevSession && !!session;
+    _prevSession = session;
     cloud.session = session;
     cloud.profile = null;
     if (session) {
-      await loadProfile();
-      cloud.status = 'Cloud connected';
+      try {
+        await loadProfile();
+        cloud.status = 'Cloud connected';
+      } catch(e) {
+        console.error('loadProfile failed:', e);
+        cloud.status = 'Signed in (profile error)';
+      }
     } else {
       cloud.status = 'Not signed in';
     }
+    setAuthStatus('');
     render();
+    if (isNewLogin && shouldShowOnboarding()) {
+      setTimeout(showOnboarding, 400);
+    }
   });
   cloud.status=cloud.session?'Cloud connected':'Ready for login';
   render();
-  if(cloud.session && shouldShowOnboarding()){
-    setTimeout(showOnboarding, 600);
-  }
 }
 async function loadProfile(){
   if(!cloud.session)return;
@@ -3726,5 +3743,15 @@ function exportDashboardCsv(){
 applyTheme();
 render();
 initSupabase();
+// Mount onboarding overlay permanently on body so it survives render() rebuilds
+(function mountOnboardingOverlay(){
+  if(document.getElementById('onboarding-overlay')) return;
+  const div = document.createElement('div');
+  div.id = 'onboarding-overlay';
+  div.style.display = 'none';
+  div.innerHTML = renderOnboardingHTML();
+  document.body.appendChild(div);
+  bindOnboardEvents();
+})();
 
 /* ── APPEND this block to styles.css ─────────────────────────────────────── */
