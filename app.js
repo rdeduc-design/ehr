@@ -3025,7 +3025,306 @@ document.querySelectorAll('[data-del-io]').forEach(b => {
   };
 });
 
-function rNotes(){const p=currentPatient();const notes=p.notes.length?p.notes.map((n,i)=>`<div class="note"><div class="note-head"><span><span class="note-type">${esc(n.type)}</span> | ${esc(n.time)} | ${esc(n.by)}</span><button class="btn small danger" data-del-note="${i}">Delete</button></div><div class="note-body">${esc(n.body)}</div></div>`).join(''):'<p class="text-block" style="text-align:center;color:var(--subtle);padding:18px;">No signed notes yet.</p>';return section('Signed nursing notes',notes)+section('Add note',`<div class="form-row"><label>Type</label><select id="note-type"><option>HCT focused progress note</option><option>Admission note</option><option>Assessment note</option><option>Medication note</option><option>Patient education</option><option>Provider notification</option><option>Shift summary</option></select></div><div class="form-row"><label>Time</label><input id="note-time" type="datetime-local" value="${nowTime()}"></div><div class="form-row"><label>Note</label><textarea id="note-body" placeholder="Objective findings, interventions, response, follow-up plan."></textarea></div><div class="actions"><button class="btn" id="insert-note-template">Insert HCT template</button><button class="btn primary" id="save-note">Sign and save</button></div>`);}
+// ── NOTE TEMPLATES — one per dropdown type ─────────────────────────────────
+function getNoteTemplate(type){
+  const p  = currentPatient();
+  const last = p.vitals[p.vitals.length-1]||{};
+  function tc(f){const n=parseFloat(f);return isNaN(n)?'--':(Math.round((n-32)*5/9*10)/10).toFixed(1)+' °C';}
+  const a  = p.assessment||{};
+  const fill = t => t
+    .replace(/\{\{lastName\}\}/g,    p.lastName||'--')
+    .replace(/\{\{firstName\}\}/g,   p.firstName||'--')
+    .replace(/\{\{mrn\}\}/g,         p.mrn||'--')
+    .replace(/\{\{dob\}\}/g,         p.dob||'--')
+    .replace(/\{\{diagnosis\}\}/g,   p.diagnosis||'--')
+    .replace(/\{\{location\}\}/g,    p.location||'--')
+    .replace(/\{\{acuity\}\}/g,      p.acuity||'--')
+    .replace(/\{\{codeStatus\}\}/g,  p.codeStatus||'Full Code')
+    .replace(/\{\{allergies\}\}/g,   p.allergies||'--')
+    .replace(/\{\{chiefComplaint\}\}/g, p.chiefComplaint||'--')
+    .replace(/\{\{hpi\}\}/g,         p.hpi||'--')
+    .replace(/\{\{pastHistory\}\}/g, p.pastHistory||'--')
+    .replace(/\{\{social\}\}/g,      p.social||'--')
+    .replace(/\{\{lines\}\}/g,       p.lines||'--')
+    .replace(/\{\{monitoring\}\}/g,  p.monitoring||'--')
+    .replace(/\{\{hr\}\}/g,          last.hr||'--')
+    .replace(/\{\{bps\}\}/g,         last.bps||'--')
+    .replace(/\{\{bpd\}\}/g,         last.bpd||'--')
+    .replace(/\{\{rr\}\}/g,          last.rr||'--')
+    .replace(/\{\{spo2\}\}/g,        last.spo2||'--')
+    .replace(/\{\{temp\}\}/g,        tc(last.temp))
+    .replace(/\{\{pain\}\}/g,        last.pain||'--')
+    .replace(/\{\{an:([^}]+)\|([^}]+)\}\}/g, (_,key,fb) => a[key]||fb)
+    .replace(/\{\{time\}\}/g,        nowDisplay(nowTime()));
+
+  const T = {
+    'HCT focused progress note':
+`HCT Focused Progress Note
+Patient: {{lastName}}, {{firstName}} | MRN: {{mrn}} | Diagnosis: {{diagnosis}}
+Date/Time: {{time}}
+
+ASSESSMENT CUES:
+- Neuro:              {{an:neuro|Not assessed}}
+- Respiratory:        {{an:resp|Not assessed}}
+- Cardiac/Perfusion:  {{an:cardiac|Not assessed}}
+- GI:                 {{an:gi|Not assessed}}
+- GU / Output:        {{an:gu|Not assessed}}
+- Skin / Wound:       {{an:skin|Not assessed}}
+- Pain:               {{an:pain|Not assessed}}
+- Safety:             {{an:safety|Not assessed}}
+- Specialty:          {{an:specialty|Not assessed}}
+- Psychosocial:       {{an:psychosocial|Not assessed}}
+
+CURRENT VITAL SIGNS:
+- HR: {{hr}} bpm | BP: {{bps}}/{{bpd}} mmHg | RR: {{rr}} br/min
+- SpO\u2082: {{spo2}}% | Temp: {{temp}} | Pain: {{pain}}/10
+
+INTERVENTIONS COMPLETED:
+- 
+
+PATIENT RESPONSE / REASSESSMENT:
+- 
+
+PLAN / FOLLOW-UP:
+- `,
+
+    'Admission note':
+`Admission Note
+Patient: {{lastName}}, {{firstName}} | MRN: {{mrn}} | DOB: {{dob}}
+Date/Time: {{time}} | Location: {{location}}
+Admitting Diagnosis: {{diagnosis}}
+Acuity: {{acuity}} | Code Status: {{codeStatus}} | Allergies: {{allergies}}
+
+CHIEF COMPLAINT:
+{{chiefComplaint}}
+
+HISTORY OF PRESENT ILLNESS:
+{{hpi}}
+
+PAST MEDICAL HISTORY:
+{{pastHistory}}
+
+SOCIAL HISTORY / SUPPORT SYSTEM:
+{{social}}
+
+ADMISSION VITAL SIGNS:
+- HR: {{hr}} bpm | BP: {{bps}}/{{bpd}} mmHg | RR: {{rr}} br/min
+- SpO\u2082: {{spo2}}% | Temp: {{temp}} | Pain: {{pain}}/10
+
+ADMISSION ASSESSMENT SUMMARY:
+- Neuro:      {{an:neuro|Pending}}
+- Respiratory:{{an:resp|Pending}}
+- Cardiac:    {{an:cardiac|Pending}}
+- GI:         {{an:gi|Pending}}
+- Skin/Safety:{{an:skin|Pending}}
+
+ACTIVE ORDERS REVIEWED:      [ ]
+IV ACCESS / LINES:            {{lines}}
+MONITORING:                   {{monitoring}}
+PATIENT / FAMILY ORIENTATION TO UNIT: [ ]`,
+
+    'Assessment note':
+`Assessment Note
+Patient: {{lastName}}, {{firstName}} | MRN: {{mrn}}
+Date/Time: {{time}} | Diagnosis: {{diagnosis}}
+
+FOCUSED ASSESSMENT FINDINGS:
+
+Neurological:
+{{an:neuro|Alert and oriented x4. No focal deficits noted.}}
+
+Respiratory:
+{{an:resp|Breath sounds clear bilaterally. Respirations regular and unlaboured.}}
+
+Cardiac / Perfusion:
+{{an:cardiac|Regular rate and rhythm. Peripheral pulses 2+ bilaterally.}}
+
+Gastrointestinal:
+{{an:gi|Abdomen soft, non-tender. Bowel sounds present x4 quadrants.}}
+
+Genitourinary / Output:
+{{an:gu|Voiding spontaneously. Output adequate.}}
+
+Skin / Wound:
+{{an:skin|Skin intact, warm, and dry.}}
+
+Pain Assessment:
+{{an:pain|Patient denies pain. Pain 0/10.}}
+
+Safety / Environment:
+{{an:safety|Call light within reach. Bed in lowest position. Side rails up x2.}}
+
+Specialty / Other:
+{{an:specialty|N/A}}
+
+Psychosocial:
+{{an:psychosocial|Patient calm and cooperative.}}
+
+CURRENT VITAL SIGNS:
+- HR: {{hr}} bpm | BP: {{bps}}/{{bpd}} mmHg | RR: {{rr}} br/min
+- SpO\u2082: {{spo2}}% | Temp: {{temp}} | Pain: {{pain}}/10
+
+PRIORITY CONCERN:
+- 
+
+NURSING INTERVENTION:
+- 
+
+PATIENT RESPONSE:
+- `,
+
+    'Medication note':
+`Medication Note
+Patient: {{lastName}}, {{firstName}} | MRN: {{mrn}}
+Date/Time: {{time}} | Diagnosis: {{diagnosis}}
+Allergies: {{allergies}}
+
+MEDICATION ADMINISTERED:
+- Drug:
+- Dose / Route / Frequency:
+- Indication:
+- Verified: Patient ID [ ]  Allergy [ ]  MAR [ ]  Labs [ ]  Right time [ ]
+
+PRE-ADMINISTRATION ASSESSMENT:
+- HR: {{hr}} | BP: {{bps}}/{{bpd}} | RR: {{rr}} | SpO\u2082: {{spo2}}% | Pain: {{pain}}/10
+- Relevant labs:
+- Hold parameters checked:  [ ]
+- Patient education provided: [ ]
+
+ADMINISTRATION:
+- Site / Method:
+- Time given: {{time}}
+- Administered by: Student Nurse
+
+POST-ADMINISTRATION MONITORING:
+- Expected effect:
+- Adverse reactions to monitor:
+- Reassessment time:
+- Patient response:`,
+
+    'Patient education':
+`Patient Education Note
+Patient: {{lastName}}, {{firstName}} | MRN: {{mrn}}
+Date/Time: {{time}} | Diagnosis: {{diagnosis}}
+
+EDUCATION TOPIC:
+- 
+
+LEARNING NEEDS ASSESSED:
+- Barriers (language, literacy, cognition, anxiety):
+- Preferred learning style: [ ] Visual  [ ] Verbal  [ ] Demonstration  [ ] Written
+- Readiness to learn:       [ ] Ready   [ ] Not ready — Reason:
+
+EDUCATION PROVIDED:
+- Content covered:
+- Teaching method:
+- Materials given:
+
+LEARNER RESPONSE / EVALUATION:
+- Patient verbalized understanding: [ ] Yes  [ ] No  [ ] Partial
+- Return demonstration / teach-back: [ ] Correct  [ ] Needs reinforcement
+- Questions asked:
+- Plan for follow-up:`,
+
+    'Provider notification':
+`Provider Notification — SBAR
+Patient: {{lastName}}, {{firstName}} | MRN: {{mrn}}
+Date/Time: {{time}} | Diagnosis: {{diagnosis}}
+Provider notified: ___________________  Time of call: {{time}}
+
+SITUATION:
+This is the student nurse calling about {{firstName}} {{lastName}} in {{location}},
+admitted for {{diagnosis}}.
+Reason for call:
+
+BACKGROUND:
+{{hpi}}
+Vital signs: HR {{hr}} | BP {{bps}}/{{bpd}} | RR {{rr}} | SpO\u2082 {{spo2}}% | Temp {{temp}}
+Allergies: {{allergies}}
+
+ASSESSMENT:
+Priority concern:
+Relevant assessment findings:
+Relevant labs / diagnostics:
+
+RECOMMENDATION:
+Request / recommendation:
+Orders received:
+Read-back completed: [ ] Yes
+
+FOLLOW-UP:
+- New orders implemented:
+- Patient response:
+- Next reassessment:`,
+
+    'Shift summary':
+`Shift Summary Note
+Patient: {{lastName}}, {{firstName}} | MRN: {{mrn}}
+Date/Time: {{time}} | Diagnosis: {{diagnosis}}
+Shift: [ ] Days  [ ] Evenings  [ ] Nights
+
+CONDITION AT START OF SHIFT:
+- Acuity: {{acuity}} | Code Status: {{codeStatus}}
+- Vital signs on arrival: HR {{hr}} | BP {{bps}}/{{bpd}} | RR {{rr}} | SpO\u2082 {{spo2}}%
+
+CARE PROVIDED THIS SHIFT:
+- Medications administered:
+- Procedures completed:
+- Assessment findings:
+- IV access / fluids: {{lines}}
+- I/O summary: Intake ___ mL | Output ___ mL | Net ___ mL
+
+PATIENT RESPONSE TO CARE:
+- 
+
+OUTSTANDING ISSUES / CONCERNS:
+- 
+
+PATIENT / FAMILY COMMUNICATION:
+- 
+
+CONDITION AT END OF SHIFT:
+- Vital signs:
+- Pain score:   /10
+- Overall status: [ ] Improving  [ ] Stable  [ ] Declining
+
+HANDOFF — PRIORITY SBAR TO ONCOMING NURSE:
+- Priority concern:
+- Pending orders / labs:
+- Safety concerns:`
+  };
+
+  return fill(T[type] || T['HCT focused progress note']);
+}
+function rNotes(){
+  const p=currentPatient();
+  const notes=p.notes.length
+    ?p.notes.map((n,i)=>`<div class="note"><div class="note-head"><span><span class="note-type">${esc(n.type)}</span> | ${esc(nowDisplay(n.time))} | ${esc(n.by)}</span><button class="btn small danger" data-del-note="${i}">Delete</button></div><div class="note-body">${esc(n.body)}</div></div>`).join('')
+    :'<p class="text-block" style="text-align:center;color:var(--subtle);padding:18px;">No signed notes yet.</p>';
+  return section('Signed nursing notes',notes)
+   +section('Add note',`
+    <div class="form-row">
+      <label>Type</label>
+      <select id="note-type" onchange="document.getElementById('note-body').value=getNoteTemplate(this.value);">
+        <option>HCT focused progress note</option>
+        <option>Admission note</option>
+        <option>Assessment note</option>
+        <option>Medication note</option>
+        <option>Patient education</option>
+        <option>Provider notification</option>
+        <option>Shift summary</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Time</label><input id="note-time" type="datetime-local" value="${nowTime()}"></div>
+    <div class="form-row">
+      <label>Note</label>
+      <textarea id="note-body" rows="18" placeholder="Select a note type above to auto-fill the template, or type freely here.">${esc(getNoteTemplate('HCT focused progress note'))}</textarea>
+    </div>
+    <div class="actions">
+      <button class="btn" id="insert-note-template">↺ Reload template</button>
+      <button class="btn primary" id="save-note">Sign and save</button>
+    </div>`);
+}
 function rCarePlan(){const rows=currentPatient().carePlan.map((c,i)=>`<tr><td><input data-cp="dx" data-cp-index="${i}" value="${esc(c.dx)}"></td><td><textarea data-cp="goal" data-cp-index="${i}">${esc(c.goal)}</textarea></td><td><textarea data-cp="interventions" data-cp-index="${i}">${esc(c.interventions)}</textarea></td><td><textarea data-cp="evaluation" data-cp-index="${i}">${esc(c.evaluation)}</textarea></td><td><button class="btn small danger" data-del-cp="${i}">Delete</button></td></tr>`).join('');return section('Nursing care plan',table(['Diagnosis','Goal','Interventions','Evaluation',''],rows)+'<div class="actions"><button class="btn primary" id="add-careplan">Add row</button><button class="btn navy" id="save-careplan">Save care plan</button></div>');}
 function rEducation(){const rows=currentPatient().education.map((e,i)=>`<div class="check-row"><input type="checkbox" data-ed-check="${i}" ${e.status==='Complete'?'checked':''}><strong>${esc(e.topic)}</strong><select data-ed-status="${i}"><option ${e.status==='Not started'?'selected':''}>Not started</option><option ${e.status==='In progress'?'selected':''}>In progress</option><option ${e.status==='Complete'?'selected':''}>Complete</option><option ${e.status==='Deferred'?'selected':''}>Deferred</option></select><input data-ed-response="${i}" value="${esc(e.response)}" placeholder="Learner/patient response"></div>`).join('');return section('Education record',`${rows}<div class="form-row"><label>New topic</label><input id="ed-topic" placeholder="Medication effects, warning signs, device use"></div><div class="actions"><button class="btn primary" id="add-education">Add topic</button><button class="btn navy" id="save-education">Save education</button></div>`);}
 function rSbar(){const s=currentPatient().sbar;return section('SBAR communication',`<div class="form-row"><label>Situation</label><textarea id="sb-s">${esc(s.s)}</textarea></div><div class="form-row"><label>Background</label><textarea id="sb-b">${esc(s.b)}</textarea></div><div class="form-row"><label>Assessment</label><textarea id="sb-a">${esc(s.a)}</textarea></div><div class="form-row"><label>Recommendation</label><textarea id="sb-r">${esc(s.r)}</textarea></div><div class="actions"><button class="btn" id="insert-sbar-template">Insert template</button><button class="btn primary" id="save-sbar">Save and document call</button></div>`);}
@@ -3736,7 +4035,12 @@ function bindTabEvents(){
     persist(); render();
     toast(`Output added: ${cleanLabel}${ml ? ' — ' + ml + ' mL' : count ? ' — ' + count + 'x' : ''}`);
   });
-  document.getElementById('insert-note-template')?.addEventListener('click',()=>{const ta=document.getElementById('note-body');ta.value=`HCT Focused Progress Note\nPatient: ${p.lastName}, ${p.firstName} | Diagnosis: ${p.diagnosis}\n\nAssessment cues:\n- Neuro: ${p.assessment.neuro}\n- Respiratory: ${p.assessment.resp}\n- Cardiac/perfusion: ${p.assessment.cardiac}\n- Priority concern:\n\nInterventions completed:\n- \n\nPatient response / reassessment:\n- \n\nPlan / follow-up:\n- `;ta.focus();});
+  document.getElementById('insert-note-template')?.addEventListener('click',()=>{
+  const ta = document.getElementById('note-body');
+  const type = val('note-type') || 'HCT focused progress note';
+  ta.value = getNoteTemplate(type);
+  ta.focus();
+});
   document.getElementById('save-note')?.addEventListener('click',()=>{const body=val('note-body');if(!body)return toast('Note body required');p.notes.push({type:val('note-type'),time:val('note-time'),body,by:'Student Nurse'});persist();render();});
   document.querySelectorAll('[data-del-note]').forEach(b=>b.onclick=()=>{p.notes.splice(Number(b.dataset.delNote),1);persist();render();});
   document.getElementById('add-careplan')?.addEventListener('click',()=>{p.carePlan.push({dx:'',goal:'',interventions:'',evaluation:'Pending'});persist();render();});
