@@ -1201,6 +1201,7 @@ async function saveReview(id){
 
 function render() {
   applyTheme();
+  if(isFacultyTab(state.tab)) state.tab = 'summary';
  
   // ── AUTH GATE: show login page if not signed in ───────────────────────────
   if (!cloud.session) {
@@ -1302,6 +1303,8 @@ function renderPatientCard(p){
   return`<div class="patient-card"><span class="label">Active patient</span><div class="patient-name">${esc(p.lastName)}, ${esc(p.firstName)}</div><div class="patient-line">${esc(p.sex)} | ${esc(p.age)}y | DOB ${esc(p.dob)} | MRN ${esc(p.mrn)}</div><div class="patient-line">${esc(p.location)} | ${esc(p.diagnosis)}</div>${showG?`<div class="patient-line">${esc(p.gestation)} | ${esc(p.codeStatus)} | ${esc(p.allergies)}</div>`:`<div class="patient-line">${esc(p.codeStatus)} | ${esc(p.allergies)}</div>`}<div class="badges">${(p.tags||[]).map(t=>`<span class="badge ${badgeClass(t)}">${esc(t)}</span>`).join('')}</div></div>`;
 }
 function renderPatientTools(){return`<div class="patient-tools"><label class="label" for="patient-select">Patient workspace</label><select id="patient-select">${state.patients.map(p=>`<option value="${esc(p.id)}" ${p.id===state.activeId?'selected':''}>${esc(p.lastName)}, ${esc(p.firstName)} — ${esc(p.diagnosis)}</option>`).join('')}</select><div class="quick-actions"><button class="btn small primary" data-tab-jump="newpatient">New patient</button><button class="btn small" data-tab-jump="scenarios">Samples</button></div></div>`;}
+const FACULTY_TABS = new Set(['modulebuilder','dashboard','statusboard']);
+function isFacultyTab(tab){ return FACULTY_TABS.has(tab) && cloud.profile?.role !== 'instructor'; }
 function renderNav(){
   const isInstructor = cloud.profile?.role === 'instructor';
   const groups=[
@@ -1314,7 +1317,11 @@ function renderNav(){
 }
 function toolbarButtons(){return`<button class="btn small primary" id="save-local-btn">Save</button><button class="btn small" id="print-report-btn">${tr('printReport')}</button><button class="btn small danger" id="reset-btn">Reset local</button>`;}
 function tabTitle(){const t={summary:'Patient summary',orders:'Provider orders',labs:'Labs / diagnostics',vitals:'Vital signs',assessment:'Focused assessment',meds:'Medication administration record',io:'Intake / output',notes:'Nursing notes',careplan:'Care plan',education:'Patient education',sbar:'SBAR / handoff',reasoning:'Clinical reasoning prompts',debriefing:'Simulation debriefing',progress:'My progress tracker',scenarios:'Sample scenarios',newpatient:'Add patient from scratch',dashboard:'Instructor dashboard',statusboard:'Submission status board',peerreview:tr('peer'),report:'Printable chart report',modulebuilder:tr('faculty')};return t[state.tab]||'Patient summary';}
-function renderTab(){const map={summary:rSummary,orders:rOrders,labs:rLabs,vitals:rVitals,assessment:rAssessment,meds:rMeds,io:rIO,notes:rNotes,careplan:rCarePlan,education:rEducation,sbar:rSbar,reasoning:rReasoning,debriefing:rDebriefing,progress:rProgress,scenarios:rScenarios,newpatient:rNewPatient,dashboard:rDashboard,statusboard:rStatusBoard,peerreview:rPeerReview,report:rReport,modulebuilder:rModuleBuilder};return(map[state.tab]||rSummary)();}
+function renderTab(){
+  const tab = isFacultyTab(state.tab) ? 'summary' : state.tab;
+  const map={summary:rSummary,orders:rOrders,labs:rLabs,vitals:rVitals,assessment:rAssessment,meds:rMeds,io:rIO,notes:rNotes,careplan:rCarePlan,education:rEducation,sbar:rSbar,reasoning:rReasoning,debriefing:rDebriefing,progress:rProgress,scenarios:rScenarios,newpatient:rNewPatient,dashboard:rDashboard,statusboard:rStatusBoard,peerreview:rPeerReview,report:rReport,modulebuilder:rModuleBuilder};
+  return(map[tab]||rSummary)();
+}
 function renderAuthPage() {
   return `
     <div class="auth-shell">
@@ -3417,7 +3424,13 @@ function vitalSvg(vitals){
 }
 
 function val(id){return document.getElementById(id)?.value?.trim()||'';}
-function setTab(tab){state.tab=tab;persist({cloud:false});if(tab==='dashboard'||tab==='statusboard')fetchDashboard();else render();}
+function setTab(tab){
+  if(isFacultyTab(tab)){ tab='summary'; }
+  state.tab=tab;
+  persist({cloud:false});
+  if(tab==='dashboard'||tab==='statusboard') fetchDashboard();
+  else render();
+}
 
 function bindEvents(){
   document.getElementById('theme-toggle')?.addEventListener('click',()=>{settings().theme=settings().theme==='dark'?'light':'dark';persist({cloud:false});render();});
