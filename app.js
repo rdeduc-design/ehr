@@ -1131,8 +1131,150 @@ function renderVitalAlerts(vital){
   if(!alerts.length)return'';
   return alerts.map(a=>`<div class="notice danger" style="margin-bottom:6px;"><span class="mark">⚠ ALERT</span><span>${esc(a)}</span></div>`).join('');
 }
+// ── Shared medication list builder (used by summary, chart review, and report) ─
+function buildAllMeds(p){
+  const MED_CATEGORIES=['medication','med','drug','iv fluids','iv','infusion','analgesic','antibiotic','new order'];
+  function isMedOrder(o){const cat=(o.category||'').toLowerCase();const ord=(o.order||'').toLowerCase();return MED_CATEGORIES.some(k=>cat.includes(k)||ord.startsWith(k));}
+  const existingNames=new Set((p.meds||[]).map(m=>(m.name||'').toLowerCase().trim()));
+  const synced=(p.orders||[]).filter(o=>isMedOrder(o)&&!existingNames.has((o.order||'').toLowerCase().trim())).map((o,i)=>({id:`sync-${i}`,name:o.order,dose:o.details||'—',route:'',freq:o.status,priority:o.category,status:o.nurseCompleted?'given':'pending',time:'',note:'',warn:'',_fromOrder:true}));
+  return[...(p.meds||[]),...synced];
+}
+function rSummary(){
+  const p=currentPatient();
+  const c=chartStats(p);
+  const score=completionScore(p);
 
-function rSummary(){const p=currentPatient();const c=chartStats(p);const score=completionScore(p);return`${section('Interactive chart readiness',`<div class="metric-row"><div class="metric interactive"><div class="num">${score}%</div><div class="lbl">Completion</div></div><div class="metric interactive"><div class="num">${c.notes}</div><div class="lbl">Notes</div></div><div class="metric interactive"><div class="num">${c.peer}</div><div class="lbl">Peer reviews</div></div><div class="metric interactive"><div class="num">${c.modules}</div><div class="lbl">Faculty modules</div></div></div><div class="actions" style="justify-content:flex-start"><button class="btn small primary" data-tab-jump="vitals">Chart vitals</button><button class="btn small" data-tab-jump="peerreview">Start peer review</button><button class="btn small" data-tab-jump="modulebuilder">Build module</button><button class="btn small" data-tab-jump="report">Preview report</button></div>`)}${section('Safety snapshot',`<div class="notice ${p.acuity==='Critical'?'danger':'info'}"><span class="mark">HCT</span><span><strong>${esc(p.acuity)} acuity.</strong> Allergies: ${esc(p.allergies)}. Monitoring: ${esc(p.monitoring)}.</span></div><div class="grid-4">${field('Patient',`${p.lastName}, ${p.firstName}`)}${field('DOB / Age',`${p.dob} / ${p.age}`)}${field('Location',p.location)}${field('Diagnosis',p.diagnosis)}${field('Code status',p.codeStatus)}${field('Diet',p.diet)}${field('Activity',p.activity)}${field('Lines',p.lines)}</div>`)}${section('Clinical picture',`<p class="text-block"><strong>Chief complaint:</strong> ${esc(p.chiefComplaint)}</p><p class="text-block"><strong>HPI:</strong> ${esc(p.hpi)}</p><p class="text-block"><strong>Background:</strong> ${esc(p.background)}</p>`)}${section('History and objectives',`<div class="grid-2">${field('Past history',p.pastHistory)}${field('Social / contact',`${p.social}\n${p.familyContact}`)}${(p.objectives||[]).map((o,i)=>field(`Objective ${i+1}`,o)).join('')}</div>`)}`;}
+  // ── Latest vitals ──────────────────────────────────────────────────────────
+  const last=p.vitals[p.vitals.length-1]||{};
+  function fToC(f){const n=parseFloat(f);return isNaN(n)?null:Math.round((n-32)*5/9*10)/10;}
+  const tempC=fToC(last.temp);
+  const hasVitals=Object.keys(last).length>0;
+
+  // ── Vital alerts ───────────────────────────────────────────────────────────
+  const vAlerts=hasVitals?VITAL_RULES.filter(r=>{
+    const v=r.key==='tempc'?tempC:Number(last[r.key]);
+    return v!==null&&!isNaN(v)&&(v<r.lo||v>r.hi);
+  }):[];
+
+  const vitalsBlock=hasVitals?`
+    <div class="grid-4" style="margin-bottom:10px;">
+      ${field('HR',`${last.hr||'--'} bpm${Number(last.hr)<60||Number(last.hr)>100?` <span class="badge red">⚠</span>`:''}`)}
+      ${field('BP',`${last.bps||'--'}/${last.bpd||'--'} mmHg`)}
+      ${field('RR',`${last.rr||'--'} br/min`)}
+      ${field('SpO₂',`${last.spo2||'--'}%${Number(last.spo2)<95?` <span class="badge red">⚠</span>`:''}`)}
+      ${field('Temp',tempC!==null?`${tempC.toFixed(1)} °C${(tempC<36.1||tempC>37.9)?` <span class="badge red">⚠</span>`:''}` :'--')}
+      ${field('Pain',`${last.pain||'--'}/10`)}
+      ${field('Time',last.time||'--')}
+      ${field('Note',last.note||'--')}
+    </div>
+    ${vAlerts.length?`<div style="margin-top:4px;">${vAlerts.map(r=>`<div class="notice danger" style="margin-bottom:5px;padding:7px 10px;"><span class="mark">⚠ ${esc(r.label)}</span><span style="font-size:11px;">${esc(r.msg)}</span></div>`).join('')}</div>`:''}
+  `:'<p style="color:var(--subtle);font-size:12px;padding:4px 0;">No vital signs charted yet.</p>';
+
+  // ── Medications ────────────────────────────────────────────────────────────
+  const MED_CATEGORIES=['medication','med','drug','iv fluids','iv','infusion','analgesic','antibiotic','new order'];
+  function isMedOrder(o){const cat=(o.category||'').toLowerCase();const ord=(o.order||'').toLowerCase();return MED_CATEGORIES.some(k=>cat.includes(k)||ord.startsWith(k));}
+  const existingMedNames=new Set((p.meds||[]).map(m=>(m.name||'').toLowerCase().trim()));
+  const syncedMeds=(p.orders||[]).filter(o=>isMedOrder(o)&&!existingMedNames.has((o.order||'').toLowerCase().trim())).map((o,idx)=>({id:`sync-${idx}`,name:o.order,dose:o.details||'—',route:'',freq:o.status,priority:o.category,status:o.nurseCompleted?'given':'pending',time:'',note:'',warn:'',_fromOrder:true}));
+  const allMeds=[...(p.meds||[]),...syncedMeds];
+  const given=allMeds.filter(m=>m.status==='given');
+  const held=allMeds.filter(m=>m.status==='hold');
+  const notGiven=allMeds.filter(m=>m.status==='not_given');
+  const pending=allMeds.filter(m=>m.status==='pending');
+
+  function medRow(m,colorClass){
+    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);gap:8px;font-size:12px;">
+      <span><strong>${esc(m.name)}</strong>${m.dose?` <span style="color:var(--muted);">${esc(m.dose)}</span>`:''}${m.route?` <span style="color:var(--subtle);">${esc(m.route)}</span>`:''}</span>
+      <span style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+        ${m.time?`<span style="color:var(--muted);font-size:11px;">${esc(m.time)}</span>`:''}
+        <span class="badge ${colorClass}">${esc(m.status)}</span>
+      </span>
+    </div>`;
+  }
+
+  const medsBlock=allMeds.length?`
+    ${given.length?`<p style="font-size:10px;font-weight:800;text-transform:uppercase;color:var(--success);margin:6px 0 2px;">✓ Given (${given.length})</p>${given.map(m=>medRow(m,'green')).join('')}`:''}
+    ${held.length?`<p style="font-size:10px;font-weight:800;text-transform:uppercase;color:var(--warning);margin:8px 0 2px;">⏸ Held (${held.length})</p>${held.map(m=>medRow(m,'gold')).join('')}`:''}
+    ${notGiven.length?`<p style="font-size:10px;font-weight:800;text-transform:uppercase;color:var(--danger);margin:8px 0 2px;">✗ Not given (${notGiven.length})</p>${notGiven.map(m=>medRow(m,'red')).join('')}`:''}
+    ${pending.length?`<p style="font-size:10px;font-weight:800;text-transform:uppercase;color:var(--muted);margin:8px 0 2px;">○ Pending (${pending.length})</p>${pending.map(m=>medRow(m,'blue')).join('')}`:''}
+  `:'<p style="color:var(--subtle);font-size:12px;padding:4px 0;">No medications on MAR.</p>';
+
+  // ── I/O summary ────────────────────────────────────────────────────────────
+  const totals=(p.io||[]).reduce((a,e)=>{if(e.direction==='in')a.ins+=Number(e.amount)||0;if(e.direction==='out')a.outs+=Number(e.amount)||0;return a;},{ins:0,outs:0});
+  const net=totals.ins-totals.outs;
+  const netColor=net<-500?'var(--danger)':net>2000?'var(--warning)':'var(--success)';
+  const intakeCount=(p.io||[]).filter(e=>e.direction==='in').length;
+  const outputCount=(p.io||[]).filter(e=>e.direction==='out').length;
+
+  const ioBlock=(p.io||[]).length?`
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;">
+      <div style="text-align:center;padding:8px;background:var(--info-bg);border-radius:6px;border:1px solid rgba(23,95,158,0.2);">
+        <div style="font-size:17px;font-weight:900;color:var(--info);">${totals.ins.toLocaleString()}</div>
+        <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;">Intake mL</div>
+        <div style="font-size:10px;color:var(--subtle);">${intakeCount} entries</div>
+      </div>
+      <div style="text-align:center;padding:8px;background:var(--danger-bg);border-radius:6px;border:1px solid rgba(163,49,49,0.2);">
+        <div style="font-size:17px;font-weight:900;color:var(--danger);">${totals.outs.toLocaleString()}</div>
+        <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;">Output mL</div>
+        <div style="font-size:10px;color:var(--subtle);">${outputCount} entries</div>
+      </div>
+      <div style="text-align:center;padding:8px;background:var(--surface-2);border-radius:6px;border:1px solid var(--line);">
+        <div style="font-size:17px;font-weight:900;color:${netColor};">${net>=0?'+':''}${net.toLocaleString()}</div>
+        <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;">Net mL</div>
+        <div style="font-size:10px;color:var(--subtle);">Balance</div>
+      </div>
+    </div>
+    ${net<-500?`<div class="notice danger" style="padding:7px 10px;margin-bottom:0;"><span class="mark">⚠ DEFICIT</span><span style="font-size:11px;">Net ${net.toLocaleString()} mL — negative balance. Assess for dehydration.</span></div>`:''}
+    ${net>2000?`<div class="notice" style="padding:7px 10px;margin-bottom:0;"><span class="mark">⚠ EXCESS</span><span style="font-size:11px;">Net +${net.toLocaleString()} mL — positive balance. Assess for fluid overload.</span></div>`:''}
+  `:'<p style="color:var(--subtle);font-size:12px;padding:4px 0;">No I/O entries yet.</p>';
+
+  return`
+    ${section('Interactive chart readiness',`
+      <div class="metric-row">
+        <div class="metric interactive"><div class="num">${score}%</div><div class="lbl">Completion</div></div>
+        <div class="metric interactive"><div class="num">${c.notes}</div><div class="lbl">Notes</div></div>
+        <div class="metric interactive"><div class="num">${c.peer}</div><div class="lbl">Peer reviews</div></div>
+        <div class="metric interactive"><div class="num">${c.modules}</div><div class="lbl">Faculty modules</div></div>
+      </div>
+      <div class="actions" style="justify-content:flex-start;">
+        <button class="btn small primary" data-tab-jump="vitals">Chart vitals</button>
+        <button class="btn small" data-tab-jump="peerreview">Start peer review</button>
+        <button class="btn small" data-tab-jump="modulebuilder">Build module</button>
+        <button class="btn small" data-tab-jump="report">Preview report</button>
+      </div>
+    `)}
+    ${section('Safety snapshot',`
+      <div class="notice ${p.acuity==='Critical'?'danger':'info'}">
+        <span class="mark">HCT</span>
+        <span><strong>${esc(p.acuity)} acuity.</strong> Allergies: ${esc(p.allergies)}. Monitoring: ${esc(p.monitoring)}.</span>
+      </div>
+      <div class="grid-4">
+        ${field('Patient',`${p.lastName}, ${p.firstName}`)}
+        ${field('DOB / Age',`${p.dob} / ${p.age}`)}
+        ${field('Location',p.location)}
+        ${field('Diagnosis',p.diagnosis)}
+        ${field('Code status',p.codeStatus)}
+        ${field('Diet',p.diet)}
+        ${field('Activity',p.activity)}
+        ${field('Lines',p.lines)}
+      </div>
+    `)}
+    ${section('Latest vital signs',vitalsBlock)}
+    ${section('Medication status',medsBlock)}
+    ${section('Intake / Output summary',ioBlock)}
+    ${section('Clinical picture',`
+      <p class="text-block"><strong>Chief complaint:</strong> ${esc(p.chiefComplaint)}</p>
+      <p class="text-block"><strong>HPI:</strong> ${esc(p.hpi)}</p>
+      <p class="text-block"><strong>Background:</strong> ${esc(p.background)}</p>
+    `)}
+    ${section('History and objectives',`
+      <div class="grid-2">
+        ${field('Past history',p.pastHistory)}
+        ${field('Social / contact',`${p.social}\n${p.familyContact}`)}
+        ${(p.objectives||[]).map((o,i)=>field(`Objective ${i+1}`,o)).join('')}
+      </div>
+    `)}
+  `;
+}
 function rOrders(){
   const p=currentPatient();
  
@@ -2491,8 +2633,152 @@ function rNewPatient(){return section('Create patient from scratch',`<div class=
 
 function rPeerReview(){const p=currentPatient();const reviews=p.peerReviews||[];const rows=reviews.map((r,i)=>`<tr><td>${esc(r.time)}</td><td>${esc(r.reviewer)}</td><td>${esc(r.score)}/5</td><td>${lines(r.strength)}</td><td>${lines(r.growth)}</td><td><button class="btn small danger" data-del-peer="${i}">Delete</button></td></tr>`).join('');return section('Peer review workspace',`<div class="notice info"><span class="mark">PEER</span><span>Use this mode for student-to-student chart review. Feedback stays with this local chart and can be included in the printable report.</span></div><div class="form-grid"><input id="peer-reviewer" placeholder="Reviewer name"><select id="peer-score"><option value="5">5 - Safe/complete</option><option value="4">4 - Minor gaps</option><option value="3">3 - Needs follow-up</option><option value="2">2 - Safety concern</option><option value="1">1 - Incomplete</option></select></div><div class="grid-2"><div class="form-row"><label>Strength observed</label><textarea id="peer-strength" placeholder="What documentation or reasoning was strong?"></textarea></div><div class="form-row"><label>Growth opportunity</label><textarea id="peer-growth" placeholder="What should be clarified, reassessed, or documented next?"></textarea></div></div><div class="actions"><button class="btn" id="peer-template">Use feedback sentence starters</button><button class="btn primary" id="save-peer-review">Save peer review</button></div>`)+section('Saved peer feedback',table(['Time','Reviewer','Score','Strength','Growth',''],rows||'<tr><td colspan="6">No peer feedback yet.</td></tr>'));}
 
-function rReport(){const p=currentPatient();const c=chartStats(p);const latest=p.vitals[p.vitals.length-1]||{};const notes=(p.notes||[]).slice(-4).map(n=>`<div class="note"><div class="note-head"><span class="note-type">${esc(n.type)} | ${esc(n.time)}</span><span>${esc(n.by)}</span></div><div class="note-body">${lines(n.body)}</div></div>`).join('')||'<p class="text-block">No notes documented.</p>';const peer=(p.peerReviews||[]).map(r=>`<li><strong>${esc(r.reviewer)} (${esc(r.score)}/5):</strong> ${esc(r.strength)} — ${esc(r.growth)}</li>`).join('')||'<li>No peer review saved.</li>';return `<div class="print-report">${section('Printable EHR report',`<div class="notice info"><span class="mark">REPORT</span><span>Use the print report button for a focused handoff packet.</span></div><div class="actions" style="justify-content:flex-start"><button class="btn primary" onclick="window.print()">${tr('printReport')}</button></div>`)}${section('Patient snapshot',`<div class="grid-4">${field('Patient',`${p.lastName}, ${p.firstName}`)}${field('MRN',p.mrn)}${field('Diagnosis',p.diagnosis)}${field('Acuity',p.acuity)}${field('Allergies',p.allergies)}${field('Latest vitals',`HR ${latest.hr||'--'} BP ${latest.bps||'--'}/${latest.bpd||'--'} RR ${latest.rr||'--'} SpO2 ${latest.spo2||'--'}%`)}${field('Completion',completionScore(p)+'%')}${field('Peer reviews',c.peer)}`)}${section('SBAR',`<div class="grid-2">${field('Situation',p.sbar?.s)}${field('Background',p.sbar?.b)}${field('Assessment',p.sbar?.a)}${field('Recommendation',p.sbar?.r)}</div>`)}${section('Recent notes',notes)}${section('Peer review summary',`<ul class="interactive-list">${peer}</ul>`)}</div>`;}
+function rReport(){
+  const p=currentPatient();
+  const c=chartStats(p);
+  const last=p.vitals[p.vitals.length-1]||{};
 
+  // ── Temp conversion ────────────────────────────────────────────────────────
+  function fToC(f){const n=parseFloat(f);return isNaN(n)?null:Math.round((n-32)*5/9*10)/10;}
+  const tempC=fToC(last.temp);
+
+  // ── Vital alerts ───────────────────────────────────────────────────────────
+  const vAlerts=Object.keys(last).length?VITAL_RULES.filter(r=>{
+    const v=r.key==='tempc'?tempC:Number(last[r.key]);
+    return v!==null&&!isNaN(v)&&(v<r.lo||v>r.hi);
+  }):[];
+
+  // ── All vitals flowsheet ───────────────────────────────────────────────────
+  const vitalsRows=(p.vitals||[]).map(v=>{
+    const tc=fToC(v.temp);
+    return`<tr>
+      <td>${esc(v.time)}</td>
+      <td>${esc(v.hr)}</td>
+      <td>${esc(v.bps)}/${esc(v.bpd)}</td>
+      <td>${esc(v.rr)}</td>
+      <td>${esc(v.spo2)}%</td>
+      <td>${tc!==null?tc.toFixed(1)+' °C':'--'}</td>
+      <td>${esc(v.pain)}</td>
+      <td style="font-size:11px;color:var(--muted);">${esc(v.note)}</td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="8" style="color:var(--subtle);">No vitals charted.</td></tr>';
+
+  // ── Medications by status ──────────────────────────────────────────────────
+  const MED_CATEGORIES=['medication','med','drug','iv fluids','iv','infusion','analgesic','antibiotic','new order'];
+  function isMedOrder(o){const cat=(o.category||'').toLowerCase();const ord=(o.order||'').toLowerCase();return MED_CATEGORIES.some(k=>cat.includes(k)||ord.startsWith(k));}
+  const existingMedNames=new Set((p.meds||[]).map(m=>(m.name||'').toLowerCase().trim()));
+  const syncedMeds=(p.orders||[]).filter(o=>isMedOrder(o)&&!existingMedNames.has((o.order||'').toLowerCase().trim())).map((o,idx)=>({id:`sync-${idx}`,name:o.order,dose:o.details||'—',route:'',freq:o.status,priority:o.category,status:o.nurseCompleted?'given':'pending',time:'',note:'',warn:'',_fromOrder:true}));
+  const allMeds=[...(p.meds||[]),...syncedMeds];
+
+  function medStatusSection(label,statusKey,colorClass){
+    const subset=allMeds.filter(m=>m.status===statusKey);
+    if(!subset.length)return'';
+    const rows=subset.map(m=>`<tr>
+      <td><strong>${esc(m.name)}</strong>${m._fromOrder?` <span class="badge blue" style="font-size:9px;">Order</span>`:''}</td>
+      <td>${esc(m.dose)}</td>
+      <td>${esc(m.route)}</td>
+      <td>${esc(m.freq)}</td>
+      <td>${m.time?esc(m.time):'—'}</td>
+      <td>${m.note?esc(m.note):'—'}</td>
+      <td><span class="badge ${colorClass}">${esc(m.status)}</span></td>
+    </tr>`).join('');
+    return`<p style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);margin:10px 0 4px;">${label}</p>`
+      +table(['Medication','Dose','Route','Freq','Time','Note','Status'],rows);
+  }
+
+  const medBlock=allMeds.length
+    ? medStatusSection('✓ Given',       'given',    'green')
+    + medStatusSection('⏸ Held',        'hold',     'gold')
+    + medStatusSection('✗ Not given',   'not_given','red')
+    + medStatusSection('○ Pending',     'pending',  'blue')
+    : '<p style="color:var(--subtle);font-size:12px;">No medications on MAR.</p>';
+
+  // ── I/O summary ────────────────────────────────────────────────────────────
+  const totals=(p.io||[]).reduce((a,e)=>{if(e.direction==='in')a.ins+=Number(e.amount)||0;if(e.direction==='out')a.outs+=Number(e.amount)||0;return a;},{ins:0,outs:0});
+  const net=totals.ins-totals.outs;
+  const netColor=net<-500?'var(--danger)':net>2000?'var(--warning)':'var(--success)';
+  const ioRows=(p.io||[]).map(e=>`<tr>
+    <td>${esc(e.time)}</td>
+    <td><span class="badge ${e.direction==='in'?'blue':'red'}">${e.direction.toUpperCase()}</span></td>
+    <td>${esc(e.type)}</td>
+    <td>${e.amount?esc(e.amount)+' mL':'—'}</td>
+    <td style="font-size:11px;color:var(--muted);">${esc(e.characteristic||e.note||'')}</td>
+  </tr>`).join('')||'<tr><td colspan="5" style="color:var(--subtle);">No I/O entries.</td></tr>';
+
+  // ── Alerts summary for report ──────────────────────────────────────────────
+  const alertsBlock=vAlerts.length
+    ?`<div style="margin-bottom:8px;">${vAlerts.map(r=>`<div class="notice danger" style="padding:7px 10px;margin-bottom:5px;"><span class="mark">⚠ ${esc(r.label)}</span><span style="font-size:11px;">${esc(r.msg)}</span></div>`).join('')}</div>`
+    :`<p style="color:var(--subtle);font-size:12px;">No active vital sign alerts.</p>`;
+
+  const notes=(p.notes||[]).slice(-4).map(n=>`<div class="note"><div class="note-head"><span class="note-type">${esc(n.type)} | ${esc(n.time)}</span><span>${esc(n.by)}</span></div><div class="note-body">${lines(n.body)}</div></div>`).join('')
+    ||'<p class="text-block">No notes documented.</p>';
+
+  const peer=(p.peerReviews||[]).map(r=>`<li><strong>${esc(r.reviewer)} (${esc(r.score)}/5):</strong> ${esc(r.strength)} — ${esc(r.growth)}</li>`).join('')
+    ||'<li>No peer review saved.</li>';
+
+  return`<div class="print-report">
+    ${section('Printable EHR report',`
+      <div class="notice info"><span class="mark">REPORT</span><span>Use the print report button for a focused handoff packet.</span></div>
+      <div class="actions" style="justify-content:flex-start;">
+        <button class="btn primary" onclick="window.print()">${tr('printReport')}</button>
+      </div>
+    `)}
+    ${section('Patient snapshot',`
+      <div class="grid-4">
+        ${field('Patient',`${p.lastName}, ${p.firstName}`)}
+        ${field('MRN',p.mrn)}
+        ${field('Diagnosis',p.diagnosis)}
+        ${field('Acuity',p.acuity)}
+        ${field('Allergies',p.allergies)}
+        ${field('Code status',p.codeStatus)}
+        ${field('Completion',completionScore(p)+'%')}
+        ${field('Peer reviews',c.peer)}
+      </div>
+    `)}
+    ${section('Latest vital signs',`
+      <div class="grid-4" style="margin-bottom:10px;">
+        ${field('HR',`${last.hr||'--'} bpm`)}
+        ${field('BP',`${last.bps||'--'}/${last.bpd||'--'} mmHg`)}
+        ${field('RR',`${last.rr||'--'} br/min`)}
+        ${field('SpO₂',`${last.spo2||'--'}%`)}
+        ${field('Temp',tempC!==null?tempC.toFixed(1)+' °C':'--')}
+        ${field('Pain',`${last.pain||'--'}/10`)}
+        ${field('Time charted',last.time||'--')}
+        ${field('Note',last.note||'--')}
+      </div>
+      ${section('All vital signs — flowsheet',table(['Time','HR','BP','RR','SpO₂','Temp','Pain','Note'],vitalsRows))}
+    `)}
+    ${section('Clinical decision alerts',alertsBlock)}
+    ${section('Medication administration record',medBlock)}
+    ${section('Intake / Output',`
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+        <div style="text-align:center;padding:10px;background:var(--info-bg);border-radius:6px;">
+          <div style="font-size:20px;font-weight:900;color:var(--info);">${totals.ins.toLocaleString()} mL</div>
+          <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;">Total Intake</div>
+        </div>
+        <div style="text-align:center;padding:10px;background:var(--danger-bg);border-radius:6px;">
+          <div style="font-size:20px;font-weight:900;color:var(--danger);">${totals.outs.toLocaleString()} mL</div>
+          <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;">Total Output</div>
+        </div>
+        <div style="text-align:center;padding:10px;background:var(--surface-2);border-radius:6px;">
+          <div style="font-size:20px;font-weight:900;color:${netColor};">${net>=0?'+':''}${net.toLocaleString()} mL</div>
+          <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;">Net Balance</div>
+        </div>
+      </div>
+      ${table(['Time','Direction','Type','Amount','Characteristic / Note'],ioRows)}
+    `)}
+    ${section('SBAR',`
+      <div class="grid-2">
+        ${field('Situation',p.sbar?.s)}
+        ${field('Background',p.sbar?.b)}
+        ${field('Assessment',p.sbar?.a)}
+        ${field('Recommendation',p.sbar?.r)}
+      </div>
+    `)}
+    ${section('Recent notes',notes)}
+    ${section('Peer review summary',`<ul class="interactive-list">${peer}</ul>`)}
+  </div>`;
+}
 function rModuleBuilder(){const p=currentPatient();const modules=p.facultyModules||[];const rows=modules.map((m,i)=>`<tr><td>${esc(m.title)}</td><td>${esc(m.level)}</td><td>${lines(m.objectives)}</td><td>${lines(m.activities)}</td><td>${esc(m.checkpoint)}</td><td><button class="btn small" data-apply-module="${i}">Apply</button> <button class="btn small danger" data-del-module="${i}">Delete</button></td></tr>`).join('');return section('Faculty module builder',`<div class="notice info"><span class="mark">FACULTY</span><span>Create interactive mini-modules that can add objectives, a nursing note prompt, and checklist activity to this patient.</span></div><div class="form-grid"><input id="module-title" placeholder="Module title"><select id="module-level"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select><input id="module-checkpoint" placeholder="Checkpoint / exit ticket"></div><div class="grid-2"><div class="form-row"><label>Learning objectives</label><textarea id="module-objectives" placeholder="One objective per line"></textarea></div><div class="form-row"><label>Interactive activities</label><textarea id="module-activities" placeholder="Assessment huddle, med safety check, SBAR role play"></textarea></div></div><div class="actions"><button class="btn" id="module-template">Load HCT template</button><button class="btn primary" id="save-module">Save module</button></div>`)+section('Built modules',table(['Title','Level','Objectives','Activities','Checkpoint',''],rows||'<tr><td colspan="6">No faculty modules yet.</td></tr>'));}
 
 function rDashboard(){
