@@ -611,7 +611,16 @@ function randomMrn(){return String(Math.floor(100000+Math.random()*900000));}
 function clone(v){return JSON.parse(JSON.stringify(v));}
 function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function lines(v){return esc(v||'').replace(/\n/g,'<br>');}
-function nowTime(){return new Date().toTimeString().slice(0,5);}
+function nowTime(){
+  const d=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function nowDisplay(v){
+  if(!v)return'--';
+  if(v.includes('T')){const[date,time]=v.split('T');const[y,m,d]=date.split('-');return`${m}/${d}/${y} ${time}`;}
+  return v;
+}
 function uid(p){return `${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,7)}`;}
 
 const I18N={
@@ -1377,7 +1386,7 @@ function rLabs(){
       ? `<span class="badge blue" style="margin-left:4px;font-size:9px;">From orders</span>`
       : '';
     return `<tr style="${isSync?'opacity:0.7;':''}">
-      <td>${esc(l.time)}</td>
+      <td>${esc(nowDisplay(l.time))}</td>
       <td>${esc(l.test)}${syncTag}</td>
       <td><strong style="${isSync?'color:var(--subtle);':''}">${esc(l.result)}</strong></td>
       <td style="color:var(--muted);font-size:11px;">${esc(l.range)}</td>
@@ -1400,7 +1409,7 @@ function rLabs(){
   ) +
   section('Add lab result',`
     <div class="form-grid">
-      <input id="lab-time" type="time" value="${nowTime()}">
+      <input id="lab-time" type="datetime-local" value="${nowTime()}">
       <input id="lab-test" placeholder="Test">
       <input id="lab-result" placeholder="Result">
       <select id="lab-flag"><option>Normal</option><option>High</option><option>Low</option><option>Critical</option><option>Pending</option></select>
@@ -1525,7 +1534,7 @@ function rVitals(){
  
     ${section('Add vital signs', `
       <div class="form-grid">
-        <input id="vt-time" type="time" value="${nowTime()}">
+        <input id="vt-time" type="datetime-local" value="${nowTime()}">
         <input id="vt-hr"   type="number" placeholder="HR (bpm)">
         <input id="vt-bps"  type="number" placeholder="SBP (mmHg)">
         <input id="vt-bpd"  type="number" placeholder="DBP (mmHg)">
@@ -2378,7 +2387,7 @@ function rIO(){
       : '';
     const noteCell = e.note ? `<span style="font-size:11px;color:var(--muted);">${esc(e.note)}</span>` : '';
     return `<tr>
-      <td>${esc(e.time)}</td>
+      <td>${esc(nowDisplay(e.time))}</td>
       <td><span class="badge ${isOut?'red':'blue'}">${isOut?'OUT':'IN'}</span></td>
       <td>${esc(e.type)}</td>
       <td>${amtCell}</td>
@@ -2439,7 +2448,7 @@ function rIO(){
         </div>
         <div>
           <span class="input-label">Time</span>
-          <input id="io-in-time" type="time" value="${nowTime()}">
+          <input id="io-in-time" type="datetime-local" value="${nowTime()}">
         </div>
       </div>
       <div id="io-in-fields" class="io-sub-row" style="display:none;">
@@ -2467,7 +2476,7 @@ function rIO(){
         </div>
         <div>
           <span class="input-label">Time</span>
-          <input id="io-out-time" type="time" value="${nowTime()}">
+          <input id="io-out-time" type="datetime-local" value="${nowTime()}">
         </div>
       </div>
  
@@ -2578,7 +2587,7 @@ document.querySelectorAll('[data-del-io]').forEach(b => {
     render();
   };
 });
-function rNotes(){const p=currentPatient();const notes=p.notes.length?p.notes.map((n,i)=>`<div class="note"><div class="note-head"><span><span class="note-type">${esc(n.type)}</span> | ${esc(n.time)} | ${esc(n.by)}</span><button class="btn small danger" data-del-note="${i}">Delete</button></div><div class="note-body">${esc(n.body)}</div></div>`).join(''):'<p class="text-block" style="text-align:center;color:var(--subtle);padding:18px;">No signed notes yet.</p>';return section('Signed nursing notes',notes)+section('Add note',`<div class="form-row"><label>Type</label><select id="note-type"><option>HCT focused progress note</option><option>Admission note</option><option>Assessment note</option><option>Medication note</option><option>Patient education</option><option>Provider notification</option><option>Shift summary</option></select></div><div class="form-row"><label>Time</label><input id="note-time" type="time" value="${nowTime()}"></div><div class="form-row"><label>Note</label><textarea id="note-body" placeholder="Objective findings, interventions, response, follow-up plan."></textarea></div><div class="actions"><button class="btn" id="insert-note-template">Insert HCT template</button><button class="btn primary" id="save-note">Sign and save</button></div>`);}
+function rNotes(){const p=currentPatient();const notes=p.notes.length?p.notes.map((n,i)=>`<div class="note"><div class="note-head"><span><span class="note-type">${esc(n.type)}</span> | ${esc(n.time)} | ${esc(n.by)}</span><button class="btn small danger" data-del-note="${i}">Delete</button></div><div class="note-body">${esc(n.body)}</div></div>`).join(''):'<p class="text-block" style="text-align:center;color:var(--subtle);padding:18px;">No signed notes yet.</p>';return section('Signed nursing notes',notes)+section('Add note',`<div class="form-row"><label>Type</label><select id="note-type"><option>HCT focused progress note</option><option>Admission note</option><option>Assessment note</option><option>Medication note</option><option>Patient education</option><option>Provider notification</option><option>Shift summary</option></select></div><div class="form-row"><label>Time</label><input id="note-time" type="datetime-local" value="${nowTime()}"></div><div class="form-row"><label>Note</label><textarea id="note-body" placeholder="Objective findings, interventions, response, follow-up plan."></textarea></div><div class="actions"><button class="btn" id="insert-note-template">Insert HCT template</button><button class="btn primary" id="save-note">Sign and save</button></div>`);}
 function rCarePlan(){const rows=currentPatient().carePlan.map((c,i)=>`<tr><td><input data-cp="dx" data-cp-index="${i}" value="${esc(c.dx)}"></td><td><textarea data-cp="goal" data-cp-index="${i}">${esc(c.goal)}</textarea></td><td><textarea data-cp="interventions" data-cp-index="${i}">${esc(c.interventions)}</textarea></td><td><textarea data-cp="evaluation" data-cp-index="${i}">${esc(c.evaluation)}</textarea></td><td><button class="btn small danger" data-del-cp="${i}">Delete</button></td></tr>`).join('');return section('Nursing care plan',table(['Diagnosis','Goal','Interventions','Evaluation',''],rows)+'<div class="actions"><button class="btn primary" id="add-careplan">Add row</button><button class="btn navy" id="save-careplan">Save care plan</button></div>');}
 function rEducation(){const rows=currentPatient().education.map((e,i)=>`<div class="check-row"><input type="checkbox" data-ed-check="${i}" ${e.status==='Complete'?'checked':''}><strong>${esc(e.topic)}</strong><select data-ed-status="${i}"><option ${e.status==='Not started'?'selected':''}>Not started</option><option ${e.status==='In progress'?'selected':''}>In progress</option><option ${e.status==='Complete'?'selected':''}>Complete</option><option ${e.status==='Deferred'?'selected':''}>Deferred</option></select><input data-ed-response="${i}" value="${esc(e.response)}" placeholder="Learner/patient response"></div>`).join('');return section('Education record',`${rows}<div class="form-row"><label>New topic</label><input id="ed-topic" placeholder="Medication effects, warning signs, device use"></div><div class="actions"><button class="btn primary" id="add-education">Add topic</button><button class="btn navy" id="save-education">Save education</button></div>`);}
 function rSbar(){const s=currentPatient().sbar;return section('SBAR communication',`<div class="form-row"><label>Situation</label><textarea id="sb-s">${esc(s.s)}</textarea></div><div class="form-row"><label>Background</label><textarea id="sb-b">${esc(s.b)}</textarea></div><div class="form-row"><label>Assessment</label><textarea id="sb-a">${esc(s.a)}</textarea></div><div class="form-row"><label>Recommendation</label><textarea id="sb-r">${esc(s.r)}</textarea></div><div class="actions"><button class="btn" id="insert-sbar-template">Insert template</button><button class="btn primary" id="save-sbar">Save and document call</button></div>`);}
@@ -2657,7 +2666,7 @@ function rReport(){
   const vitalsRows=(p.vitals||[]).map(v=>{
     const tc=fToC(v.temp);
     return`<tr>
-      <td>${esc(v.time)}</td>
+      <td>${esc(nowDisplay(v.time))}</td>
       <td>${esc(v.hr)}</td>
       <td>${esc(v.bps)}/${esc(v.bpd)}</td>
       <td>${esc(v.rr)}</td>
@@ -2715,7 +2724,7 @@ function rReport(){
     ?`<div style="margin-bottom:8px;">${vAlerts.map(r=>`<div class="notice danger" style="padding:7px 10px;margin-bottom:5px;"><span class="mark">⚠ ${esc(r.label)}</span><span style="font-size:11px;">${esc(r.msg)}</span></div>`).join('')}</div>`
     :`<p style="color:var(--subtle);font-size:12px;">No active vital sign alerts.</p>`;
 
-  const notes=(p.notes||[]).slice(-4).map(n=>`<div class="note"><div class="note-head"><span class="note-type">${esc(n.type)} | ${esc(n.time)}</span><span>${esc(n.by)}</span></div><div class="note-body">${lines(n.body)}</div></div>`).join('')
+  const notes=(p.notes||[]).slice(-4).map(n=>`<div class="note"><div class="note-head"><span class="note-type">${esc(n.type)} | ${esc(nowDisplay(n.time))}</span><span>${esc(n.by)}</span></div><div class="note-body">${lines(n.body)}</div></div>`).join('')
     ||'<p class="text-block">No notes documented.</p>';
 
   const peer=(p.peerReviews||[]).map(r=>`<li><strong>${esc(r.reviewer)} (${esc(r.score)}/5):</strong> ${esc(r.strength)} — ${esc(r.growth)}</li>`).join('')
@@ -3030,7 +3039,7 @@ function bindTabEvents(){
         // Auto-sign a quick nursing note
         p.notes.push({
           type: 'Nursing note',
-          time: nowTime(),
+          time:nowTime(),
           by: 'Student Nurse',
           body: `Order completed: ${order.order}${order.details ? ' — ' + order.details : ''}`
         });
