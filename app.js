@@ -1167,7 +1167,7 @@ function rSummary(){
       ${fieldRaw('BP',`${esc(String(last.bps||'--'))}/${esc(String(last.bpd||'--'))} mmHg`)}
       ${fieldRaw('RR',`${esc(String(last.rr||'--'))} br/min`)}
       ${fieldRaw('SpO₂',`${esc(String(last.spo2||'--'))}%${spo2Alert?` <span class="badge red">⚠</span>`:''}`)}
-      ${fieldRaw('Temp',tempC!==null?`${tempC.toFixed(1)} °C${tempAlert?` <span class="badge red">⚠</span>`:'`}`:'--')}
+      ${fieldRaw('Temp',tempC!==null?`${tempC.toFixed(1)} °C${tempAlert?' <span class="badge red">⚠</span>':''}` :'--')}
       ${fieldRaw('Pain',`${esc(String(last.pain||'--'))}/10`)}
       ${fieldRaw('Time',esc(String(last.time||'--')))}
       ${fieldRaw('Note',esc(String(last.note||'--')))}
