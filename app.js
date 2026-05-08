@@ -616,6 +616,391 @@ function nowTime(){
   const pad=n=>String(n).padStart(2,'0');
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+const ONBOARDING_SLIDES = [
+  {
+    icon: '🏥',
+    tag:  'Welcome',
+    title:'Welcome to HCT\nStudent EHR',
+    desc: 'Your interactive nursing simulation platform — built for Filipino BSN students preparing for the PNLE and NCLEX-RN. Chart, reason, collaborate, and grow.',
+    visual: 'welcome',
+    features: null,
+  },
+  {
+    icon: '📋',
+    tag:  'Chart Review',
+    title:'Explore the\nElectronic Health Record',
+    desc: 'Every tab in the sidebar is a section of a real hospital chart. Start by reading the patient summary, then work through orders, labs, and documentation.',
+    visual: 'chart',
+    features: [
+      { icon:'🗂️', label:'Patient Summary',   desc:'Acuity, vitals snapshot, meds, I/O balance at a glance' },
+      { icon:'📝', label:'Provider Orders',    desc:'Add, complete, and sync nursing orders to the MAR and labs' },
+      { icon:'🔬', label:'Labs & Diagnostics', desc:'Review results, add new values, flag critical findings' },
+    ],
+  },
+  {
+    icon: '✍️',
+    tag:  'Documentation',
+    title:'Document Like\na Real Nurse',
+    desc: 'Every tool you will use in clinical practice is here — with built-in safety checks and clinical decision support.',
+    visual: 'document',
+    features: [
+      { icon:'💓', label:'Vital Signs',          desc:'Datetime-stamped entries, 6-parameter trend chart, auto-alerts for abnormals' },
+      { icon:'🩺', label:'Focused Assessment',   desc:'10-system dropdown picker — abnormal findings flagged automatically' },
+      { icon:'💊', label:'Medication MAR',        desc:'Allergy cross-checker, given / held / not-given tracking, high-alert warnings' },
+      { icon:'💧', label:'Intake & Output',       desc:'Full fluid balance with trend chart, deficit and excess alerts' },
+    ],
+  },
+  {
+    icon: '🧠',
+    tag:  'Clinical Reasoning',
+    title:'Build the Thinking\nBehind the Action',
+    desc: 'Go beyond documentation. Develop the clinical judgment that is tested in the PNLE and expected at the bedside.',
+    visual: 'reasoning',
+    features: [
+      { icon:'📞', label:'SBAR',              desc:'Structured provider communication — auto-populated from your chart' },
+      { icon:'🗒️', label:'Care Plan',         desc:'Nursing diagnoses, SMART goals, interventions, and evaluation' },
+      { icon:'🎯', label:'Clinical Reasoning',desc:'Scenario-specific PNLE-style questions linked to your chart data' },
+      { icon:'🔄', label:'Debriefing',        desc:'PEARLS self-assessment — strengths, growth areas, self-score' },
+    ],
+  },
+  {
+    icon: '🩺',
+    tag:  'Scenarios',
+    title:'13 Clinical Cases\nReady to Open',
+    desc: 'Each scenario is fully pre-charted with orders, labs, vitals, and medications. Open one, read the chart, then start documenting.',
+    visual: 'scenarios',
+    features: [
+      { icon:'🤰', label:'OB / Maternal',      desc:'Hyperemesis Gravidarum, Postpartum Hemorrhage, DVT' },
+      { icon:'🚨', label:'Adult / Emergency',   desc:'Sepsis, DKA, Hypertensive Crisis, Acute Psychotic Episode' },
+      { icon:'👶', label:'Pediatrics',          desc:'Acute Asthma Exacerbation' },
+      { icon:'🏥', label:'UbiSim VR Cases',     desc:"Crohn's Disease, CAD, Alzheimer's, Type 2 DM, Post-op Pain" },
+    ],
+  },
+  {
+    icon: '👥',
+    tag:  'Collaboration',
+    title:'Learn Together,\nGrow Together',
+    desc: 'HCT EHR is built for collaborative learning. Give feedback, receive feedback, and let your faculty guide your simulation.',
+    visual: 'collab',
+    features: [
+      { icon:'🤝', label:'Peer Review',            desc:'Score and comment on classmates\' charts with structured feedback' },
+      { icon:'🏫', label:'Faculty Module Builder', desc:'Instructors add custom objectives, activities, and checkpoints to your case' },
+      { icon:'📊', label:'Instructor Dashboard',   desc:'Faculty review, score, and annotate all submitted charts' },
+      { icon:'📤', label:'Submit Chart',            desc:'Send your completed chart to your instructor with one click' },
+    ],
+  },
+  {
+    icon: '🎓',
+    tag:  "You're Ready",
+    title:"You're Ready\nto Chart",
+    desc: "Start with a sample scenario, create your own patient, or ask your instructor which case to open. Your chart saves automatically.",
+    visual: 'ready',
+    features: [
+      { icon:'📂', label:'Open a Scenario',     desc:'Click "Sample Scenarios" in the sidebar — 13 cases ready to go' },
+      { icon:'➕', label:'Create a Patient',     desc:'Click "Add Patient" to build a case from scratch' },
+      { icon:'☁️', label:'Cloud Auto-save',      desc:'Charts sync to your instructor automatically when you submit' },
+      { icon:'🖨️', label:'Print Report',         desc:'Generate a handoff-ready chart summary at any time' },
+    ],
+  },
+];
+ 
+function onboardingKey(){
+  return cloud.session ? `hct_onboarded_${cloud.session.user.id}` : null;
+}
+function shouldShowOnboarding(){
+  const key = onboardingKey();
+  if(!key) return false;
+  return !localStorage.getItem(key);
+}
+function markOnboarded(){
+  const key = onboardingKey();
+  if(key) localStorage.setItem(key, '1');
+}
+function resetOnboarding(){
+  const key = onboardingKey();
+  if(key) localStorage.removeItem(key);
+}
+ 
+let _onboardSlide = 0;
+ 
+function showOnboarding(){
+  _onboardSlide = 0;
+  const el = document.getElementById('onboarding-overlay');
+  if(el){ el.style.display = 'flex'; renderOnboardSlide(); return; }
+  // Mount overlay
+  const div = document.createElement('div');
+  div.id = 'onboarding-overlay';
+  div.innerHTML = renderOnboardingHTML();
+  document.body.appendChild(div);
+  bindOnboardEvents();
+}
+ 
+function closeOnboarding(){
+  markOnboarded();
+  const el = document.getElementById('onboarding-overlay');
+  if(el){ el.style.opacity='0'; setTimeout(()=>el.style.display='none', 300); }
+}
+ 
+function renderOnboardingHTML(){
+  return `
+    <div class="ob-backdrop" id="ob-backdrop"></div>
+    <div class="ob-modal" id="ob-modal" role="dialog" aria-modal="true" aria-label="HCT EHR Onboarding">
+      <button class="ob-skip" id="ob-skip" title="Skip tour">Skip tour ✕</button>
+      <div class="ob-body" id="ob-body">${buildSlideHTML(ONBOARDING_SLIDES[0], 0)}</div>
+      <div class="ob-footer">
+        <div class="ob-dots" id="ob-dots">${ONBOARDING_SLIDES.map((_,i)=>`<button class="ob-dot ${i===0?'active':''}" data-dot="${i}" aria-label="Slide ${i+1}"></button>`).join('')}</div>
+        <div class="ob-nav">
+          <button class="ob-btn secondary" id="ob-prev" style="visibility:hidden;">← Back</button>
+          <button class="ob-btn primary" id="ob-next">Next →</button>
+        </div>
+      </div>
+    </div>`;
+}
+ 
+function buildSlideHTML(slide, idx){
+  const isLast = idx === ONBOARDING_SLIDES.length - 1;
+  const isFirst = idx === 0;
+ 
+  const featuresHTML = slide.features ? `
+    <div class="ob-features">
+      ${slide.features.map(f=>`
+        <div class="ob-feature">
+          <span class="ob-feat-icon">${f.icon}</span>
+          <div>
+            <strong>${esc(f.label)}</strong>
+            <p>${esc(f.desc)}</p>
+          </div>
+        </div>`).join('')}
+    </div>` : '';
+ 
+  const visualHTML = buildVisual(slide.visual, idx);
+ 
+  return `
+    <div class="ob-slide ob-slide-${slide.visual}" data-slide="${idx}">
+      <div class="ob-left">
+        <div class="ob-tag">${esc(slide.tag)}</div>
+        <h2 class="ob-title">${slide.title.replace(/\n/g,'<br>')}</h2>
+        <p class="ob-desc">${esc(slide.desc)}</p>
+        ${featuresHTML}
+        ${isLast ? `<button class="ob-btn primary large" id="ob-finish">Start charting →</button>` : ''}
+      </div>
+      <div class="ob-right">
+        ${visualHTML}
+      </div>
+    </div>`;
+}
+function buildVisual(type, idx){
+  const visuals = {
+    welcome: `
+      <div class="ob-visual ob-visual-welcome">
+        <div class="ob-logo-ring">
+          <img src="${LOGO_TEAL}" alt="HCT" class="ob-big-logo">
+        </div>
+        <div class="ob-welcome-bubbles">
+          ${['PNLE','NCLEX','EHR','OB','ICU','ED','Peds','Psych'].map((t,i)=>
+            `<span class="ob-bubble" style="animation-delay:${i*0.15}s">${t}</span>`
+          ).join('')}
+        </div>
+        <div class="ob-tagline">How Care Transforms</div>
+      </div>`,
+    chart: `
+      <div class="ob-visual ob-visual-chart">
+        <div class="ob-mock-ehr">
+          <div class="ob-mock-sidebar">
+            ${['Summary','Orders','Labs','Vitals','Assessment','MAR','I/O','Notes'].map((t,i)=>
+              `<div class="ob-mock-nav ${i===0?'active':''}" style="animation-delay:${0.1+i*0.08}s">${t}</div>`
+            ).join('')}
+          </div>
+          <div class="ob-mock-content">
+            <div class="ob-mock-badge critical">Critical</div>
+            <div class="ob-mock-line wide"></div>
+            <div class="ob-mock-line med"></div>
+            <div class="ob-mock-grid">
+              <div class="ob-mock-card"><span>HR</span><strong>122</strong></div>
+              <div class="ob-mock-card"><span>SpO₂</span><strong style="color:var(--ob-danger);">89%</strong></div>
+              <div class="ob-mock-card"><span>BP</span><strong>88/52</strong></div>
+              <div class="ob-mock-card"><span>RR</span><strong>28</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>`,
+    document: `
+      <div class="ob-visual ob-visual-document">
+        <div class="ob-doc-stack">
+          <div class="ob-doc-card" style="animation-delay:0s">
+            <div class="ob-doc-label">Vital Signs</div>
+            <div class="ob-doc-row"><span>HR</span><span class="ob-doc-val">88 bpm</span><span class="ob-doc-ok">✓</span></div>
+            <div class="ob-doc-row"><span>SpO₂</span><span class="ob-doc-val warn">91%</span><span class="ob-doc-warn">⚠</span></div>
+          </div>
+          <div class="ob-doc-card" style="animation-delay:0.15s">
+            <div class="ob-doc-label">Medication MAR</div>
+            <div class="ob-doc-row"><span>Ondansetron 4mg</span><span class="ob-doc-status given">Given</span></div>
+            <div class="ob-doc-row"><span>Thiamine 100mg</span><span class="ob-doc-status hold">Hold</span></div>
+          </div>
+          <div class="ob-doc-card" style="animation-delay:0.3s">
+            <div class="ob-doc-label">I/O Balance</div>
+            <div class="ob-doc-row"><span>Intake</span><span class="ob-doc-val">740 mL</span></div>
+            <div class="ob-doc-row"><span>Output</span><span class="ob-doc-val">350 mL</span></div>
+            <div class="ob-doc-row"><span>Net</span><span class="ob-doc-val" style="color:var(--ob-teal);font-weight:900;">+390 mL</span></div>
+          </div>
+        </div>
+      </div>`,
+    reasoning: `
+      <div class="ob-visual ob-visual-reasoning">
+        <div class="ob-reasoning-flow">
+          <div class="ob-rf-step" style="animation-delay:0s">
+            <div class="ob-rf-icon">👁️</div>
+            <div class="ob-rf-label">Assess</div>
+          </div>
+          <div class="ob-rf-arrow">→</div>
+          <div class="ob-rf-step" style="animation-delay:0.15s">
+            <div class="ob-rf-icon">🧠</div>
+            <div class="ob-rf-label">Analyze</div>
+          </div>
+          <div class="ob-rf-arrow">→</div>
+          <div class="ob-rf-step" style="animation-delay:0.3s">
+            <div class="ob-rf-icon">⚡</div>
+            <div class="ob-rf-label">Act</div>
+          </div>
+          <div class="ob-rf-arrow">→</div>
+          <div class="ob-rf-step" style="animation-delay:0.45s">
+            <div class="ob-rf-icon">🔄</div>
+            <div class="ob-rf-label">Evaluate</div>
+          </div>
+        </div>
+        <div class="ob-sbar-preview">
+          <div class="ob-sbar-row"><span class="ob-sbar-letter">S</span><span>Patient in distress, HR 122, SpO₂ 89%</span></div>
+          <div class="ob-sbar-row"><span class="ob-sbar-letter">B</span><span>Sepsis protocol activated, lactate 3.8</span></div>
+          <div class="ob-sbar-row"><span class="ob-sbar-letter">A</span><span>Deteriorating — IV bolus running</span></div>
+          <div class="ob-sbar-row"><span class="ob-sbar-letter">R</span><span>Request immediate provider reassessment</span></div>
+        </div>
+      </div>`,
+    scenarios: `
+      <div class="ob-visual ob-visual-scenarios">
+        <div class="ob-scenario-cards">
+          ${[
+            {name:'Hyperemesis Gravidarum',tag:'OB · Intermediate',color:'#43c0c4'},
+            {name:'Sepsis — Pneumonia',tag:'ED · Advanced',color:'#a33131'},
+            {name:'Diabetic Ketoacidosis',tag:'ICU · Advanced',color:'#8a560f'},
+            {name:'Acute Asthma',tag:'Peds · Intermediate',color:'#175f9e'},
+            {name:"Alzheimer's — Med Safety",tag:'Med-Surg · Beginner',color:'#31691f'},
+            {name:'Post-op Pain Mgmt',tag:'Surgical · Beginner',color:'#5e35b1'},
+          ].map((s,i)=>`
+            <div class="ob-sc-card" style="animation-delay:${i*0.1}s;border-left-color:${s.color}">
+              <div class="ob-sc-name">${s.name}</div>
+              <div class="ob-sc-tag">${s.tag}</div>
+            </div>`).join('')}
+        </div>
+      </div>`,
+    collab: `
+      <div class="ob-visual ob-visual-collab">
+        <div class="ob-collab-diagram">
+          <div class="ob-collab-center">
+            <div class="ob-collab-hub">
+              <img src="${LOGO_NAVY}" alt="HCT" style="width:44px;height:44px;object-fit:contain;">
+            </div>
+          </div>
+          <div class="ob-collab-nodes">
+            ${[
+              {icon:'👩‍🎓',label:'Student A',delay:'0s'},
+              {icon:'👨‍🎓',label:'Student B',delay:'0.15s'},
+              {icon:'👩‍🏫',label:'Faculty',delay:'0.3s'},
+              {icon:'📊',label:'Dashboard',delay:'0.45s'},
+            ].map(n=>`
+              <div class="ob-collab-node" style="animation-delay:${n.delay}">
+                <div class="ob-collab-avatar">${n.icon}</div>
+                <div class="ob-collab-label">${n.label}</div>
+              </div>`).join('')}
+          </div>
+          <svg class="ob-collab-lines" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+            <line x1="150" y1="150" x2="150" y2="40"  stroke="rgba(67,192,196,0.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+            <line x1="150" y1="150" x2="260" y2="150" stroke="rgba(67,192,196,0.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+            <line x1="150" y1="150" x2="150" y2="260" stroke="rgba(67,192,196,0.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+            <line x1="150" y1="150" x2="40"  y2="150" stroke="rgba(67,192,196,0.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+          </svg>
+        </div>
+      </div>`,
+    ready: `
+      <div class="ob-visual ob-visual-ready">
+        <div class="ob-ready-wrap">
+          <div class="ob-ready-ring ob-ready-ring-1"></div>
+          <div class="ob-ready-ring ob-ready-ring-2"></div>
+          <div class="ob-ready-ring ob-ready-ring-3"></div>
+          <div class="ob-ready-center">
+            <img src="${LOGO_TEAL}" alt="HCT" style="width:72px;height:72px;object-fit:contain;">
+            <div style="font-size:28px;margin-top:8px;">🎓</div>
+          </div>
+          <div class="ob-ready-label">All systems ready</div>
+        </div>
+      </div>`,
+  };
+  return visuals[type] || visuals.welcome;
+}
+ 
+function renderOnboardSlide(){
+  const body = document.getElementById('ob-body');
+  const prev = document.getElementById('ob-prev');
+  const next = document.getElementById('ob-next');
+  const dots = document.querySelectorAll('.ob-dot');
+  if(!body) return;
+ 
+  const slide = ONBOARDING_SLIDES[_onboardSlide];
+  const isLast = _onboardSlide === ONBOARDING_SLIDES.length - 1;
+ 
+  // Animate out
+  body.style.opacity = '0';
+  body.style.transform = 'translateX(16px)';
+  setTimeout(()=>{
+    body.innerHTML = buildSlideHTML(slide, _onboardSlide);
+    body.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+    body.style.opacity = '1';
+    body.style.transform = 'translateX(0)';
+ 
+    // Rebind finish button
+    document.getElementById('ob-finish')?.addEventListener('click', closeOnboarding);
+  }, 200);
+ 
+  // Update nav
+  if(prev) prev.style.visibility = _onboardSlide === 0 ? 'hidden' : 'visible';
+  if(next){
+    next.style.display = isLast ? 'none' : 'inline-flex';
+  }
+ 
+  // Update dots
+  dots.forEach((d,i) => d.classList.toggle('active', i === _onboardSlide));
+}
+ 
+function bindOnboardEvents(){
+  document.getElementById('ob-skip')?.addEventListener('click', closeOnboarding);
+  document.getElementById('ob-backdrop')?.addEventListener('click', closeOnboarding);
+  document.getElementById('ob-prev')?.addEventListener('click', ()=>{
+    if(_onboardSlide > 0){ _onboardSlide--; renderOnboardSlide(); }
+  });
+  document.getElementById('ob-next')?.addEventListener('click', ()=>{
+    if(_onboardSlide < ONBOARDING_SLIDES.length - 1){ _onboardSlide++; renderOnboardSlide(); }
+  });
+  document.querySelectorAll('.ob-dot').forEach(d=>{
+    d.addEventListener('click', ()=>{ _onboardSlide = Number(d.dataset.dot); renderOnboardSlide(); });
+  });
+ 
+  // Keyboard navigation
+  document.addEventListener('keydown', onboardKeyHandler);
+}
+ 
+function onboardKeyHandler(e){
+  const overlay = document.getElementById('onboarding-overlay');
+  if(!overlay || overlay.style.display === 'none') {
+    document.removeEventListener('keydown', onboardKeyHandler);
+    return;
+  }
+  if(e.key === 'ArrowRight' || e.key === 'ArrowDown'){
+    if(_onboardSlide < ONBOARDING_SLIDES.length - 1){ _onboardSlide++; renderOnboardSlide(); }
+  }
+  if(e.key === 'ArrowLeft' || e.key === 'ArrowUp'){
+    if(_onboardSlide > 0){ _onboardSlide--; renderOnboardSlide(); }
+  }
+  if(e.key === 'Escape') closeOnboarding();
+}
 function nowDisplay(v){
   if(!v)return'--';
   if(v.includes('T')){const[date,time]=v.split('T');const[y,m,d]=date.split('-');return`${m}/${d}/${y} ${time}`;}
@@ -678,6 +1063,8 @@ async function initSupabase(){
   });
   cloud.status=cloud.session?'Cloud connected':'Ready for login';
   render();
+  if(cloud.session && shouldShowOnboarding()){
+    setTimeout(showOnboarding, 600);
 }
 async function loadProfile(){
   if(!cloud.session)return;
@@ -868,6 +1255,7 @@ function renderCloudPanel() {
         ${p.role === 'instructor'
           ? '<button class="btn" id="dashboard-shortcut">Instructor dashboard</button>'
           : ''}
+        <button class="btn" id="help-tour-btn">? Help tour</button>
         <button class="btn danger" id="signout-btn">Sign out</button>
       </div>
     </section>`;
@@ -3007,6 +3395,7 @@ function bindCloudEvents(){
   document.getElementById('save-cloud-btn')?.addEventListener('click',()=>saveCurrentChart(true));
   document.getElementById('submit-chart-btn')?.addEventListener('click',submitCurrentChart);
   document.getElementById('dashboard-shortcut')?.addEventListener('click',()=>setTab('dashboard'));
+  document.getElementById('help-tour-btn')?.addEventListener('click', showOnboarding);
 }
 function bindTabEvents(){
   const p=currentPatient();
