@@ -727,15 +727,30 @@ function showOnboarding(){
   _onboardSlide = 0;
   let el = document.getElementById('onboarding-overlay');
   if(!el){
-    // Safety fallback: mount if somehow missing
     el = document.createElement('div');
     el.id = 'onboarding-overlay';
     el.innerHTML = renderOnboardingHTML();
     document.body.appendChild(el);
     bindOnboardEvents();
   }
-  el.style.display = 'flex';
-  el.style.opacity = '1';
+  // Force positioning via inline styles as bulletproof fallback
+  // in case CSS specificity or transform ancestors override the stylesheet
+  el.style.cssText = [
+    'position:fixed',
+    'top:0',
+    'left:0',
+    'right:0',
+    'bottom:0',
+    'width:100vw',
+    'height:100vh',
+    'z-index:99999',
+    'display:flex',
+    'align-items:center',
+    'justify-content:center',
+    'padding:16px',
+    'opacity:1',
+    'transition:opacity 0.3s ease',
+  ].join(';');
   renderOnboardSlide();
 }
  
@@ -743,9 +758,12 @@ function closeOnboarding(){
   markOnboarded();
   const el = document.getElementById('onboarding-overlay');
   if(el){
-    el.style.transition = 'opacity 0.3s ease';
     el.style.opacity = '0';
-    setTimeout(()=>{ el.style.display='none'; el.style.opacity='1'; }, 310);
+    el.style.transition = 'opacity 0.3s ease';
+    setTimeout(()=>{
+      el.style.display = 'none';
+      el.style.opacity = '1';
+    }, 320);
   }
 }
  
