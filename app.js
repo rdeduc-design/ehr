@@ -645,6 +645,7 @@ function badgeClass(t){const s=String(t||'').toLowerCase();if(s.includes('allerg
 function statusClass(t){const s=String(t||'').toLowerCase();if(s.includes('stat')||s.includes('critical')||s.includes('high')||s.includes('low'))return'critical';if(s.includes('pending')||s.includes('hold'))return'pending';if(s.includes('active')||s.includes('complete')||s.includes('given'))return'done';return'normal';}
 function section(title,body,right=''){return `<div class="card"><div class="card-head"><h3>${esc(title)}</h3>${right}</div><div class="card-body">${body}</div></div>`;}
 function field(label,value){return `<div class="field"><span class="k">${esc(label)}</span><span class="v">${lines(value||'--')}</span></div>`;}
+function fieldRaw(label,value){return `<div class="field"><span class="k">${esc(label)}</span><span class="v">${value||'--'}</span></div>`;}
 
 async function initSupabase(){
   const cfg=window.HCT_SUPABASE_CONFIG||{};
@@ -1156,16 +1157,20 @@ function rSummary(){
     return v!==null&&!isNaN(v)&&(v<r.lo||v>r.hi);
   }):[];
 
+  const hrAlert=Number(last.hr)<60||Number(last.hr)>100;
+  const spo2Alert=Number(last.spo2)<95;
+  const tempAlert=tempC!==null&&(tempC<36.1||tempC>37.9);
+
   const vitalsBlock=hasVitals?`
     <div class="grid-4" style="margin-bottom:10px;">
-      ${field('HR',`${last.hr||'--'} bpm${Number(last.hr)<60||Number(last.hr)>100?` <span class="badge red">⚠</span>`:''}`)}
-      ${field('BP',`${last.bps||'--'}/${last.bpd||'--'} mmHg`)}
-      ${field('RR',`${last.rr||'--'} br/min`)}
-      ${field('SpO₂',`${last.spo2||'--'}%${Number(last.spo2)<95?` <span class="badge red">⚠</span>`:''}`)}
-      ${field('Temp',tempC!==null?`${tempC.toFixed(1)} °C${(tempC<36.1||tempC>37.9)?` <span class="badge red">⚠</span>`:''}` :'--')}
-      ${field('Pain',`${last.pain||'--'}/10`)}
-      ${field('Time',last.time||'--')}
-      ${field('Note',last.note||'--')}
+      ${fieldRaw('HR',`${esc(String(last.hr||'--'))} bpm${hrAlert?` <span class="badge red">⚠</span>`:''}`)}
+      ${fieldRaw('BP',`${esc(String(last.bps||'--'))}/${esc(String(last.bpd||'--'))} mmHg`)}
+      ${fieldRaw('RR',`${esc(String(last.rr||'--'))} br/min`)}
+      ${fieldRaw('SpO₂',`${esc(String(last.spo2||'--'))}%${spo2Alert?` <span class="badge red">⚠</span>`:''}`)}
+      ${fieldRaw('Temp',tempC!==null?`${tempC.toFixed(1)} °C${tempAlert?` <span class="badge red">⚠</span>`:'`}`:'--')}
+      ${fieldRaw('Pain',`${esc(String(last.pain||'--'))}/10`)}
+      ${fieldRaw('Time',esc(String(last.time||'--')))}
+      ${fieldRaw('Note',esc(String(last.note||'--')))}
     </div>
     ${vAlerts.length?`<div style="margin-top:4px;">${vAlerts.map(r=>`<div class="notice danger" style="margin-bottom:5px;padding:7px 10px;"><span class="mark">⚠ ${esc(r.label)}</span><span style="font-size:11px;">${esc(r.msg)}</span></div>`).join('')}</div>`:''}
   `:'<p style="color:var(--subtle);font-size:12px;padding:4px 0;">No vital signs charted yet.</p>';
@@ -2737,14 +2742,14 @@ function rReport(){
     `)}
     ${section('Latest vital signs',`
       <div class="grid-4" style="margin-bottom:10px;">
-        ${field('HR',`${last.hr||'--'} bpm`)}
-        ${field('BP',`${last.bps||'--'}/${last.bpd||'--'} mmHg`)}
-        ${field('RR',`${last.rr||'--'} br/min`)}
-        ${field('SpO₂',`${last.spo2||'--'}%`)}
-        ${field('Temp',tempC!==null?tempC.toFixed(1)+' °C':'--')}
-        ${field('Pain',`${last.pain||'--'}/10`)}
-        ${field('Time charted',last.time||'--')}
-        ${field('Note',last.note||'--')}
+        ${fieldRaw('HR',`${esc(String(last.hr||'--'))} bpm`)}
+        ${fieldRaw('BP',`${esc(String(last.bps||'--'))}/${esc(String(last.bpd||'--'))} mmHg`)}
+        ${fieldRaw('RR',`${esc(String(last.rr||'--'))} br/min`)}
+        ${fieldRaw('SpO₂',`${esc(String(last.spo2||'--'))}%`)}
+        ${fieldRaw('Temp',tempC!==null?tempC.toFixed(1)+' °C':'--')}
+        ${fieldRaw('Pain',`${esc(String(last.pain||'--'))}/10`)}
+        ${fieldRaw('Time charted',esc(String(last.time||'--')))}
+        ${fieldRaw('Note',esc(String(last.note||'--')))}
       </div>
       ${section('All vital signs — flowsheet',table(['Time','HR','BP','RR','SpO₂','Temp','Pain','Note'],vitalsRows))}
     `)}
