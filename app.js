@@ -647,26 +647,54 @@ function section(title,body,right=''){return `<div class="card"><div class="card
 function field(label,value){return `<div class="field"><span class="k">${esc(label)}</span><span class="v">${lines(value||'--')}</span></div>`;}
 
 async function initSupabase(){
-  const cfg=window.HCT_SUPABASE_CONFIG||{};
-  const ok=cfg.url&&cfg.anonKey&&!cfg.url.includes('YOUR-')&&!cfg.anonKey.includes('YOUR_');
-  if(!ok||!window.supabase){cloud.status='Supabase not configured';render();return;}
-  cloud.ready=true;
-  cloud.client=window.supabase.createClient(cfg.url,cfg.anonKey);
-  const{data}=await cloud.client.auth.getSession();
-  cloud.session=data.session;
-  if(cloud.session)await loadProfile();
-  cloud.client.auth.onAuthStateChange(async (_, session) => {
-    cloud.session = session;
-    cloud.profile = null;
-    if (session) {
+  const cfg = window.HCT_SUPABASE_CONFIG || {};
+  const ok  = cfg.url && cfg.anonKey
+              && !cfg.url.includes('YOUR-')
+              && !cfg.anonKey.includes('YOUR_');
+ 
+  if (!ok || !window.supabase) {
+    cloud.status = 'Supabase not configured — local mode only';
+    render();   // show auth page immediately
+    return;
+  }
+ 
+  // Show the auth page right away, don't wait for Supabase
+  cloud.status = 'Connecting…';
+  render();
+ 
+  try {
+    cloud.ready  = true;
+    cloud.client = window.supabase.createClient(cfg.url, cfg.anonKey);
+ 
+    const { data, error } = await cloud.client.auth.getSession();
+    if (error) throw error;
+ 
+    cloud.session = data.session;
+    if (cloud.session) {
       await loadProfile();
       cloud.status = 'Cloud connected';
     } else {
-      cloud.status = 'Not signed in';
+      cloud.status = 'Ready — sign in to continue';
     }
-    render();
-  });
-  cloud.status=cloud.session?'Cloud connected':'Ready for login';
+ 
+    // Listen for future auth state changes (login / logout)
+    cloud.client.auth.onAuthStateChange(async (_, session) => {
+      cloud.session = session;
+      cloud.profile = null;
+      if (session) {
+        await loadProfile();
+        cloud.status = 'Cloud connected';
+      } else {
+        cloud.status = 'Signed out';
+      }
+      render();
+    });
+ 
+  } catch (err) {
+    cloud.status = 'Connection error — check config';
+    console.error('Supabase init error:', err);
+  }
+ 
   render();
 }
 async function loadProfile(){
@@ -679,19 +707,42 @@ async function loadProfile(){
   await cloud.client.from('profiles').insert(p);cloud.profile=p;
 }
 async function signIn() {
-  const e = val('auth-email');
+  const e  = val('auth-email');
   const pw = val('auth-password');
-  if (!e || !pw) { toast('Email and password required'); return; }
  
-  setAuthStatus('Signing in…');
-  const { error } = await cloud.client.auth.signInWithPassword({ email: e, password: pw });
- 
-  if (error) {
-    setAuthStatus('Sign in failed');
-    showAuthError(error.message);
+  if (!e || !pw) {
+    showAuthError('Email and password are required.');
     return;
   }
-  // onAuthStateChange will fire render() automatically
+ 
+  // Guard: Supabase not ready yet
+  if (!cloud.ready || !cloud.client) {
+    showAuthError('Still connecting to server — please wait a moment and try again.');
+    return;
+  }
+ 
+  // Show spinner
+  const signinBtn = document.getElementById('signin-btn');
+  if (signinBtn) { signinBtn.disabled = true; signinBtn.textContent = 'Signing in…'; }
+  clearAuthErrors();
+ 
+  try {
+    const { error } = await cloud.client.auth.signInWithPassword({ email: e, password: pw });
+ 
+    if (error) {
+      showAuthError(
+        error.message.includes('Invalid login')
+          ? 'Incorrect email or password. Please try again.'
+          : error.message
+      );
+      if (signinBtn) { signinBtn.disabled = false; signinBtn.textContent = 'Sign in'; }
+      return;
+    }
+    // onAuthStateChange will call render() — no need to do it here
+  } catch (err) {
+    showAuthError('Network error — check your connection and try again.');
+    if (signinBtn) { signinBtn.disabled = false; signinBtn.textContent = 'Sign in'; }
+  }
 }
 async function signUp() {
   const accountType = document.querySelector('input[name="account-type"]:checked')?.value || 'student';
@@ -700,9 +751,15 @@ async function signUp() {
   const pw2  = val('auth-password2');
   const name = val('auth-name');
  
-  if (!e || !pw || !name) { showAuthError('Name, email, and password are required.'); return; }
+  if (!name || !e || !pw) { showAuthError('Name, email, and password are required.'); return; }
   if (pw !== pw2)          { showAuthError('Passwords do not match.'); return; }
   if (pw.length < 8)       { showAuthError('Password must be at least 8 characters.'); return; }
+ 
+  // Guard: Supabase not ready yet
+  if (!cloud.ready || !cloud.client) {
+    showAuthError('Still connecting to server — please wait a moment and try again.');
+    return;
+  }
  
   const meta = { full_name: name };
   if (accountType === 'student') {
@@ -713,6 +770,39 @@ async function signUp() {
   } else {
     meta.role = 'instructor';
   }
+ 
+  const signupBtn = document.getElementById('signup-btn');
+  if (signupBtn) { signupBtn.disabled = true; signupBtn.textContent = 'Creating account…'; }
+  clearAuthErrors();
+ 
+  try {
+    const { data, error } = await cloud.client.auth.signUp({
+      email: e, password: pw, options: { data: meta }
+    });
+ 
+    if (error) {
+      showAuthError(
+        error.message.includes('already registered')
+          ? 'This email is already registered. Try signing in instead.'
+          : error.message
+      );
+      if (signupBtn) { signupBtn.disabled = false; signupBtn.textContent = 'Create account'; }
+      return;
+    }
+ 
+    if (data.session) {
+      cloud.session = data.session;
+      await upsertProfile(meta);
+      // onAuthStateChange fires render()
+    } else {
+      // Email confirmation required
+      document.getElementById('app').innerHTML = renderEmailConfirmPage(e);
+    }
+  } catch (err) {
+    showAuthError('Network error — check your connection and try again.');
+    if (signupBtn) { signupBtn.disabled = false; signupBtn.textContent = 'Create account'; }
+  }
+}
   
   setAuthStatus('Creating account…');
   const { data, error } = await cloud.client.auth.signUp({
@@ -1112,13 +1202,7 @@ function clearAuthErrors() {
 }
  
 function setAuthStatus(msg) {
-  cloud.status = msg;
-  const l1 = document.getElementById('auth-loading');
-  const l2 = document.getElementById('auth-loading-su');
-  const show = !!msg;
-  if (l1) l1.style.display = show ? 'flex' : 'none';
-  if (l2) l2.style.display = show ? 'flex' : 'none';
-}
+  cloud.status = msg || '';
  
 // Override val() to also check -su suffixed inputs (signup form uses different IDs)
 // The existing signUp() needs these helpers:
