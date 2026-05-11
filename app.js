@@ -3533,122 +3533,236 @@ function rNewPatient(){return section('Create patient from scratch',`<div class=
 function rPeerReview(){const p=currentPatient();const reviews=p.peerReviews||[];const rows=reviews.map((r,i)=>`<tr><td>${esc(r.time)}</td><td>${esc(r.reviewer)}</td><td>${esc(r.score)}/5</td><td>${lines(r.strength)}</td><td>${lines(r.growth)}</td><td><button class="btn small danger" data-del-peer="${i}">Delete</button></td></tr>`).join('');return section('Peer review workspace',`<div class="notice info"><span class="mark">PEER</span><span>Use this mode for student-to-student chart review. Feedback stays with this local chart and can be included in the printable report.</span></div><div class="form-grid"><input id="peer-reviewer" placeholder="Reviewer name"><select id="peer-score"><option value="5">5 - Safe/complete</option><option value="4">4 - Minor gaps</option><option value="3">3 - Needs follow-up</option><option value="2">2 - Safety concern</option><option value="1">1 - Incomplete</option></select></div><div class="grid-2"><div class="form-row"><label>Strength observed</label><textarea id="peer-strength" placeholder="What documentation or reasoning was strong?"></textarea></div><div class="form-row"><label>Growth opportunity</label><textarea id="peer-growth" placeholder="What should be clarified, reassessed, or documented next?"></textarea></div></div><div class="actions"><button class="btn" id="peer-template">Use feedback sentence starters</button><button class="btn primary" id="save-peer-review">Save peer review</button></div>`)+section('Saved peer feedback',table(['Time','Reviewer','Score','Strength','Growth',''],rows||'<tr><td colspan="6">No peer feedback yet.</td></tr>'));}
 
 function rReport(){
-  const p=currentPatient();
-  const c=chartStats(p);
-  const last=p.vitals[p.vitals.length-1]||{};
-
-  // ── Temp conversion ────────────────────────────────────────────────────────
+  const p   = currentPatient();
+  const c   = chartStats(p);
+  const last = p.vitals[p.vitals.length-1]||{};
+ 
+  // ── Helpers ───────────────────────────────────────────────────────────────
   function fToC(f){const n=parseFloat(f);return isNaN(n)?null:Math.round((n-32)*5/9*10)/10;}
-  const tempC=fToC(last.temp);
-
-  // ── Vital alerts ───────────────────────────────────────────────────────────
-  const vAlerts=Object.keys(last).length?VITAL_RULES.filter(r=>{
-    const v=r.key==='tempc'?tempC:Number(last[r.key]);
-    return v!==null&&!isNaN(v)&&(v<r.lo||v>r.hi);
-  }):[];
-
-  // ── All vitals flowsheet ───────────────────────────────────────────────────
-  const vitalsRows=(p.vitals||[]).map(v=>{
-    const tc=fToC(v.temp);
-    return`<tr>
+  const tempC = fToC(last.temp);
+ 
+  // ── Vitals alerts ─────────────────────────────────────────────────────────
+  const vAlerts = Object.keys(last).length ? VITAL_RULES.filter(r=>{
+    const v = r.key==='tempc' ? tempC : Number(last[r.key]);
+    return v!==null && !isNaN(v) && (v<r.lo||v>r.hi);
+  }) : [];
+ 
+  // ── All vitals flowsheet rows ─────────────────────────────────────────────
+  const vitalsRows = (p.vitals||[]).map(v=>{
+    const tc = fToC(v.temp);
+    return `<tr>
       <td>${esc(nowDisplay(v.time))}</td>
       <td>${esc(v.hr)}</td>
       <td>${esc(v.bps)}/${esc(v.bpd)}</td>
       <td>${esc(v.rr)}</td>
       <td>${esc(v.spo2)}%</td>
-      <td>${tc!==null?tc.toFixed(1)+' °C':'--'}</td>
+      <td>${tc!==null ? tc.toFixed(1)+' °C' : '--'}</td>
       <td>${esc(v.pain)}</td>
       <td style="font-size:11px;color:var(--muted);">${esc(v.note)}</td>
     </tr>`;
-  }).join('')||'<tr><td colspan="8" style="color:var(--subtle);">No vitals charted.</td></tr>';
-
-  // ── Medications by status ──────────────────────────────────────────────────
-  const MED_CATEGORIES=['medication','med','drug','iv fluids','iv','infusion','analgesic','antibiotic','new order'];
-  function isMedOrder(o){const cat=(o.category||'').toLowerCase();const ord=(o.order||'').toLowerCase();return MED_CATEGORIES.some(k=>cat.includes(k)||ord.startsWith(k));}
-  const existingMedNames=new Set((p.meds||[]).map(m=>(m.name||'').toLowerCase().trim()));
-  const syncedMeds=(p.orders||[]).filter(o=>isMedOrder(o)&&!existingMedNames.has((o.order||'').toLowerCase().trim())).map((o,idx)=>({id:`sync-${idx}`,name:o.order,dose:o.details||'—',route:'',freq:o.status,priority:o.category,status:o.nurseCompleted?'given':'pending',time:'',note:'',warn:'',_fromOrder:true}));
-  const allMeds=[...(p.meds||[]),...syncedMeds];
-
-  function medStatusSection(label,statusKey,colorClass){
-    const subset=allMeds.filter(m=>m.status===statusKey);
-    if(!subset.length)return'';
-    const rows=subset.map(m=>`<tr>
-      <td><strong>${esc(m.name)}</strong>${m._fromOrder?` <span class="badge blue" style="font-size:9px;">Order</span>`:''}</td>
-      <td>${esc(m.dose)}</td>
-      <td>${esc(m.route)}</td>
-      <td>${esc(m.freq)}</td>
-      <td>${m.time?esc(m.time):'—'}</td>
-      <td>${m.note?esc(m.note):'—'}</td>
-      <td><span class="badge ${colorClass}">${esc(m.status)}</span></td>
-    </tr>`).join('');
-    return`<p style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);margin:10px 0 4px;">${label}</p>`
-      +table(['Medication','Dose','Route','Freq','Time','Note','Status'],rows);
+  }).join('') || '<tr><td colspan="8" style="color:var(--subtle);">No vitals charted.</td></tr>';
+ 
+  // ── Medication sections by status ─────────────────────────────────────────
+  const MED_CATS = ['medication','med','drug','iv fluids','iv','infusion','analgesic','antibiotic','new order'];
+  function isMedOrder(o){
+    const cat=(o.category||'').toLowerCase();
+    const ord=(o.order||'').toLowerCase();
+    return MED_CATS.some(k=>cat.includes(k)||ord.startsWith(k));
   }
-
-  const medBlock=allMeds.length
-    ? medStatusSection('✓ Given',       'given',    'green')
-    + medStatusSection('⏸ Held',        'hold',     'gold')
-    + medStatusSection('✗ Not given',   'not_given','red')
-    + medStatusSection('○ Pending',     'pending',  'blue')
-    : '<p style="color:var(--subtle);font-size:12px;">No medications on MAR.</p>';
-
-  // ── I/O summary ────────────────────────────────────────────────────────────
-  const totals=(p.io||[]).reduce((a,e)=>{if(e.direction==='in')a.ins+=Number(e.amount)||0;if(e.direction==='out')a.outs+=Number(e.amount)||0;return a;},{ins:0,outs:0});
-  const net=totals.ins-totals.outs;
-  const netColor=net<-500?'var(--danger)':net>2000?'var(--warning)':'var(--success)';
-  const ioRows=(p.io||[]).map(e=>`<tr>
-    <td>${esc(e.time)}</td>
+  const existingNames = new Set((p.meds||[]).map(m=>(m.name||'').toLowerCase().trim()));
+  const syncedMeds   = (p.orders||[])
+    .filter(o=>isMedOrder(o)&&!existingNames.has((o.order||'').toLowerCase().trim()))
+    .map((o,idx)=>({id:`sync-${idx}`,name:o.order,dose:o.details||'—',route:'',freq:o.status,
+      priority:o.category,status:o.nurseCompleted?'given':'pending',time:'',note:'',warn:'',_fromOrder:true}));
+  const allMeds = [...(p.meds||[]),...syncedMeds];
+ 
+  function medSection(label, statusKey, colorClass){
+    const subset = allMeds.filter(m=>m.status===statusKey);
+    if(!subset.length) return '';
+    const rows = subset.map(m=>{
+      const warn = checkMedAllergy(m.name, p.allergies);
+      return `<tr>
+        <td>
+          <strong>${esc(m.name)}</strong>
+          ${m._fromOrder?` <span style="font-size:9px;color:var(--info);">(order)</span>`:''}
+          ${warn?`<br><span style="font-size:10px;color:var(--danger);font-weight:800;">⚠ ${esc(warn)}</span>`:''}
+        </td>
+        <td>${esc(m.dose)}</td>
+        <td>${esc(m.route)}</td>
+        <td>${esc(m.freq)}</td>
+        <td>${m.time ? esc(nowDisplay(m.time)) : '—'}</td>
+        <td style="font-size:11px;color:var(--muted);">${m.note ? esc(m.note) : '—'}</td>
+        <td><span class="badge ${colorClass}">${esc(m.status)}</span></td>
+      </tr>`;
+    }).join('');
+    return `<p style="font-size:10px;font-weight:800;text-transform:uppercase;
+      color:var(--muted);margin:10px 0 4px;letter-spacing:.06em;">${label}</p>
+      ${table(['Medication','Dose','Route','Freq','Time','Note','Status'], rows)}`;
+  }
+ 
+  const medBlock = allMeds.length
+    ? (medSection('✓ Given',     'given',    'green') ||'')
+    + (medSection('⏸ Held',      'hold',     'gold')  ||'')
+    + (medSection('✗ Not given', 'not_given','red')   ||'')
+    + (medSection('○ Pending',   'pending',  'blue')  ||'')
+    : '<p style="color:var(--subtle);font-size:12px;padding:4px 0;">No medications on MAR.</p>';
+ 
+  // ── I/O ───────────────────────────────────────────────────────────────────
+  const totals = (p.io||[]).reduce((a,e)=>{
+    if(e.direction==='in')  a.ins  += Number(e.amount)||0;
+    if(e.direction==='out') a.outs += Number(e.amount)||0;
+    return a;
+  },{ins:0,outs:0});
+  const net      = totals.ins - totals.outs;
+  const netColor = net<-500 ? 'var(--danger)' : net>2000 ? 'var(--warning)' : 'var(--success)';
+  const ioRows   = (p.io||[]).map(e=>`<tr>
+    <td>${esc(nowDisplay(e.time))}</td>
     <td><span class="badge ${e.direction==='in'?'blue':'red'}">${e.direction.toUpperCase()}</span></td>
     <td>${esc(e.type)}</td>
-    <td>${e.amount?esc(e.amount)+' mL':'—'}</td>
+    <td>${e.amount ? esc(e.amount)+' mL' : '—'}</td>
     <td style="font-size:11px;color:var(--muted);">${esc(e.characteristic||e.note||'')}</td>
-  </tr>`).join('')||'<tr><td colspan="5" style="color:var(--subtle);">No I/O entries.</td></tr>';
-
-  // ── Alerts summary for report ──────────────────────────────────────────────
-  const alertsBlock=vAlerts.length
-    ?`<div style="margin-bottom:8px;">${vAlerts.map(r=>`<div class="notice danger" style="padding:7px 10px;margin-bottom:5px;"><span class="mark">⚠ ${esc(r.label)}</span><span style="font-size:11px;">${esc(r.msg)}</span></div>`).join('')}</div>`
-    :`<p style="color:var(--subtle);font-size:12px;">No active vital sign alerts.</p>`;
-
-  const notes=(p.notes||[]).slice(-4).map(n=>`<div class="note"><div class="note-head"><span class="note-type">${esc(n.type)} | ${esc(nowDisplay(n.time))}</span><span>${esc(n.by)}</span></div><div class="note-body">${lines(n.body)}</div></div>`).join('')
-    ||'<p class="text-block">No notes documented.</p>';
-
-  const peer=(p.peerReviews||[]).map(r=>`<li><strong>${esc(r.reviewer)} (${esc(r.score)}/5):</strong> ${esc(r.strength)} — ${esc(r.growth)}</li>`).join('')
-    ||'<li>No peer review saved.</li>';
-
-  return`<div class="print-report">
-    ${section('Printable EHR report',`
-      <div class="notice info"><span class="mark">REPORT</span><span>Use the print report button for a focused handoff packet.</span></div>
+  </tr>`).join('') || '<tr><td colspan="5" style="color:var(--subtle);">No I/O entries.</td></tr>';
+ 
+  // ── Alerts ────────────────────────────────────────────────────────────────
+  const allergyAlerts = allMeds
+    .map(m => checkMedAllergy(m.name, p.allergies))
+    .filter(Boolean);
+ 
+  const alertsHTML = [
+    ...vAlerts.map(r=>`<div class="notice danger" style="padding:7px 10px;margin-bottom:5px;">
+      <span class="mark">⚠ ${esc(r.label)}</span>
+      <span style="font-size:11px;">${esc(r.msg)}</span></div>`),
+    ...allergyAlerts.map(a=>`<div class="notice danger" style="padding:7px 10px;margin-bottom:5px;">
+      <span class="mark">🚨 ALLERGY</span>
+      <span style="font-size:11px;">${esc(a)}</span></div>`),
+  ].join('') || '<p style="color:var(--subtle);font-size:12px;">No active alerts.</p>';
+ 
+  // ── Notes ─────────────────────────────────────────────────────────────────
+  const notesHTML = (p.notes||[]).slice(-5).map(n=>`
+    <div class="note">
+      <div class="note-head">
+        <span><span class="note-type">${esc(n.type)}</span> | ${esc(nowDisplay(n.time))} | ${esc(n.by)}</span>
+      </div>
+      <div class="note-body">${lines(n.body)}</div>
+    </div>`).join('') || '<p class="text-block" style="color:var(--subtle);">No notes documented.</p>';
+ 
+  // ── Peer review ───────────────────────────────────────────────────────────
+  const peerHTML = (p.peerReviews||[]).length
+    ? (p.peerReviews||[]).map(r=>`<li><strong>${esc(r.reviewer)} (${esc(r.score)}/5):</strong>
+        ${esc(r.strength)} — ${esc(r.growth)}</li>`).join('')
+    : '<li style="color:var(--subtle);">No peer review saved.</li>';
+ 
+  // ── Assessment narrative ──────────────────────────────────────────────────
+  const assessHTML = p.assessment?.narrative
+    ? `<p class="text-block">${lines(p.assessment.narrative)}</p>
+       <div class="grid-2" style="margin-top:10px;">
+         ${field('Neuro',      p.assessment.neuro)}
+         ${field('Respiratory',p.assessment.resp)}
+         ${field('Cardiac',    p.assessment.cardiac)}
+         ${field('GI',         p.assessment.gi)}
+         ${field('GU / Output',p.assessment.gu)}
+         ${field('Skin / Wound',p.assessment.skin)}
+         ${field('Pain',       p.assessment.pain)}
+         ${field('Safety',     p.assessment.safety)}
+       </div>`
+    : '<p style="color:var(--subtle);font-size:12px;">Assessment not documented.</p>';
+ 
+  // ── Care plan ─────────────────────────────────────────────────────────────
+  const carePlanRows = (p.carePlan||[]).filter(c=>c.dx).map(c=>`<tr>
+    <td>${esc(c.dx)}</td>
+    <td style="font-size:11px;">${esc(c.goal)}</td>
+    <td style="font-size:11px;">${esc(c.interventions)}</td>
+    <td style="font-size:11px;">${esc(c.evaluation)}</td>
+  </tr>`).join('') || '<tr><td colspan="4" style="color:var(--subtle);">No care plan documented.</td></tr>';
+ 
+  // ── Education ─────────────────────────────────────────────────────────────
+  const eduRows = (p.education||[]).map(e=>`<tr>
+    <td>${esc(e.topic)}</td>
+    <td><span class="badge ${e.status==='Complete'?'green':e.status==='In progress'?'gold':'blue'}">${esc(e.status)}</span></td>
+    <td style="font-size:11px;">${esc(e.response||'—')}</td>
+  </tr>`).join('') || '<tr><td colspan="3" style="color:var(--subtle);">No education documented.</td></tr>';
+ 
+  // ── Clinical reasoning ────────────────────────────────────────────────────
+  const prompts  = getPrompts(p.scenarioId);
+  const rr       = p.reasoningResponses||{};
+  const reasoningHTML = prompts.map((q,i)=>`
+    <div style="margin-bottom:10px;padding:8px;background:var(--surface);border-radius:6px;border:1px solid var(--line);">
+      <p style="font-size:11px;font-weight:800;color:var(--muted);margin:0 0 4px;">${esc(q)}</p>
+      <p style="font-size:12px;margin:0;">${rr[i] ? esc(rr[i]) : '<em style="color:var(--subtle);">No response</em>'}</p>
+    </div>`).join('') || '<p style="color:var(--subtle);font-size:12px;">No reasoning responses.</p>';
+ 
+  // ── Debriefing ────────────────────────────────────────────────────────────
+  const d = p.debriefing||{};
+  const debriefHTML = d.selfScore || d.strengths || d.improvements ? `
+    <div class="grid-2">
+      ${field('Self-score', d.selfScore ? d.selfScore+'/100' : '--')}
+      ${field('Facilitator score', d.facilNotes ? '(see notes)' : '--')}
+    </div>
+    ${d.strengths    ? `<p style="font-size:12px;margin:6px 0 2px;"><strong>What went well:</strong> ${lines(d.strengths)}</p>` : ''}
+    ${d.improvements ? `<p style="font-size:12px;margin:6px 0 2px;"><strong>What to improve:</strong> ${lines(d.improvements)}</p>` : ''}
+    ${d.facilNotes   ? `<p style="font-size:12px;margin:6px 0 2px;"><strong>Facilitator notes:</strong> ${lines(d.facilNotes)}</p>` : ''}`
+    : '<p style="color:var(--subtle);font-size:12px;">Debriefing not completed.</p>';
+ 
+  // ── Completion bar ────────────────────────────────────────────────────────
+  const score = completionScore(p);
+  const scoreColor = score>=80?'var(--success)':score>=50?'var(--warning)':'var(--danger)';
+ 
+  // ── Render ────────────────────────────────────────────────────────────────
+  return `<div class="print-report">
+ 
+    ${section('Printable chart report',`
+      <div class="notice info" style="margin-bottom:10px;">
+        <span class="mark">REPORT</span>
+        <span>Complete chart report — vitals, medications, I/O, assessment, care plan, education, reasoning, and debriefing.</span>
+      </div>
       <div class="actions" style="justify-content:flex-start;">
-        <button class="btn primary" onclick="window.print()">${tr('printReport')}</button>
+        <button class="btn primary" onclick="window.print()">🖨️ ${tr('printReport')}</button>
       </div>
     `)}
+ 
     ${section('Patient snapshot',`
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="flex:1;height:8px;background:var(--line);border-radius:999px;overflow:hidden;">
+          <div style="height:100%;width:${score}%;background:${scoreColor};border-radius:999px;transition:width .4s;"></div>
+        </div>
+        <span style="font-size:12px;font-weight:800;color:${scoreColor};">${score}% complete</span>
+      </div>
       <div class="grid-4">
         ${field('Patient',`${p.lastName}, ${p.firstName}`)}
-        ${field('MRN',p.mrn)}
-        ${field('Diagnosis',p.diagnosis)}
-        ${field('Acuity',p.acuity)}
-        ${field('Allergies',p.allergies)}
-        ${field('Code status',p.codeStatus)}
-        ${field('Completion',completionScore(p)+'%')}
-        ${field('Peer reviews',c.peer)}
+        ${field('MRN', p.mrn)}
+        ${field('DOB / Age',`${p.dob} / ${p.age}y`)}
+        ${field('Sex', p.sex)}
+        ${field('Diagnosis', p.diagnosis)}
+        ${field('Acuity', p.acuity)}
+        ${field('Code status', p.codeStatus)}
+        ${field('Allergies', p.allergies)}
+        ${field('Location', p.location)}
+        ${field('Specialty', p.specialty)}
+        ${p.gestation && p.gestation!=='N/A' ? field('Gestation', p.gestation) : ''}
+        ${field('Attending', p.attending||'Simulation provider')}
       </div>
     `)}
+ 
+    ${section('Active alerts',alertsHTML)}
+ 
     ${section('Latest vital signs',`
-      <div class="grid-4" style="margin-bottom:10px;">
-        ${fieldRaw('HR',`${esc(String(last.hr||'--'))} bpm`)}
-        ${fieldRaw('BP',`${esc(String(last.bps||'--'))}/${esc(String(last.bpd||'--'))} mmHg`)}
-        ${fieldRaw('RR',`${esc(String(last.rr||'--'))} br/min`)}
-        ${fieldRaw('SpO₂',`${esc(String(last.spo2||'--'))}%`)}
-        ${fieldRaw('Temp',tempC!==null?tempC.toFixed(1)+' °C':'--')}
-        ${fieldRaw('Pain',`${esc(String(last.pain||'--'))}/10`)}
-        ${fieldRaw('Time charted',esc(String(last.time||'--')))}
-        ${fieldRaw('Note',esc(String(last.note||'--')))}
+      <div class="grid-4" style="margin-bottom:12px;">
+        ${fieldRaw('HR',         `${esc(String(last.hr||'--'))} bpm`)}
+        ${fieldRaw('BP',         `${esc(String(last.bps||'--'))}/${esc(String(last.bpd||'--'))} mmHg`)}
+        ${fieldRaw('RR',         `${esc(String(last.rr||'--'))} br/min`)}
+        ${fieldRaw('SpO\u2082',  `${esc(String(last.spo2||'--'))}%`)}
+        ${fieldRaw('Temp',       tempC!==null ? tempC.toFixed(1)+' °C' : '--')}
+        ${fieldRaw('Pain',       `${esc(String(last.pain||'--'))}/10`)}
+        ${fieldRaw('Time',       esc(nowDisplay(last.time||'')))}
+        ${fieldRaw('Note',       esc(String(last.note||'--')))}
       </div>
-      ${section('All vital signs — flowsheet',table(['Time','HR','BP','RR','SpO₂','Temp','Pain','Note'],vitalsRows))}
+      <p style="font-size:10px;font-weight:800;text-transform:uppercase;color:var(--muted);
+        letter-spacing:.06em;margin:0 0 6px;">All vital signs</p>
+      ${table(['Time','HR','BP','RR','SpO\u2082','Temp','Pain','Note'], vitalsRows)}
     `)}
-    ${section('Clinical decision alerts',alertsBlock)}
-    ${section('Medication administration record',medBlock)}
+ 
+    ${section('Medication administration record', medBlock)}
+ 
     ${section('Intake / Output',`
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
         <div style="text-align:center;padding:10px;background:var(--info-bg);border-radius:6px;">
@@ -3664,18 +3778,36 @@ function rReport(){
           <div style="font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;">Net Balance</div>
         </div>
       </div>
-      ${table(['Time','Direction','Type','Amount','Characteristic / Note'],ioRows)}
+      ${table(['Time','Direction','Type','Amount','Characteristic / Note'], ioRows)}
     `)}
-    ${section('SBAR',`
+ 
+    ${section('SBAR communication',`
       <div class="grid-2">
-        ${field('Situation',p.sbar?.s)}
-        ${field('Background',p.sbar?.b)}
-        ${field('Assessment',p.sbar?.a)}
-        ${field('Recommendation',p.sbar?.r)}
+        ${field('Situation',    p.sbar?.s||'—')}
+        ${field('Background',   p.sbar?.b||'—')}
+        ${field('Assessment',   p.sbar?.a||'—')}
+        ${field('Recommendation', p.sbar?.r||'—')}
       </div>
     `)}
-    ${section('Recent notes',notes)}
-    ${section('Peer review summary',`<ul class="interactive-list">${peer}</ul>`)}
+ 
+    ${section('Focused assessment', assessHTML)}
+ 
+    ${section('Nursing care plan',
+      table(['Nursing Diagnosis','Goal','Interventions','Evaluation'], carePlanRows)
+    )}
+ 
+    ${section('Patient education',
+      table(['Topic','Status','Patient Response'], eduRows)
+    )}
+ 
+    ${section('Signed nursing notes (last 5)', notesHTML)}
+ 
+    ${section('Clinical reasoning responses', reasoningHTML)}
+ 
+    ${section('Simulation debriefing', debriefHTML)}
+ 
+    ${section('Peer review summary',`<ul class="interactive-list">${peerHTML}</ul>`)}
+ 
   </div>`;
 }
 function rModuleBuilder(){const p=currentPatient();const modules=p.facultyModules||[];const rows=modules.map((m,i)=>`<tr><td>${esc(m.title)}</td><td>${esc(m.level)}</td><td>${lines(m.objectives)}</td><td>${lines(m.activities)}</td><td>${esc(m.checkpoint)}</td><td><button class="btn small" data-apply-module="${i}">Apply</button> <button class="btn small danger" data-del-module="${i}">Delete</button></td></tr>`).join('');return section('Faculty module builder',`<div class="notice info"><span class="mark">FACULTY</span><span>Create interactive mini-modules that can add objectives, a nursing note prompt, and checklist activity to this patient.</span></div><div class="form-grid"><input id="module-title" placeholder="Module title"><select id="module-level"><option>Beginner</option><option>Intermediate</option><option>Advanced</option></select><input id="module-checkpoint" placeholder="Checkpoint / exit ticket"></div><div class="grid-2"><div class="form-row"><label>Learning objectives</label><textarea id="module-objectives" placeholder="One objective per line"></textarea></div><div class="form-row"><label>Interactive activities</label><textarea id="module-activities" placeholder="Assessment huddle, med safety check, SBAR role play"></textarea></div></div><div class="actions"><button class="btn" id="module-template">Load HCT template</button><button class="btn primary" id="save-module">Save module</button></div>`)+section('Built modules',table(['Title','Level','Objectives','Activities','Checkpoint',''],rows||'<tr><td colspan="6">No faculty modules yet.</td></tr>'));}
