@@ -1457,3 +1457,458 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--h
   .ob-nav    { order: 1; width: 100%; }
   .ob-btn    { flex: 1; justify-content: center; }
 }
+
+#band-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: bandFadeIn 0.22s ease both;
+}
+ 
+@keyframes bandFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+ 
+.band-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 18, 32, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+ 
+/* ── Dialog shell ────────────────────────────────────────────────────────── */
+.band-dialog {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 760px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 32px 80px rgba(23,41,70,0.28);
+  overflow: hidden;
+  animation: bandSlideUp 0.3s cubic-bezier(0.22,1,0.36,1) both;
+}
+ 
+@keyframes bandSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+ 
+.band-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(23,41,70,0.12);
+  background: linear-gradient(135deg, rgba(67,192,196,0.08), transparent);
+}
+ 
+.band-dialog-title {
+  margin: 0 0 3px;
+  font-size: 17px;
+  font-weight: 900;
+  color: #172946;
+}
+ 
+.band-dialog-sub {
+  margin: 0;
+  font-size: 12px;
+  color: #617085;
+}
+ 
+.band-close-btn {
+  border: 1px solid rgba(23,41,70,0.18);
+  background: #fff;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 13px;
+  color: #617085;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.band-close-btn:hover { background: #fbeaea; color: #a33131; }
+ 
+/* ── Band preview wrapper ────────────────────────────────────────────────── */
+.band-preview-wrap {
+  padding: 20px 24px;
+  background: #f0f4f8;
+  display: flex;
+  justify-content: center;
+}
+ 
+/* ── The actual wristband card ───────────────────────────────────────────── */
+.band-card {
+  width: 100%;
+  max-width: 680px;
+  background: #fff;
+  border: 1.5px solid #c8d5e0;
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: 'Courier New', Courier, monospace;
+  box-shadow: 0 4px 20px rgba(23,41,70,0.14), inset 0 0 0 1px rgba(255,255,255,0.8);
+}
+ 
+.band-card--allergy {
+  border-color: #e9a0a0;
+}
+ 
+/* Allergy top stripe */
+.band-allergy-stripe {
+  background: #a33131;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-align: center;
+  padding: 4px 12px;
+  text-transform: uppercase;
+}
+ 
+/* Inner layout: left + center + right */
+.band-inner {
+  display: grid;
+  grid-template-columns: 1fr 140px 110px;
+  gap: 0;
+  min-height: 110px;
+}
+ 
+/* ── LEFT zone ───────────────────────────────────────────────────────────── */
+.band-left {
+  padding: 10px 12px;
+  border-right: 1px dashed #c8d5e0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+ 
+.band-patient-name {
+  font-size: 17px;
+  font-weight: 900;
+  color: #0a1929;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-family: 'Courier New', monospace;
+}
+ 
+.band-mrn-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+ 
+.band-barcode {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #0a1929;
+  font-family: 'Courier New', monospace;
+  /* Simulated barcode feel */
+  border-bottom: 2px solid #0a1929;
+  padding-bottom: 1px;
+}
+ 
+.band-label {
+  font-size: 8px;
+  font-weight: 900;
+  color: #617085;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: #eef2f6;
+  padding: 1px 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+ 
+.band-meta-row {
+  display: flex;
+  gap: 10px;
+  font-size: 10px;
+  color: #3a4a5c;
+  align-items: center;
+  flex-wrap: wrap;
+}
+ 
+.band-meta-row span {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+ 
+.band-diagnosis {
+  font-size: 11px;
+  font-weight: 700;
+  color: #172946;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+ 
+.band-location-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: #3a4a5c;
+  margin-top: 1px;
+}
+ 
+.band-acuity {
+  font-size: 9px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.band-acuity--critical { background: #fbeaea; color: #a33131; }
+.band-acuity--urgent   { background: #fff2d7; color: #8a560f; }
+.band-acuity--stable   { background: #e8f5e3; color: #31691f; }
+.band-acuity--watcher  { background: #e8f3ff; color: #175f9e; }
+ 
+.band-allergy-row {
+  font-size: 10px;
+  font-weight: 900;
+  color: #a33131;
+  background: #fbeaea;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-top: 3px;
+  display: inline-block;
+  width: fit-content;
+}
+ 
+.band-nkda-row {
+  font-size: 10px;
+  font-weight: 800;
+  color: #31691f;
+  margin-top: 3px;
+}
+ 
+/* ── CENTER zone ─────────────────────────────────────────────────────────── */
+.band-center {
+  padding: 10px 10px;
+  border-right: 1px dashed #c8d5e0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: linear-gradient(180deg, rgba(67,192,196,0.06), transparent);
+}
+ 
+.band-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+ 
+.band-facility {
+  font-size: 10px;
+  font-weight: 900;
+  color: #172946;
+  text-align: center;
+  letter-spacing: 0.04em;
+  font-family: var(--font, sans-serif);
+}
+ 
+.band-facility-sub {
+  font-size: 7.5px;
+  color: #617085;
+  text-align: center;
+  line-height: 1.3;
+  font-family: var(--font, sans-serif);
+}
+ 
+.band-tagline {
+  font-size: 7px;
+  font-weight: 800;
+  color: #43c0c4;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-top: 2px;
+  font-family: var(--font, sans-serif);
+}
+ 
+/* ── RIGHT zone — QR ─────────────────────────────────────────────────────── */
+.band-right {
+  padding: 8px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+ 
+.band-qr-box {
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+}
+ 
+.band-qr-box img,
+.band-qr-box canvas {
+  width: 90px !important;
+  height: 90px !important;
+}
+ 
+.band-scan-label {
+  font-size: 7px;
+  font-weight: 900;
+  color: #172946;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: center;
+  font-family: var(--font, sans-serif);
+}
+ 
+.band-url-label {
+  font-size: 6px;
+  color: #8b98aa;
+  text-align: center;
+  word-break: break-all;
+  max-width: 94px;
+  line-height: 1.3;
+  font-family: 'Courier New', monospace;
+}
+ 
+/* ── Bottom data strip ───────────────────────────────────────────────────── */
+.band-bottom-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #172946;
+  color: rgba(255,255,255,0.85);
+  padding: 4px 12px;
+  font-size: 8px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.06em;
+  gap: 8px;
+}
+ 
+.band-bottom-strip span { white-space: nowrap; }
+ 
+/* ── Dialog actions & note ───────────────────────────────────────────────── */
+.band-actions {
+  display: flex;
+  gap: 8px;
+  padding: 14px 24px;
+  border-top: 1px solid rgba(23,41,70,0.10);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+ 
+.band-note {
+  margin: 0;
+  padding: 10px 24px 16px;
+  font-size: 11px;
+  color: #8b98aa;
+  line-height: 1.5;
+  border-top: 1px solid rgba(23,41,70,0.07);
+}
+ 
+/* ── Dark mode ───────────────────────────────────────────────────────────── */
+:root[data-theme="dark"] .band-dialog {
+  background: #172033;
+}
+:root[data-theme="dark"] .band-dialog-head {
+  border-color: rgba(222,232,245,0.12);
+}
+:root[data-theme="dark"] .band-dialog-title { color: #dbeafe; }
+:root[data-theme="dark"] .band-preview-wrap { background: #0b1220; }
+:root[data-theme="dark"] .band-card {
+  background: #fff; /* keep band white for print clarity */
+  border-color: #43c0c4;
+}
+:root[data-theme="dark"] .band-actions {
+  border-color: rgba(222,232,245,0.10);
+  background: #172033;
+}
+:root[data-theme="dark"] .band-note {
+  border-color: rgba(222,232,245,0.07);
+  color: #8fa1b8;
+}
+:root[data-theme="dark"] .band-close-btn {
+  background: #0b1220;
+  border-color: rgba(222,232,245,0.15);
+  color: #b2bfd0;
+}
+ 
+/* ── Print — ONLY the wristband prints ───────────────────────────────────── */
+@media print {
+  /* Hide everything */
+  body > *:not(#band-modal) { display: none !important; }
+ 
+  #band-modal {
+    position: static !important;
+    display: block !important;
+    background: none !important;
+    padding: 0 !important;
+  }
+ 
+  .band-backdrop,
+  .band-dialog-head,
+  .band-actions,
+  .band-note { display: none !important; }
+ 
+  .band-dialog {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    border: none !important;
+    animation: none !important;
+  }
+ 
+  .band-preview-wrap {
+    padding: 4mm !important;
+    background: #fff !important;
+  }
+ 
+  .band-card {
+    max-width: 100% !important;
+    border: 1.5px solid #000 !important;
+    border-radius: 4mm !important;
+    break-inside: avoid;
+  }
+ 
+  .band-patient-name { font-size: 18pt !important; }
+  .band-barcode      { font-size: 14pt !important; }
+  .band-diagnosis    { font-size: 11pt !important; }
+ 
+  /* Print 2 bands per page by duplicating — user can cut */
+  .band-card::after {
+    content: '';
+    display: block;
+    height: 8mm;
+    border-top: 1px dashed #999;
+    margin-top: 4mm;
+  }
+}
+ 
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .band-inner {
+    grid-template-columns: 1fr;
+  }
+  .band-center,
+  .band-right {
+    border-right: none;
+    border-top: 1px dashed #c8d5e0;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+  .band-bottom-strip {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+}
