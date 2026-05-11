@@ -1845,7 +1845,6 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--h
  
 /* ── Print — ONLY the wristband prints ───────────────────────────────────── */
 @media print {
-  /* Hide everything */
   body > *:not(#band-modal) { display: none !important; }
  
   #band-modal {
