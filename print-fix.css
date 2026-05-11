@@ -1,0 +1,14 @@
+@media print {
+  body.print-report-mode > #app {
+    display: block !important;
+  }
+
+  body.print-report-mode > .toast,
+  body.print-report-mode #band-modal {
+    display: none !important;
+  }
+
+  body.print-band-mode > *:not(#band-modal) {
+    display: none !important;
+  }
+}
