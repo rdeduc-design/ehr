@@ -1691,6 +1691,7 @@ function rSummary(){
         <button class="btn small" data-tab-jump="peerreview">Start peer review</button>
         <button class="btn small" data-tab-jump="modulebuilder">Build module</button>
         <button class="btn small" data-tab-jump="report">Preview report</button>
+        <button class="btn small" id="show-patient-band">🏷️ Patient band</button>
       </div>
     `)}
     ${section('Safety snapshot',`
@@ -3325,6 +3326,153 @@ function rNotes(){
       <button class="btn primary" id="save-note">Sign and save</button>
     </div>`);
 }
+function buildBandUrl(p){
+  const base = window.location.origin + window.location.pathname;
+  const params = new URLSearchParams();
+  params.set('patient', p.scenarioId||'scratch');
+  if(p.mrn) params.set('mrn', p.mrn);
+  return `${base}?${params.toString()}`;
+}
+ 
+function showPatientBand(){
+  const p   = currentPatient();
+  const url = buildBandUrl(p);
+  const hasAllergy = p.allergies &&
+    p.allergies.toLowerCase() !== 'nkda' &&
+    p.allergies.toLowerCase() !== 'nka';
+ 
+  // Remove existing modal if present
+  document.getElementById('band-modal')?.remove();
+ 
+  const modal = document.createElement('div');
+  modal.id = 'band-modal';
+  modal.innerHTML = `
+    <div class="band-backdrop" id="band-backdrop"></div>
+    <div class="band-dialog" role="dialog" aria-label="Patient wristband">
+ 
+      <div class="band-dialog-head">
+        <div>
+          <h2 class="band-dialog-title">Patient Identification Band</h2>
+          <p class="band-dialog-sub">Scan QR to open this patient's chart on any device</p>
+        </div>
+        <button class="band-close-btn" id="band-close" title="Close">✕</button>
+      </div>
+ 
+      <!-- ── PREVIEW ── -->
+      <div class="band-preview-wrap">
+        <div class="band-card${hasAllergy?' band-card--allergy':''}" id="band-printable">
+ 
+          <!-- Allergy stripe -->
+          ${hasAllergy ? `<div class="band-allergy-stripe">⚠ ALLERGY: ${esc(p.allergies)}</div>` : ''}
+ 
+          <div class="band-inner">
+ 
+            <!-- LEFT — patient info -->
+            <div class="band-left">
+              <div class="band-patient-name">${esc(p.lastName)}, ${esc(p.firstName)}</div>
+              <div class="band-mrn-row">
+                <span class="band-label">MRN</span>
+                <span class="band-barcode">${esc(p.mrn)}</span>
+              </div>
+              <div class="band-meta-row">
+                <span><span class="band-label">DOB</span> ${esc(p.dob)}</span>
+                <span><span class="band-label">AGE</span> ${esc(p.age)}y</span>
+                <span><span class="band-label">SEX</span> ${esc(p.sex)}</span>
+              </div>
+              <div class="band-diagnosis">${esc(p.diagnosis)}</div>
+              <div class="band-location-row">
+                <span><span class="band-label">LOC</span> ${esc(p.location)}</span>
+                <span class="band-acuity band-acuity--${(p.acuity||'stable').toLowerCase()}">${esc(p.acuity)}</span>
+              </div>
+              ${hasAllergy
+                ? `<div class="band-allergy-row">⚠ ${esc(p.allergies)}</div>`
+                : `<div class="band-nkda-row">✓ NKDA</div>`}
+            </div>
+ 
+            <!-- CENTER — logo + facility -->
+            <div class="band-center">
+              <img src="${LOGO_TEAL}" alt="HCT" class="band-logo">
+              <div class="band-facility">HCT Academy</div>
+              <div class="band-facility-sub">Healthcare & Technology Institute</div>
+              <div class="band-facility-sub">Pasig City, Philippines</div>
+              <div class="band-tagline">How Care Transforms</div>
+            </div>
+ 
+            <!-- RIGHT — QR code -->
+            <div class="band-right">
+              <div id="band-qr-canvas" class="band-qr-box"></div>
+              <div class="band-scan-label">SCAN TO OPEN CHART</div>
+              <div class="band-url-label">${esc(url.replace('https://',''))}</div>
+            </div>
+ 
+          </div><!-- /band-inner -->
+ 
+          <!-- Bottom strip -->
+          <div class="band-bottom-strip">
+            <span>${esc(p.lastName)}, ${esc(p.firstName)}</span>
+            <span>MRN: ${esc(p.mrn)}</span>
+            <span>${esc(p.dob)}</span>
+            <span>${esc(p.location)}</span>
+            <span>HCT Academy Simulation</span>
+          </div>
+ 
+        </div><!-- /band-card -->
+      </div><!-- /band-preview-wrap -->
+ 
+      <!-- ── ACTIONS ── -->
+      <div class="band-actions">
+        <button class="btn" id="band-print-btn">🖨️ Print wristband</button>
+        <button class="btn primary" id="band-copy-url">🔗 Copy chart URL</button>
+        <button class="btn" id="band-close-2">Close</button>
+      </div>
+ 
+      <p class="band-note">
+        Scanning this QR code opens the <strong>${esc(p.firstName)} ${esc(p.lastName)}</strong> scenario
+        on any device with internet access. Students must log in first.
+        ${p.scenarioId==='scratch'?'<br><em>Note: student-created patients are stored locally — scanned devices load the default scenario view.</em>':''}
+      </p>
+ 
+    </div><!-- /band-dialog -->
+  `;
+  document.body.appendChild(modal);
+ 
+  // Generate QR code after mount
+  setTimeout(()=>{
+    const qrEl = document.getElementById('band-qr-canvas');
+    if(!qrEl) return;
+    if(window.QRCode){
+      new QRCode(qrEl, {
+        text:         url,
+        width:        90,
+        height:       90,
+        colorDark:    '#172946',
+        colorLight:   '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+    } else {
+      // Fallback: show URL if QRCode lib not loaded
+      qrEl.innerHTML = `<div style="font-size:8px;word-break:break-all;color:#172946;padding:4px;">${esc(url)}</div>`;
+    }
+  }, 60);
+ 
+  // Events
+  document.getElementById('band-backdrop')?.addEventListener('click', closePatientBand);
+  document.getElementById('band-close')?.addEventListener('click',    closePatientBand);
+  document.getElementById('band-close-2')?.addEventListener('click',  closePatientBand);
+  document.getElementById('band-print-btn')?.addEventListener('click', ()=>{
+    window.print();
+  });
+  document.getElementById('band-copy-url')?.addEventListener('click', ()=>{
+    navigator.clipboard?.writeText(url).then(()=>toast('Chart URL copied!')).catch(()=>{
+      prompt('Copy this URL:', url);
+    });
+  });
+}
+ 
+function closePatientBand(){
+  const m = document.getElementById('band-modal');
+  if(m){ m.style.opacity='0'; m.style.transition='opacity 0.2s'; setTimeout(()=>m.remove(),220); }
+}
 function rCarePlan(){const rows=currentPatient().carePlan.map((c,i)=>`<tr><td><input data-cp="dx" data-cp-index="${i}" value="${esc(c.dx)}"></td><td><textarea data-cp="goal" data-cp-index="${i}">${esc(c.goal)}</textarea></td><td><textarea data-cp="interventions" data-cp-index="${i}">${esc(c.interventions)}</textarea></td><td><textarea data-cp="evaluation" data-cp-index="${i}">${esc(c.evaluation)}</textarea></td><td><button class="btn small danger" data-del-cp="${i}">Delete</button></td></tr>`).join('');return section('Nursing care plan',table(['Diagnosis','Goal','Interventions','Evaluation',''],rows)+'<div class="actions"><button class="btn primary" id="add-careplan">Add row</button><button class="btn navy" id="save-careplan">Save care plan</button></div>');}
 function rEducation(){const rows=currentPatient().education.map((e,i)=>`<div class="check-row"><input type="checkbox" data-ed-check="${i}" ${e.status==='Complete'?'checked':''}><strong>${esc(e.topic)}</strong><select data-ed-status="${i}"><option ${e.status==='Not started'?'selected':''}>Not started</option><option ${e.status==='In progress'?'selected':''}>In progress</option><option ${e.status==='Complete'?'selected':''}>Complete</option><option ${e.status==='Deferred'?'selected':''}>Deferred</option></select><input data-ed-response="${i}" value="${esc(e.response)}" placeholder="Learner/patient response"></div>`).join('');return section('Education record',`${rows}<div class="form-row"><label>New topic</label><input id="ed-topic" placeholder="Medication effects, warning signs, device use"></div><div class="actions"><button class="btn primary" id="add-education">Add topic</button><button class="btn navy" id="save-education">Save education</button></div>`);}
 function rSbar(){const s=currentPatient().sbar;return section('SBAR communication',`<div class="form-row"><label>Situation</label><textarea id="sb-s">${esc(s.s)}</textarea></div><div class="form-row"><label>Background</label><textarea id="sb-b">${esc(s.b)}</textarea></div><div class="form-row"><label>Assessment</label><textarea id="sb-a">${esc(s.a)}</textarea></div><div class="form-row"><label>Recommendation</label><textarea id="sb-r">${esc(s.r)}</textarea></div><div class="actions"><button class="btn" id="insert-sbar-template">Insert template</button><button class="btn primary" id="save-sbar">Save and document call</button></div>`);}
@@ -3754,6 +3902,7 @@ function bindCloudEvents(){
 }
 function bindTabEvents(){
   const p=currentPatient();
+  document.getElementById('show-patient-band')?.addEventListener('click', showPatientBand);
   document.getElementById('add-order')?.addEventListener('click',()=>{
     const o=val('ord-name');if(!o)return toast('Order required');
     p.orders.push({
@@ -4082,6 +4231,27 @@ function exportDashboardCsv(){
 }
 
 applyTheme();
+(function handleUrlPatient(){
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const pid    = params.get('patient');
+    if (!pid) return;
+    const sc = scenarios.find(s => s.id === pid);
+    if (!sc) return;
+    // Load the scenario as a new workspace patient
+    const existing = state.patients.find(p => p.scenarioId === pid);
+    if (existing) {
+      state.activeId = existing.id;
+    } else {
+      const next = clone(sc.patient);
+      next.id = uid(sc.id);
+      state.patients.push(next);
+      state.activeId = next.id;
+    }
+    state.tab = 'summary';
+    persist({cloud:false});
+  } catch(e) { console.warn('URL patient load failed:', e); }
+})();
 render();
 initSupabase();
 // Mount onboarding overlay permanently on body so it survives render() rebuilds
