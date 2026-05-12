@@ -165,34 +165,6 @@
   margin-top: 10px;
 }
 
-.nav-btn {
-  position: relative;
-}
-
-.nav-btn.ux-done {
-  color: var(--hct-navy);
-}
-
-.ux-nav-state {
-  margin-left: auto;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: inline-grid;
-  place-items: center;
-  border: 1px solid var(--line);
-  color: var(--subtle);
-  font-size: 10px;
-  font-weight: 900;
-  background: var(--paper);
-}
-
-.nav-btn.ux-done .ux-nav-state {
-  border-color: rgba(49,105,31,.25);
-  background: var(--success-bg);
-  color: var(--success);
-}
-
 @media (max-width: 1020px) {
   .ux-guide__body {
     grid-template-columns: 1fr;
