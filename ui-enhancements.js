@@ -108,23 +108,6 @@
     </div>`;
   }
 
-  function enhanceNav(){
-    const patient = p();
-    const c = completion(patient);
-    document.querySelectorAll('.nav-btn[data-tab]').forEach(btn => {
-      const tab = btn.dataset.tab;
-      btn.classList.toggle('ux-done', !!c.done[tab]);
-      let mark = btn.querySelector('.ux-nav-state');
-      if(!mark){
-        mark = document.createElement('span');
-        mark.className = 'ux-nav-state';
-        btn.appendChild(mark);
-      }
-      mark.textContent = c.done[tab] ? '\u2713' : '';
-      mark.title = c.done[tab] ? 'Section has charted content' : 'No charted content yet';
-    });
-  }
-
   function addGuide(){
     const content = document.getElementById('content');
     if(!content || document.getElementById('ux-guide')) return;
@@ -143,7 +126,6 @@
   function augment(){
     try{
       addGuide();
-      enhanceNav();
       bindUx();
     }catch(err){
       console.warn('UI enhancements failed:', err);
