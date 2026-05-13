@@ -3,15 +3,23 @@
 .hisx-brand { padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); margin-bottom: 10px; }
 .hisx-brand strong { display: block; color: var(--hct-navy); font-size: 15px; }
 .hisx-brand span { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; }
+.hisx-mode { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); margin-bottom: 10px; }
+.hisx-mode strong { color: var(--hct-navy); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.hisx-mode button { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--muted); padding: 7px 8px; font-size: 12px; font-weight: 800; text-align: left; }
+.hisx-mode button.active, .hisx-mode button:hover { background: rgba(67,192,196,.14); color: var(--hct-navy); }
 .hisx-nav { display: grid; gap: 6px; }
 .hisx-nav button { display: grid; grid-template-columns: 30px minmax(0,1fr); gap: 9px; align-items: center; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted); padding: 8px; text-align: left; }
 .hisx-nav button.active, .hisx-nav button:hover { border-color: var(--line); background: var(--paper); color: var(--hct-navy); }
+.hisx-nav button.locked { opacity: .52; }
+.hisx-nav button em { display: block; color: var(--warning); font-style: normal; font-size: 10px; margin-top: 2px; }
 .hisx-ic { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; background: rgba(67,192,196,.16); color: var(--hct-navy); font-size: 10px; font-weight: 900; }
 .hisx-main { min-width: 0; display: flex; flex-direction: column; }
 .hisx-top { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 12px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }
 .hisx-top h2 { margin: 0; color: var(--hct-navy); font-size: 19px; }
 .hisx-top p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
 .hisx-content { padding: 16px; overflow: auto; background: linear-gradient(180deg,var(--paper),var(--surface)); }
+.hisx-content.locked { opacity: .55; filter: saturate(.7); }
+.hisx-lock-banner { border-bottom: 1px solid var(--line); background: var(--warning-bg); color: var(--warning); padding: 9px 16px; font-size: 12px; font-weight: 800; }
 .hisx-grid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 12px; }
 .hisx-grid.two { grid-template-columns: 1.1fr .9fr; }
 .hisx-card { border: 1px solid var(--line); border-radius: 8px; background: var(--paper); overflow: hidden; }
@@ -39,5 +47,13 @@
 .hisx-status.blue { background: var(--info-bg); color: var(--info); }
 .hisx-bar { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; margin-top: 6px; }
 .hisx-bar span { display: block; height: 100%; background: var(--hct-teal); }
+.hisx-chart-head { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); padding: 12px; margin-bottom: 12px; }
+.hisx-chart-head h3 { margin: 0; color: var(--hct-navy); font-size: 18px; }
+.hisx-chart-head p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+#hisx-popups { position: fixed; top: 18px; right: 18px; z-index: 99999; display: grid; gap: 8px; width: min(360px, calc(100vw - 36px)); pointer-events: none; }
+.hisx-popup { border: 1px solid var(--line); border-left: 4px solid var(--hct-teal); border-radius: 8px; background: var(--paper); box-shadow: 0 16px 44px rgba(20,35,61,.18); padding: 11px 12px; opacity: 1; transform: translateY(0); transition: opacity .7s ease, transform .7s ease; }
+.hisx-popup.fade { opacity: 0; transform: translateY(-8px); }
+.hisx-popup strong { display: block; color: var(--hct-navy); font-size: 12px; margin-bottom: 3px; }
+.hisx-popup span { display: block; color: var(--muted); font-size: 12px; line-height: 1.35; }
 @media (max-width: 980px) { .hisx-shell, .hisx-grid.two { grid-template-columns: 1fr; } .hisx-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .hisx-top, .hisx-tools, .hisx-tools.compact { grid-template-columns: 1fr; } }
-@media (max-width: 640px) { .hisx-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .hisx-grid { grid-template-columns: 1fr; } .hisx-chart-head { grid-template-columns: auto minmax(0,1fr); } .hisx-chart-head .btn { grid-column: 1 / -1; } }
