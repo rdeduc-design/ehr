@@ -1,0 +1,4 @@
+.hisx-nav button.hisx-locked { opacity: .52; }
+.hisx-lock-note { display: block; color: var(--warning); font-style: normal; font-size: 10px; margin-top: 2px; }
+.hisx-content.hisx-section-locked { opacity: .55; filter: saturate(.7); }
+.hisx-lock-banner { border-bottom: 1px solid var(--line); background: var(--warning-bg); color: var(--warning); padding: 9px 16px; font-size: 12px; font-weight: 800; }
