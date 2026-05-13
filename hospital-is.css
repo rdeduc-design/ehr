@@ -1,0 +1,43 @@
+.hisx-shell { min-height: calc(100vh - 210px); display: grid; grid-template-columns: 248px minmax(0, 1fr); border: 1px solid var(--line); border-radius: 8px; background: var(--paper); overflow: hidden; }
+.hisx-side { padding: 14px; border-right: 1px solid var(--line); background: var(--surface); }
+.hisx-brand { padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); margin-bottom: 10px; }
+.hisx-brand strong { display: block; color: var(--hct-navy); font-size: 15px; }
+.hisx-brand span { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; }
+.hisx-nav { display: grid; gap: 6px; }
+.hisx-nav button { display: grid; grid-template-columns: 30px minmax(0,1fr); gap: 9px; align-items: center; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted); padding: 8px; text-align: left; }
+.hisx-nav button.active, .hisx-nav button:hover { border-color: var(--line); background: var(--paper); color: var(--hct-navy); }
+.hisx-ic { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; background: rgba(67,192,196,.16); color: var(--hct-navy); font-size: 10px; font-weight: 900; }
+.hisx-main { min-width: 0; display: flex; flex-direction: column; }
+.hisx-top { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 12px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.hisx-top h2 { margin: 0; color: var(--hct-navy); font-size: 19px; }
+.hisx-top p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+.hisx-content { padding: 16px; overflow: auto; background: linear-gradient(180deg,var(--paper),var(--surface)); }
+.hisx-grid { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 12px; }
+.hisx-grid.two { grid-template-columns: 1.1fr .9fr; }
+.hisx-card { border: 1px solid var(--line); border-radius: 8px; background: var(--paper); overflow: hidden; }
+.hisx-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.hisx-head h3 { margin: 0; color: var(--hct-navy); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+.hisx-body { padding: 12px; }
+.hisx-metric strong { display: block; color: var(--hct-navy); font-size: 32px; line-height: 1; }
+.hisx-metric span { display: block; color: var(--muted); font-size: 11px; font-weight: 800; margin-top: 5px; }
+.hisx-list { display: grid; gap: 8px; }
+.hisx-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; background: var(--paper); }
+.hisx-row strong { display: block; color: var(--hct-navy); font-size: 13px; }
+.hisx-row span, .hisx-row small { display: block; color: var(--muted); font-size: 11px; line-height: 1.35; margin-top: 2px; }
+.hisx-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.hisx-tools { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; align-items: center; margin-bottom: 12px; }
+.hisx-tools.compact { grid-template-columns: 1.2fr 1fr 1fr auto; margin-bottom: 0; }
+.hisx-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.hisx-table th { text-align: left; color: var(--subtle); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--line); padding: 0 8px 8px 0; }
+.hisx-table td { border-bottom: 1px solid var(--line); padding: 9px 8px 9px 0; vertical-align: top; }
+.hisx-pt { display: flex; align-items: center; gap: 10px; min-width: 220px; }
+.hisx-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); background: rgba(67,192,196,.16); display: grid; place-items: center; color: var(--hct-navy); font-size: 11px; font-weight: 900; flex: 0 0 auto; }
+.hisx-status { display: inline-flex; align-items: center; min-height: 22px; padding: 2px 8px; border-radius: 999px; background: var(--info-bg); color: var(--info); font-size: 10px; font-weight: 900; white-space: nowrap; }
+.hisx-status.red { background: var(--danger-bg); color: var(--danger); }
+.hisx-status.gold { background: var(--warning-bg); color: var(--warning); }
+.hisx-status.green { background: var(--success-bg); color: var(--success); }
+.hisx-status.blue { background: var(--info-bg); color: var(--info); }
+.hisx-bar { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; margin-top: 6px; }
+.hisx-bar span { display: block; height: 100%; background: var(--hct-teal); }
+@media (max-width: 980px) { .hisx-shell, .hisx-grid.two { grid-template-columns: 1fr; } .hisx-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .hisx-top, .hisx-tools, .hisx-tools.compact { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .hisx-grid { grid-template-columns: 1fr; } }
