@@ -1,0 +1,133 @@
+.drug-info-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid rgba(31, 95, 110, .22);
+  border-radius: 999px;
+  background: #eef9fa;
+  color: #0f4f5c;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.drug-info-btn:hover,
+.drug-info-btn:focus {
+  border-color: #43c0c4;
+  background: #dff5f7;
+  outline: none;
+}
+
+.drug-brand-line {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted, #64748b);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.drug-dose-select {
+  min-width: 190px;
+}
+
+.drug-popover {
+  position: fixed;
+  z-index: 100000;
+  width: min(380px, calc(100vw - 24px));
+  max-height: min(560px, calc(100vh - 24px));
+  overflow: auto;
+  border: 1px solid #b8dde3;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #12313f;
+  box-shadow: 0 22px 70px rgba(15, 35, 55, .26);
+}
+
+.drug-popover-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e6edf5;
+  background: #f7fbfc;
+}
+
+.drug-popover-head small {
+  display: block;
+  color: #527080;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.drug-popover-head h3 {
+  margin: 2px 0 3px;
+  color: #083344;
+  font-size: 18px;
+  text-transform: capitalize;
+}
+
+.drug-popover-head p {
+  margin: 0;
+  color: #526779;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.drug-popover-close {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d7e4ea;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.drug-dose-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 14px 0;
+}
+
+.drug-dose-row span {
+  border-radius: 999px;
+  background: #edf7f8;
+  color: #0f4f5c;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.drug-popover dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 14px 14px;
+}
+
+.drug-popover dl div {
+  border-top: 1px solid #eef3f7;
+  padding-top: 8px;
+}
+
+.drug-popover dt {
+  color: #0f4f5c;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.drug-popover dd {
+  margin: 3px 0 0;
+  color: #213547;
+  font-size: 12px;
+  line-height: 1.45;
+}
