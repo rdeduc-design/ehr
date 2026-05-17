@@ -165,10 +165,129 @@
       box("Focused Assessment", '<div class="hisx-assess">' + assessment.map(function (a) { return field(a, opts("as-" + id(a), ["Not assessed", "WNL", "Needs monitoring", "Abnormal", "Critical"], p.assessment[a])); }).join("") + '</div>' + field("Narrative", '<textarea id="as-note">' + esc(p.assessmentNote || "") + '</textarea>') + '<button id="save-assess">Save Assessment</button>') +
       box("Intake / Output", '<div class="hisx-inline">' + opts("io-dir", ["Input", "Output"]) + opts("io-type", ["Oral fluid", "Meal", "IV fluid", "Urine", "Emesis", "Stool", "Drain", "Blood loss"]) + '<input id="io-amt" placeholder="Amount mL"><input id="io-note" placeholder="Description"><button id="add-io">Add</button></div><div class="hisx-mini">Input ' + total(p, "Input") + " mL / Output " + total(p, "Output") + " mL</div>" + items(p.io.slice().reverse(), function (x) { return '<b>' + esc(x.direction) + '</b> ' + esc(x.type) + ' ' + esc(x.amount) + ' mL<small>' + esc(x.note || "") + " " + meta(x) + "</small>"; })) +
       box("Notes", '<div class="hisx-inline">' + opts("n-type", ["Nursing Note", "Progress Note", "Medication Note", "Procedure Note", "Shift Handoff"]) + '<button id="note-template">Template</button></div><textarea id="n-body" placeholder="Write chart note"></textarea><button id="add-note">Add Note</button>' + items(p.notes.slice().reverse(), function (n) { return '<b>' + esc(n.type) + '</b><p>' + esc(n.text) + '</p><small>' + meta(n) + "</small>"; })) +
-      box("Care Plan", '<div class="hisx-inline"><input id="c-dx" placeholder="Nursing diagnosis"><input id="c-goal" placeholder="Goal">' + opts("c-status", ["Planned", "In progress", "Met", "Not met", "Revised"]) + '<input id="c-int" placeholder="Interventions / evaluation"><button id="add-care">Add</button></div>' + items(p.care.slice().reverse(), function (c) { return '<b>' + esc(c.dx) + '</b> ' + badge(c.status) + '<p>' + esc(c.goal) + '</p><small>' + esc(c.intervention) + " " + meta(c) + "</small>"; })) +
+      carePlanBox(p) +
       box("Education", '<div class="hisx-inline"><input id="e-topic" placeholder="Topic">' + opts("e-status", ["Not started", "In progress", "Complete", "Needs reinforcement"]) + '<input id="e-response" placeholder="Patient response"><button id="add-edu">Add</button></div>' + items(p.education.slice().reverse(), function (e) { return '<b>' + esc(e.topic) + '</b> ' + badge(e.status) + '<small>' + esc(e.response) + " " + meta(e) + "</small>"; })) +
       box("SBAR", field("Situation", '<textarea id="sbar-s">' + esc(p.sbar.s) + '</textarea>') + field("Background", '<textarea id="sbar-b">' + esc(p.sbar.b) + '</textarea>') + field("Assessment", '<textarea id="sbar-a">' + esc(p.sbar.a) + '</textarea>') + field("Recommendation", '<textarea id="sbar-r">' + esc(p.sbar.r) + '</textarea>') + '<button id="save-sbar">Save SBAR</button>') +
       "</div></section>";
+  }
+
+  function carePlanData() { return Array.isArray(window.NURSING_CARE_PLAN_DATA) ? window.NURSING_CARE_PLAN_DATA : []; }
+  function carePlanBox(p) {
+    const data = carePlanData();
+    const subjective = unique(data.flatMap(function (d) { return d.subjective || []; }));
+    const objective = unique(data.flatMap(function (d) { return d.objective || []; }));
+    return box("Care Plan",
+      '<div class="hisx-careplan-builder">' +
+      field("Assessment", '<div class="hisx-care-cues">' + cueSelect("c-subj", "Subjective cues", subjective) + cueSelect("c-obj", "Objective cues", objective) + '</div><textarea id="c-assessment" placeholder="Write additional assessment text"></textarea>') +
+      field("Nursing diagnosis", diagnosisSelect("c-dx-select", data) + '<input id="c-dx" list="c-dx-list" placeholder="Write or refine diagnosis">' + diagnosisList(data)) +
+      field("Goal", '<select id="c-goal-select"><option value="">Select diagnosis first</option></select><input id="c-goal" list="c-goal-list" placeholder="Write custom goal"><datalist id="c-goal-list"></datalist>') +
+      field("Status", opts("c-status", ["Planned", "In progress", "Met", "Not met", "Revised"])) +
+      field("Interventions / evaluation", '<select id="c-int-select"><option value="">Select diagnosis first</option></select><input id="c-int" list="c-int-list" placeholder="Write custom intervention or evaluation"><datalist id="c-int-list"></datalist>') +
+      '<button id="add-care">Add</button></div>' +
+      carePlanItems(p.care.slice().reverse()));
+  }
+
+  function cueSelect(idv, label, options) {
+    return '<label class="hisx-field"><span>' + esc(label) + '</span><select id="' + idv + '" multiple size="6">' + options.map(function (o) { return '<option value="' + esc(o) + '">' + esc(o) + '</option>'; }).join("") + '</select></label>';
+  }
+
+  function diagnosisSelect(idv, data) {
+    const groups = {};
+    data.forEach(function (d) { (groups[d.category] = groups[d.category] || []).push(d); });
+    return '<select id="' + idv + '"><option value="">Suggested or all diagnoses</option>' + Object.keys(groups).sort().map(function (cat) {
+      return '<optgroup label="' + esc(cat) + '">' + groups[cat].sort(function (a, b) { return a.name.localeCompare(b.name); }).map(function (d) { return '<option value="' + esc(d.name) + '">' + esc(d.name) + '</option>'; }).join("") + '</optgroup>';
+    }).join("") + '</select>';
+  }
+
+  function diagnosisList(data) {
+    return '<datalist id="c-dx-list">' + data.map(function (d) { return '<option value="' + esc(d.name) + '">' + esc(d.category) + '</option>'; }).join("") + '</datalist>';
+  }
+
+  function carePlanItems(care) {
+    if (!care.length) return empty("No care plan entries yet.");
+    return '<div class="hisx-care-table"><div class="hisx-care-row head"><span>Assessment</span><span>Diagnosis</span><span>Goal</span><span>Interventions / evaluation</span></div>' +
+      care.map(function (c) {
+        return '<div class="hisx-care-row"><span>' + esc(c.assessment || "") + '</span><span><b>' + esc(c.dx) + '</b> ' + badge(c.status) + '</span><span>' + esc(c.goal) + '</span><span>' + esc(c.intervention) + '<small>' + meta(c) + '</small></span></div>';
+      }).join("") + '</div>';
+  }
+
+  function bindCarePlanControls() {
+    ["c-subj", "c-obj"].forEach(function (idv) { q("#" + idv, "change", refreshCarePlanDiagnosisOptions); });
+    q("#c-dx-select", "change", function () {
+      const dx = val("c-dx-select"), input = document.getElementById("c-dx");
+      if (input && dx) input.value = dx;
+      refreshCarePlanDetails();
+    });
+    q("#c-dx", "input", refreshCarePlanDetails);
+    refreshCarePlanDetails();
+  }
+
+  function refreshCarePlanDiagnosisOptions() {
+    const select = document.getElementById("c-dx-select");
+    if (!select) return;
+    const current = select.value;
+    const picks = selectedOptions("c-subj").concat(selectedOptions("c-obj"));
+    const data = picks.length ? scoredDiagnoses(picks).slice(0, 50) : carePlanData();
+    select.outerHTML = diagnosisSelect("c-dx-select", data);
+    const next = document.getElementById("c-dx-select");
+    if ([].some.call(next.options, function (o) { return o.value === current; })) next.value = current;
+    q("#c-dx-select", "change", function () {
+      const dx = val("c-dx-select"), input = document.getElementById("c-dx");
+      if (input && dx) input.value = dx;
+      refreshCarePlanDetails();
+    });
+    refreshCarePlanDetails();
+  }
+
+  function refreshCarePlanDetails() {
+    const dx = val("c-dx") || val("c-dx-select");
+    const data = carePlanData();
+    const rec = data.find(function (d) { return d.name === dx; }) || data.find(function (d) { return d.name.toLowerCase().includes(dx.toLowerCase()) && dx; });
+    setChoices("c-goal-select", rec ? rec.goals || [] : [], "Select diagnosis first");
+    setDatalist("c-goal-list", rec ? rec.goals || [] : []);
+    setChoices("c-int-select", rec ? rec.interventions || [] : [], "Select diagnosis first");
+    setDatalist("c-int-list", rec ? rec.interventions || [] : []);
+  }
+
+  function scoredDiagnoses(cues) {
+    return carePlanData().map(function (d) {
+      const hay = (d.subjective || []).concat(d.objective || []).join(" ").toLowerCase();
+      const score = cues.reduce(function (n, c) { return n + (hay.includes(String(c).toLowerCase()) ? 1 : 0); }, 0);
+      return Object.assign({ score: score }, d);
+    }).filter(function (d) { return d.score > 0; }).sort(function (a, b) { return b.score - a.score || a.name.localeCompare(b.name); });
+  }
+
+  function setChoices(idv, values, emptyText) {
+    const el = document.getElementById(idv);
+    if (!el) return;
+    el.innerHTML = '<option value="">' + esc(emptyText || "Choose") + '</option>' + unique(values).map(function (v) { return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join("");
+  }
+
+  function setDatalist(idv, values) {
+    const el = document.getElementById(idv);
+    if (!el) return;
+    el.innerHTML = unique(values).map(function (v) { return '<option value="' + esc(v) + '"></option>'; }).join("");
+  }
+
+  function selectedOptions(idv) {
+    const el = document.getElementById(idv);
+    return el ? [].filter.call(el.options, function (o) { return o.selected; }).map(function (o) { return o.value; }) : [];
+  }
+
+  function careAssessmentText() {
+    return selectedOptions("c-subj").map(function (x) { return "Subjective: " + x; })
+      .concat(selectedOptions("c-obj").map(function (x) { return "Objective: " + x; }))
+      .concat(val("c-assessment") ? [val("c-assessment")] : [])
+      .join(" | ");
+  }
+
+  function unique(arr) {
+    const seen = new Set();
+    return (arr || []).map(function (x) { return String(x || "").trim(); }).filter(function (x) {
+      if (!x || seen.has(x)) return false;
+      seen.add(x);
+      return true;
+    });
   }
 
   function pharmacy(s) {
@@ -201,7 +320,8 @@
     q("#add-io", "click", function () { edit(null, function (p) { p.io.push(stamp({ direction: val("io-dir"), type: val("io-type"), amount: Number(val("io-amt") || 0), note: val("io-note") })); }, "Added intake/output entry"); });
     q("#note-template", "click", function () { const n = document.getElementById("n-body"); if (n) n.value = "Assessment: \nInterventions: \nResponse: \nPlan: "; });
     q("#add-note", "click", function () { edit(null, function (p) { p.notes.push(stamp({ type: val("n-type"), text: val("n-body") })); }, "Added chart note"); });
-    q("#add-care", "click", function () { edit(null, function (p) { p.care.push(stamp({ dx: val("c-dx"), goal: val("c-goal"), status: val("c-status"), intervention: val("c-int") })); }, "Updated care plan"); });
+    bindCarePlanControls();
+    q("#add-care", "click", function () { edit(null, function (p) { p.care.push(stamp({ assessment: careAssessmentText(), dx: val("c-dx") || val("c-dx-select"), goal: val("c-goal") || val("c-goal-select"), status: val("c-status"), intervention: val("c-int") || val("c-int-select") })); }, "Updated care plan"); });
     q("#add-edu", "click", function () { edit(null, function (p) { p.education.push(stamp({ topic: val("e-topic"), status: val("e-status"), response: val("e-response") })); }, "Added patient education"); });
     q("#save-sbar", "click", function () { edit(null, function (p) { p.sbar = { s: val("sbar-s"), b: val("sbar-b"), a: val("sbar-a"), r: val("sbar-r") }; }, "Updated SBAR handoff"); });
     document.querySelectorAll("[data-dispense]").forEach(function (b) { b.onclick = function () { dispense(b.dataset.dispense); }; });

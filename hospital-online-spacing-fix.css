@@ -69,3 +69,54 @@
     padding: 14px;
   }
 }
+#app .hisx-careplan-builder {
+  display: grid;
+  gap: 10px;
+}
+
+#app .hisx-care-cues {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+#app .hisx-careplan-builder select[multiple] {
+  min-height: 138px;
+}
+
+#app .hisx-care-table {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  overflow-x: auto;
+}
+
+#app .hisx-care-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.15fr) minmax(180px, 1fr) minmax(180px, 1fr) minmax(220px, 1.25fr);
+  gap: 10px;
+  align-items: start;
+  min-width: 820px;
+  padding: 10px;
+  border: 1px solid rgba(15, 23, 42, .1);
+  border-radius: 8px;
+  background: #fff;
+}
+
+#app .hisx-care-row.head {
+  font-weight: 700;
+  color: #334155;
+  background: #f8fafc;
+}
+
+#app .hisx-care-row small {
+  display: block;
+  margin-top: 6px;
+}
+
+@media (max-width: 760px) {
+  #app .hisx-care-row {
+    grid-template-columns: 1fr;
+    min-width: 0;
+  }
+}
