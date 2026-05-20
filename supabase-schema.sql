@@ -43,6 +43,15 @@ create index if not exists chart_attempts_section_idx on public.chart_attempts(s
 create index if not exists chart_attempts_updated_idx on public.chart_attempts(updated_at desc);
 create index if not exists chart_attempts_status_idx on public.chart_attempts(status);
 
+create table if not exists public.hct_online_his_state (
+  id text primary key default 'shared',
+  state jsonb not null default '{}'::jsonb,
+  updated_by uuid references auth.users(id),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists hct_online_his_state_updated_idx on public.hct_online_his_state(updated_at desc);
+
 create or replace function public.touch_updated_at()
 returns trigger
 language plpgsql
@@ -63,6 +72,11 @@ create trigger chart_attempts_touch_updated_at
 before update on public.chart_attempts
 for each row execute function public.touch_updated_at();
 
+drop trigger if exists hct_online_his_state_touch_updated_at on public.hct_online_his_state;
+create trigger hct_online_his_state_touch_updated_at
+before update on public.hct_online_his_state
+for each row execute function public.touch_updated_at();
+
 create or replace function public.is_instructor()
 returns boolean
 language sql
@@ -79,6 +93,7 @@ $$;
 
 alter table public.profiles enable row level security;
 alter table public.chart_attempts enable row level security;
+alter table public.hct_online_his_state enable row level security;
 
 drop policy if exists "Profiles are visible to owner or instructor" on public.profiles;
 create policy "Profiles are visible to owner or instructor"
@@ -119,6 +134,22 @@ create policy "Students update own attempts and instructors review"
 on public.chart_attempts for update
 using (user_id = auth.uid() or public.is_instructor())
 with check (user_id = auth.uid() or public.is_instructor());
+
+drop policy if exists "Authenticated users read online HIS state" on public.hct_online_his_state;
+create policy "Authenticated users read online HIS state"
+on public.hct_online_his_state for select
+using (auth.uid() is not null);
+
+drop policy if exists "Authenticated users write online HIS state" on public.hct_online_his_state;
+create policy "Authenticated users write online HIS state"
+on public.hct_online_his_state for insert
+with check (auth.uid() is not null);
+
+drop policy if exists "Authenticated users update online HIS state" on public.hct_online_his_state;
+create policy "Authenticated users update online HIS state"
+on public.hct_online_his_state for update
+using (auth.uid() is not null)
+with check (auth.uid() is not null);
 
 -- After an instructor creates/logs into an account, promote them with the Supabase SQL editor:
 -- update public.profiles set role = 'instructor' where email = 'instructor@example.edu';
