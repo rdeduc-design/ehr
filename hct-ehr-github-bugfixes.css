@@ -1,0 +1,50 @@
+/* Final-load bugfixes for the EHR/HIS runtime. */
+.drug-reference-panel,
+body .drug-reference-panel {
+  position: fixed !important;
+  z-index: 2147483000 !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: auto !important;
+  width: min(430px, calc(100vw - 18px)) !important;
+  max-width: calc(100vw - 18px) !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: auto !important;
+  margin: 0 !important;
+  border-left: 1px solid #b8dde3 !important;
+  background: #fff !important;
+  box-shadow: -22px 0 70px rgba(15, 35, 55, .22) !important;
+}
+
+.hct-bugfix-patient-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 8px;
+  width: 100%;
+  margin: 8px 0;
+}
+
+.hct-bugfix-patient-fields input,
+.hct-bugfix-patient-fields select {
+  min-width: 0;
+}
+
+.hct-role-locked {
+  opacity: .75;
+}
+
+.hct-role-locked select {
+  pointer-events: none;
+}
+
+.hct-bugfix-hidden {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .hct-bugfix-patient-fields {
+    grid-template-columns: 1fr;
+  }
+}
