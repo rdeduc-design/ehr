@@ -1,0 +1,47 @@
+.drug-reference-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(8, 26, 36, .38);
+}
+
+.drug-reference-panel {
+  position: fixed;
+  z-index: 100000;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  width: min(430px, calc(100vw - 18px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+.drug-web-status {
+  margin: 0;
+  padding: 0 16px 10px;
+  color: #526779;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.drug-qr-box,
+.drug-verify-list {
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+.drug-scan-video {
+  width: 100%;
+  max-height: 55vh;
+  background: #081a24;
+  border-radius: 8px;
+}
+
+@media (max-width: 640px) {
+  .drug-reference-panel {
+    inset: 0;
+    width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+}
