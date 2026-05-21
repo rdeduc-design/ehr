@@ -1,5 +1,5 @@
 const LOCAL_KEY = 'hct_ehr_v2';
-const PRIVACY_CONSENT_KEY = 'hct_abt_privacy_consent_v1';
+const PRIVACY_CONSENT_KEY = 'hct_ehr_privacy_consent_v1';
 const CLOUD_QUEUE_KEY = 'hct_ehr_cloud_retry_queue_v1';
 const ALLOWED_REGISTRATION_DOMAINS = ['hct.ph', 'hct.edu.ph', 'hctinstitute.edu.ph'];
 const ANALYTICS_ALLOWED_EMAILS = new Set([
@@ -1042,8 +1042,8 @@ function nowDisplay(v){
 function uid(p){return `${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2,7)}`;}
 
 const I18N={
-  en:{appTitle:'HCT ABT Simulation',tagline:'Aptitude and behavioral profile assessment with secure review tools',dark:'Dark mode',light:'Light mode',lang:'Tagalog',printReport:'Print report',peer:'Peer review mode',faculty:'Faculty module builder'},
-  tl:{appTitle:'HCT ABT Simulation',tagline:'Aptitude at behavioral profile assessment na may secure review tools',dark:'Madilim',light:'Maliwanag',lang:'English',printReport:'I-print ang ulat',peer:'Peer review',faculty:'Tagabuo ng module'}
+  en:{appTitle:'HCT EHR Simulation',tagline:'How Care Transforms',dark:'Dark mode',light:'Light mode',lang:'Tagalog',printReport:'Print report',peer:'Peer review mode',faculty:'Faculty module builder'},
+  tl:{appTitle:'HCT EHR Simulation',tagline:'How Care Transforms',dark:'Madilim',light:'Maliwanag',lang:'English',printReport:'I-print ang ulat',peer:'Peer review',faculty:'Tagabuo ng module'}
 };
 function settings(){if(!state.settings)state.settings={theme:'light',language:'en',interactive:true};return state.settings;}
 function tr(k){const lang=settings().language||'en';return(I18N[lang]&&I18N[lang][k])||I18N.en[k]||k;}
@@ -1352,7 +1352,7 @@ function renderPrivacyConsentPage(){
       <div class="auth-brand">
         <img class="auth-logo" src="${LOGO_TEAL}" alt="HCT logo">
         <h1 class="auth-title">HCT Institute</h1>
-        <p class="auth-subtitle">Aptitude & Behavioral Profile Test</p>
+        <p class="auth-subtitle">EHR Simulation</p>
         <p class="auth-tagline">How Care Transforms</p>
       </div>
       <div class="auth-form-panel">
@@ -1360,7 +1360,7 @@ function renderPrivacyConsentPage(){
           <div class="auth-card-head">
             <img src="${LOGO_NAVY}" class="auth-card-logo" alt="">
             <h2>Data Privacy Consent</h2>
-            <p>Required before taking the HCT ABT</p>
+            <p>Required before taking the HCT EHR</p>
           </div>
           <div class="notice info" style="margin:14px 0;">
             <span class="mark">RA 10173</span>
@@ -1372,7 +1372,7 @@ function renderPrivacyConsentPage(){
             <input id="privacy-consent-check" type="checkbox">
             <span>I have read and understood this notice, and I give my consent for HCT Institute to process my personal information and assessment data for the purposes stated above.</span>
           </label>
-          <button class="auth-btn primary" id="accept-privacy-consent">Continue to HCT ABT</button>
+          <button class="auth-btn primary" id="accept-privacy-consent">Continue to HCT EHR</button>
           <button class="auth-link privacy-signout" id="privacy-signout" type="button">Sign out</button>
         </div>
       </div>
@@ -1457,7 +1457,7 @@ function renderAuthPage() {
       <div class="auth-brand">
         <img class="auth-logo" src="${LOGO_TEAL}" alt="HCT logo">
         <h1 class="auth-title">HCT Institute</h1>
-        <p class="auth-subtitle">Aptitude & Behavioral Profile Test</p>
+        <p class="auth-subtitle">EHR Simulation</p>
         <p class="auth-tagline">How Care Transforms</p>
         <div class="auth-brand-dots"></div>
       </div>
@@ -1471,7 +1471,7 @@ function renderAuthPage() {
             <div class="auth-card-head">
               <img src="${LOGO_NAVY}" class="auth-card-logo" alt="">
               <h2>Welcome back</h2>
-              <p>Sign in to your HCT ABT account</p>
+              <p>Sign in to your HCT EHR account</p>
             </div>
  
             <div id="auth-error" class="auth-error" style="display:none;"></div>
@@ -1504,7 +1504,7 @@ function renderAuthPage() {
             <div class="auth-card-head">
               <img src="${LOGO_NAVY}" class="auth-card-logo" alt="">
               <h2>Create account</h2>
-              <p>Join HCT ABT</p>
+              <p>Join HCT EHR</p>
             </div>
  
             <div id="auth-error-su" class="auth-error" style="display:none;"></div>
@@ -1578,7 +1578,7 @@ function renderAuthPage() {
 
             <label class="privacy-check signup-consent">
               <input id="auth-privacy-consent" type="checkbox">
-              <span>I consent to HCT Institute collecting and processing my personal information and assessment data for the HCT ABT in accordance with the Data Privacy Act of 2012 (RA 10173).</span>
+              <span>I consent to HCT Institute collecting and processing my personal information and assessment data for the HCT EHR in accordance with the Data Privacy Act of 2012 (RA 10173).</span>
             </label>
  
             <button class="auth-btn primary" id="signup-btn">Create account</button>
@@ -1605,7 +1605,7 @@ function renderEmailConfirmPage(email) {
       <div class="auth-brand">
         <img class="auth-logo" src="${LOGO_TEAL}" alt="HCT logo">
         <h1 class="auth-title">HCT Institute</h1>
-        <p class="auth-subtitle">Aptitude & Behavioral Profile Test</p>
+        <p class="auth-subtitle">EHR Simulation</p>
         <p class="auth-tagline">How Care Transforms</p>
       </div>
       <div class="auth-form-panel">
