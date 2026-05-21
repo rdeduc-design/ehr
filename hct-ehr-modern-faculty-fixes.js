@@ -4,25 +4,35 @@
   const FACULTY_ROLES = new Set(["instructor", "faculty", "teacher", "admin", "administrator", "educator"]);
   const FACULTY_TABS = new Set(["modulebuilder", "dashboard", "statusboard"]);
 
+  function appCloud(){
+    try { if (typeof cloud !== "undefined") return cloud; } catch(_) {}
+    return window.cloud || {};
+  }
+
+  function appState(){
+    try { if (typeof state !== "undefined") return state; } catch(_) {}
+    return window.state || null;
+  }
+
   function roleOf(){
-    try { return String((window.cloud?.profile?.role || "")).trim().toLowerCase(); }
-    catch(_) { return ""; }
+    const c = appCloud();
+    return String((c.profile || {}).role || "").trim().toLowerCase();
   }
 
   function userEmail(){
-    try {
-      return String(window.cloud?.session?.user?.email || window.cloud?.profile?.email || "").trim().toLowerCase();
-    } catch(_) { return ""; }
+    const c = appCloud();
+    return String(c.session?.user?.email || c.profile?.email || "").trim().toLowerCase();
   }
 
   function analyticsFlag(){
-    const p = window.cloud?.profile || {};
+    const p = appCloud().profile || {};
     return p.analytics_access === true || p.dashboard_access === true || p.faculty_access === true || p.role_access === "faculty";
   }
 
   function allowedEmail(){
     const email = userEmail();
-    const allowed = window.ANALYTICS_ALLOWED_EMAILS;
+    let allowed = window.ANALYTICS_ALLOWED_EMAILS;
+    try { if (typeof ANALYTICS_ALLOWED_EMAILS !== "undefined") allowed = ANALYTICS_ALLOWED_EMAILS; } catch(_) {}
     return !!email && !!allowed && typeof allowed.has === "function" && allowed.has(email);
   }
 
@@ -30,17 +40,23 @@
     return FACULTY_ROLES.has(roleOf()) || analyticsFlag() || allowedEmail();
   }
 
+  function expose(name, value){
+    window[name] = value;
+    try { eval(name + " = value"); } catch(_) {}
+  }
+
   function applyFacultyAccessPatch(){
-    window.isInstructor = function(){ return FACULTY_ROLES.has(roleOf()); };
-    window.canAccessAnalytics = canUseFaculty;
-    window.canUseFacultyTools = canUseFaculty;
-    window.isFacultyTab = function(tab){ return FACULTY_TABS.has(tab) && !canUseFaculty(); };
+    expose("isInstructor", function(){ return FACULTY_ROLES.has(roleOf()); });
+    expose("canAccessAnalytics", canUseFaculty);
+    expose("canUseFacultyTools", canUseFaculty);
+    expose("isFacultyTab", function(tab){ return FACULTY_TABS.has(tab) && !canUseFaculty(); });
   }
 
   function refreshIfFacultyTabUnlocked(){
     try {
-      if (!window.state || typeof window.render !== "function") return;
-      if (FACULTY_TABS.has(window.state.tab) && canUseFaculty()) window.render();
+      const s = appState();
+      if (!s || typeof render !== "function") return;
+      if (FACULTY_TABS.has(s.tab) && canUseFaculty()) render();
     } catch(err) {
       console.warn("Faculty dashboard refresh failed", err);
     }
