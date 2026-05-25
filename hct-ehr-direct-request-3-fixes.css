@@ -1,0 +1,145 @@
+:root {
+  --hct-focus: rgba(67, 192, 196, 0.24);
+}
+
+.app-shell {
+  max-width: 1500px;
+}
+
+.cloud-panel {
+  position: sticky;
+  top: 8px;
+  z-index: 15;
+  backdrop-filter: blur(14px);
+}
+
+.toolbar,
+.card-head,
+.patient-card {
+  background-image: linear-gradient(135deg, rgba(67,192,196,0.10), rgba(255,255,255,0));
+}
+
+.btn {
+  transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(23,41,70,0.10);
+}
+.btn:focus-visible,
+.nav-btn:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--hct-focus);
+  outline-offset: 2px;
+}
+
+.hct-scenario-card {
+  min-height: 255px;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+.hct-scenario-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--hct-teal);
+  box-shadow: 0 16px 34px rgba(23,41,70,0.14);
+}
+.hct-scenario-card .body {
+  gap: 10px;
+}
+
+.hct-debrief-wizard {
+  display: grid;
+  gap: 12px;
+}
+.hct-debrief-wizard h3 {
+  margin: 0;
+  color: var(--hct-navy);
+  font-size: 18px;
+  line-height: 1.35;
+}
+.hct-debrief-wizard textarea {
+  min-height: 150px;
+}
+.hct-debrief-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+.hct-progress-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.hct-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--hct-teal), var(--hct-navy));
+}
+.hct-submit-note {
+  margin: 0;
+  color: var(--success);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.hct-calc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.hct-calc-grid h4 {
+  margin: 0 0 10px;
+  color: var(--hct-navy);
+}
+.hct-calc-result {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(120px, 1fr));
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.hct-status-card div {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.hct-last-edited {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+.hct-last-edited span {
+  color: var(--subtle);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.content {
+  scroll-behavior: smooth;
+}
+.table-wrap table tbody tr:hover td {
+  background: rgba(67,192,196,0.05);
+}
+
+@media (max-width: 900px) {
+  .cloud-panel {
+    position: static;
+  }
+  .hct-calc-grid,
+  .hct-calc-result {
+    grid-template-columns: 1fr;
+  }
+}
