@@ -55,6 +55,36 @@
 }
 .hct-alert-list .notice { margin-bottom: 7px; }
 .hct-assessment-grid .field .v { white-space: pre-wrap; }
+.hct-red-alert,
+.notice.danger.hct-red-alert {
+  border-color: rgba(163,49,49,.35) !important;
+  background: var(--danger-bg, #fff1f1) !important;
+  color: var(--danger, #a33131) !important;
+}
+.hct-red-alert .mark,
+.hct-lab-alert-flag {
+  color: var(--danger, #a33131) !important;
+  font-weight: 900 !important;
+}
+.hct-lab-image-row input[type="file"] {
+  width: 100%;
+  padding: 9px;
+  border: 1px dashed rgba(23,41,70,.3);
+  border-radius: 7px;
+  background: rgba(255,255,255,.9);
+}
+.hct-lab-image {
+  margin-top: 6px;
+}
+.hct-lab-image img {
+  display: block;
+  width: min(180px, 100%);
+  max-height: 140px;
+  object-fit: contain;
+  border: 1px solid var(--line, #d9e2ea);
+  border-radius: 7px;
+  background: #fff;
+}
 
 .drug-reference-backdrop {
   position: fixed !important;
