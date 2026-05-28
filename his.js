@@ -445,8 +445,11 @@
   }
 
   function renderCommand(){
-    const pts = allLivePatients();
-    const medReqs = allMedRequests();
+    const allPts = allLivePatients();
+    const pts = wardFilter === 'All wards' ? allPts : allPts.filter(p => (liveFor(patientKey(p)).ward || wardOf(p)) === wardFilter);
+    const allReqs = allMedRequests();
+    const medReqs = wardFilter === 'All wards' ? allReqs : allReqs.filter(r => r.ward === wardFilter);
+    const wards = ['All wards', ...new Set(allPts.map(p => liveFor(patientKey(p)).ward || wardOf(p)))];
     const m = {
       census: pts.length,
       critical: pts.filter(p => /critical/i.test(liveFor(patientKey(p)).status || p.acuity)).length,
@@ -463,8 +466,12 @@
     ];
     const alertRows = alerts.map(a => `<div class="his-row"><div><strong>${escHtml(a.title)}</strong><span>${escHtml(a.body)}</span></div><button class="btn small" data-his-tab="${a.tab}">Open</button></div>`).join('');
     const feed = his.live.notifications.slice(0,7).map(n => `<div class="his-row"><div><strong>${escHtml(n.dept || 'HIS')} - ${escHtml(n.time || '')}</strong><span>${escHtml(n.text || '')}</span><small>${escHtml(n.patient || '')}</small></div></div>`).join('');
-    return `<div class="his-grid">
-      ${metricCard('Current census', m.census, 'Active EHR workspaces')}
+    return `<div class="his-census-tools" style="margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+      <select id="his-ward-filter">${wards.map(w => `<option ${w === wardFilter ? 'selected' : ''}>${escHtml(w)}</option>`).join('')}</select>
+      <span style="font-size:12px;color:var(--muted);">${wardFilter !== 'All wards' ? `Ward: ${escHtml(wardFilter)} — ` : ''}${pts.length} of ${allPts.length} patients</span>
+    </div>
+    <div class="his-grid">
+      ${metricCard('Current census', m.census, wardFilter !== 'All wards' ? escHtml(wardFilter) : 'Active EHR workspaces')}
       ${metricCard('Critical acuity', m.critical, 'Needs command awareness')}
       ${metricCard('Stable', m.stable, 'Recovery / routine monitoring')}
       ${metricCard('Admitted', m.admitted, 'Under observation')}
@@ -555,9 +562,11 @@
     const isFaculty = accountRole() === 'instructor';
     const selector = patientSelector('orders');
     const live = liveFor(livePatientId);
+    const WARD_OPTIONS = ['Medical','ICU','Emergency','OB-GYN','Pediatrics','Surgical','Psychiatry','Neurology'];
     const controls = card('Live patient controls', `<div class="his-live-controls">
       ${selector}
       <input id="live-nurse" placeholder="Attending nurse" value="${escHtml(live.attendingNurse || '')}">
+      <select id="live-ward">${WARD_OPTIONS.map(w => `<option ${(live.ward || wardOf(allLivePatients().find(x => patientKey(x) === livePatientId) || {})) === w ? 'selected' : ''}>${escHtml(w)}</option>`).join('')}</select>
       <select id="live-status"><option ${live.status === 'Stable' ? 'selected' : ''}>Stable</option><option ${live.status === 'Admitted' ? 'selected' : ''}>Admitted</option><option ${live.status === 'Urgent' ? 'selected' : ''}>Urgent</option><option ${live.status === 'Critical' ? 'selected' : ''}>Critical</option></select>
       <input id="live-note" placeholder="Shared handoff note" value="${escHtml(live.note || '')}">
       <input id="his-photo" type="file" accept="image/*">
@@ -688,6 +697,7 @@
         ${card('Shared patient controls', `<div class="his-live-controls">
           <select id="live-patient-select">${patientOptions}</select>
           <input id="live-nurse" placeholder="Attending nurse" value="${escHtml(live.attendingNurse || '')}">
+          <select id="live-ward">${['Medical','ICU','Emergency','OB-GYN','Pediatrics','Surgical','Psychiatry','Neurology'].map(w => `<option ${(live.ward || '') === w ? 'selected' : ''}>${escHtml(w)}</option>`).join('')}</select>
           <select id="live-status"><option ${live.status === 'Stable' ? 'selected' : ''}>Stable</option><option ${live.status === 'Watcher' ? 'selected' : ''}>Watcher</option><option ${live.status === 'Urgent' ? 'selected' : ''}>Urgent</option><option ${live.status === 'Critical' ? 'selected' : ''}>Critical</option></select>
           <input id="live-note" placeholder="Shared handoff note" value="${escHtml(live.note || '')}">
           <button class="btn primary" id="live-save-controls">Update live board</button>
@@ -915,7 +925,7 @@
     document.querySelectorAll('[data-live-pick]').forEach(row => row.onclick = () => openLiveSection(row.dataset.livePick, liveSection));
     document.querySelectorAll('[data-live-section]').forEach(btn => btn.onclick = () => openLiveSection(btn.dataset.livePatient, btn.dataset.liveSection));
     document.getElementById('live-patient-select')?.addEventListener('change', e => { livePatientId = e.target.value; openLiveSection(e.target.value, e.target.dataset.targetTab || liveSection); });
-    ['live-nurse','live-status','live-note'].forEach(id => document.getElementById(id)?.addEventListener('change', saveLiveControls));
+    ['live-nurse','live-status','live-note','live-ward'].forEach(id => document.getElementById(id)?.addEventListener('change', saveLiveControls));
     document.getElementById('live-note')?.addEventListener('input', debounce(saveLiveControls, 450));
     document.getElementById('live-save-controls')?.addEventListener('click', saveLiveControls);
     document.getElementById('his-photo')?.addEventListener('change', e => {
@@ -936,6 +946,7 @@
     function saveLiveControls(){
       const patch = {
         attendingNurse: document.getElementById('live-nurse')?.value?.trim() || '',
+        ward: document.getElementById('live-ward')?.value || liveFor(livePatientId).ward || 'Medical',
         status: document.getElementById('live-status')?.value || 'Stable',
         note: document.getElementById('live-note')?.value?.trim() || ''
       };
