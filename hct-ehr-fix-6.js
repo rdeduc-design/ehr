@@ -12,8 +12,50 @@
   }
 
   function readHisState(){
-    try { return JSON.parse(localStorage.getItem(HIS_KEY) || "{}"); }
-    catch (_) { return {}; }
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem(HIS_KEY) || "{}"); }
+    catch (_) { state = {}; }
+    if (!state.patients || !Object.keys(state.patients).length) state.patients = seedPatients();
+    return state;
+  }
+
+  function seedPatients(){
+    const out = {};
+    const src = Array.isArray(window.scenarios) ? window.scenarios : [];
+    src.forEach(function(scenario, index){
+      const patient = scenario.patient || scenario;
+      const id = patient.id || patient.scenarioId || scenario.id || "P" + (1000 + index);
+      const name = [patient.firstName, patient.lastName].filter(Boolean).join(" ") || scenario.patientName || scenario.name || "Patient " + (index + 1);
+      out[id] = {
+        id: id,
+        name: name,
+        initials: initials(name),
+        mrn: patient.mrn || "MRN-" + (10040 + index),
+        age: patient.age || "",
+        sex: patient.sex || "",
+        allergies: patient.allergies || "No known allergies",
+        diagnosis: patient.diagnosis || scenario.diagnosis || scenario.title || "Clinical scenario",
+        ward: wardFrom(patient.specialty || patient.location || "", index),
+        room: patient.location || "",
+        status: patient.acuity || (index % 4 === 0 ? "Critical" : index % 3 === 0 ? "Urgent" : "Stable"),
+        photo: patient.photo || ""
+      };
+    });
+    if (!Object.keys(out).length) {
+      out.P1001 = { id:"P1001", name:"Maria Dela Cruz", initials:"MD", mrn:"MRN-10042", diagnosis:"Acute Myocardial Infarction", ward:"ICU", room:"ICU-3", status:"Critical", photo:"" };
+    }
+    return out;
+  }
+
+  function wardFrom(text, index){
+    const value = String(text || "");
+    if (/icu|critical/i.test(value)) return "ICU";
+    if (/ob|gyn|labor/i.test(value)) return "OB-GYN";
+    if (/peds|pediatric/i.test(value)) return "Pediatrics";
+    if (/psych/i.test(value)) return "Psychiatry";
+    if (/surg|ortho/i.test(value)) return "Surgical";
+    if (/ed|emergency/i.test(value)) return "Emergency";
+    return ["Medical", "ICU", "Surgical", "OB-GYN"][index % 4];
   }
 
   function writeHisState(state){
@@ -53,7 +95,7 @@
     const wards = wardList(state).filter(function(ward){ return ward !== "All wards"; });
     const current = field.value || "Medical";
     if (field.tagName === "SELECT") {
-      if (field.dataset.fix6WardOptions === wards.join("|")) return;
+      if (field.dataset.fix6WardOptions === wards.join("|") && field.value === current) return;
       field.innerHTML = wards.map(function(ward){ return '<option value="' + esc(ward) + '"' + (ward === current ? " selected" : "") + '>' + esc(ward) + '</option>'; }).join("");
       field.dataset.fix6WardOptions = wards.join("|");
       return;
