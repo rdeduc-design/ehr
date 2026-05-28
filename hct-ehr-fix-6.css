@@ -1,0 +1,202 @@
+/* Final visibility and dark-mode corrections for the EHR shell and online HIS. */
+.nav-group {
+  padding: 8px 12px;
+}
+
+.nav-group + .nav-group {
+  border-top: 1px solid var(--line);
+}
+
+.nav-label {
+  margin: 8px 0 6px;
+  color: var(--subtle);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.nav-group button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  margin: 5px 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--text);
+  padding: 6px 9px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.nav-group button span {
+  display: inline-grid;
+  place-items: center;
+  width: 25px;
+  min-width: 25px;
+  height: 22px;
+  border-radius: 5px;
+  background: rgba(67, 192, 196, .18);
+  color: #075457;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.nav-group button.active,
+.nav-group button:hover,
+.nav-group button:focus-visible {
+  border-color: var(--hct-teal);
+  background: var(--surface-2);
+  color: var(--hct-navy);
+}
+
+.hisx-command-filter {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid var(--his-line, var(--line));
+  border-radius: 12px;
+  background: var(--his-panel, var(--paper));
+}
+
+.hisx-command-filter label {
+  display: grid;
+  gap: 5px;
+  min-width: min(280px, 100%);
+  color: var(--his-muted, var(--muted));
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.hisx-command-filter select {
+  min-height: 38px;
+  border: 1px solid var(--his-line, var(--line));
+  border-radius: 10px;
+  background: var(--his-panel, var(--paper));
+  color: var(--his-ink, var(--text));
+  padding: 8px 10px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.hisx-command-filter strong {
+  color: var(--his-ink, var(--text));
+  font-size: 13px;
+}
+
+.hisx-ward {
+  cursor: pointer;
+}
+
+.hisx-ward.active {
+  border-color: var(--his-accent, var(--hct-teal));
+  background: var(--his-soft, var(--surface-2));
+}
+
+:root[data-theme="dark"] .badge.teal {
+  color: #c7fcff;
+  background: rgba(67, 192, 196, .22);
+}
+
+:root[data-theme="dark"] .nav-group button {
+  border-color: rgba(222, 232, 245, .18);
+  background: #101827;
+  color: #e8eef8;
+}
+
+:root[data-theme="dark"] .nav-group button span {
+  background: rgba(67, 192, 196, .22);
+  color: #9df7fb;
+}
+
+:root[data-theme="dark"] .nav-group button.active,
+:root[data-theme="dark"] .nav-group button:hover,
+:root[data-theme="dark"] .nav-group button:focus-visible {
+  background: #202c43;
+  color: #ffffff;
+}
+
+:root[data-theme="dark"] .hisx-modern {
+  --his-bg: #0b1220;
+  --his-panel: #101827;
+  --his-line: rgba(222, 232, 245, .16);
+  --his-ink: #e8eef8;
+  --his-muted: #b2bfd0;
+  --his-accent: #14b8a6;
+  --his-accent-strong: #8df4e8;
+  --his-soft: rgba(20, 184, 166, .14);
+}
+
+:root[data-theme="dark"] .hisx-side,
+:root[data-theme="dark"] .hisx-card,
+:root[data-theme="dark"] .hisx-kpi,
+:root[data-theme="dark"] .hisx-patientrow,
+:root[data-theme="dark"] .hisx-ward,
+:root[data-theme="dark"] .hisx-stock,
+:root[data-theme="dark"] .hisx-list li,
+:root[data-theme="dark"] .hisx-command-filter {
+  background: #101827;
+  color: #e8eef8;
+  border-color: rgba(222, 232, 245, .16);
+}
+
+:root[data-theme="dark"] .hisx-nav button,
+:root[data-theme="dark"] .hisx-modern button {
+  background: #172033;
+  color: #e8eef8;
+}
+
+:root[data-theme="dark"] .hisx-nav button.active,
+:root[data-theme="dark"] .hisx-modern button:hover,
+:root[data-theme="dark"] .hisx-modern button:focus-visible {
+  background: #14b8a6;
+  color: #062f31;
+}
+
+:root[data-theme="dark"] .hisx-field input,
+:root[data-theme="dark"] .hisx-field select,
+:root[data-theme="dark"] .hisx-field textarea,
+:root[data-theme="dark"] .hisx-inline input,
+:root[data-theme="dark"] .hisx-inline select,
+:root[data-theme="dark"] .hisx-vitals-form input,
+:root[data-theme="dark"] .hisx-toolbar input,
+:root[data-theme="dark"] .hisx-tr input,
+:root[data-theme="dark"] .hisx-stock input,
+:root[data-theme="dark"] .hisx-card textarea,
+:root[data-theme="dark"] .hisx-command-filter select {
+  background: #0b1220;
+  color: #e8eef8;
+  border-color: rgba(222, 232, 245, .22);
+}
+
+:root[data-theme="dark"] .hisx-tr,
+:root[data-theme="dark"] .hisx-tr.head {
+  color: #dbeafe;
+  border-color: rgba(222, 232, 245, .16);
+}
+
+:root[data-theme="dark"] .hisx-list small,
+:root[data-theme="dark"] .hisx-muted,
+:root[data-theme="dark"] .hisx-empty,
+:root[data-theme="dark"] .hisx-field span,
+:root[data-theme="dark"] .hisx-topbar small,
+:root[data-theme="dark"] .hisx-cardhead small,
+:root[data-theme="dark"] .hisx-sidefoot {
+  color: #b2bfd0;
+}
+
+@media (max-width: 640px) {
+  .hisx-command-filter {
+    display: grid;
+    align-items: stretch;
+  }
+}
