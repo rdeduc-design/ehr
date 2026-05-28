@@ -1,0 +1,313 @@
+/* ============================================================
+   HCT EHR Fix 5
+   Issue 1: Color scheme / text visibility
+   Issue 2: Modern interactive dropdowns
+   Issue 3: Lab test reference range display
+   Issue 4: HIS ward navigation cards
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   FIX 1 — TEXT VISIBILITY IN SELECTS & DROPDOWNS
+   Forces readable dark text on all option/optgroup elements
+   regardless of inherited teal/color class leakage.
+   ---------------------------------------------------------- */
+select {
+  color: #1f2937;
+  background-color: #ffffff;
+}
+
+select option {
+  color: #1f2937 !important;
+  background-color: #ffffff !important;
+  font-weight: 400;
+}
+
+select optgroup {
+  color: #172946 !important;
+  background-color: #f0f6ff !important;
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* Flag select - ensure colored values stay readable on white bg */
+#lab-flag {
+  background-color: #ffffff !important;
+}
+
+/* Prevent teal/accent color from making text invisible */
+.hct4-modern select,
+.hisx-modern select,
+.hisx-shell select {
+  color: #1f2937 !important;
+  background-color: #ffffff !important;
+}
+
+/* ----------------------------------------------------------
+   FIX 2 — MODERN DROPDOWN APPEARANCE
+   Custom arrow, smooth transitions, clean focus ring.
+   ---------------------------------------------------------- */
+select,
+.hisx-field select,
+.hisx-inline select,
+.hisx-toolbar select,
+.hisx-tr select,
+.form-grid select,
+.hct4-lab-form select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%23617085' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px !important;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.1s ease;
+  border-radius: 8px;
+}
+
+select:hover {
+  border-color: var(--hct-teal, #43c0c4) !important;
+  background-color: #f8fffe !important;
+}
+
+select:focus {
+  outline: none !important;
+  border-color: var(--hct-teal, #43c0c4) !important;
+  box-shadow: 0 0 0 3px rgba(67, 192, 196, 0.2) !important;
+  background-color: #f8fffe !important;
+}
+
+/* Active state feedback */
+select:active {
+  transform: scale(0.995);
+}
+
+/* Modern input+select consistency */
+input,
+select,
+textarea {
+  border-radius: 8px;
+}
+
+/* ----------------------------------------------------------
+   FIX 3 — LAB TEST DROPDOWN & REFERENCE RANGE
+   ---------------------------------------------------------- */
+#lab-test {
+  min-height: 40px;
+  font-size: 13px;
+}
+
+/* Optgroup headers in lab-test select */
+#lab-test optgroup {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #172946 !important;
+  background-color: #eef3fa !important;
+  padding: 4px 0;
+}
+
+#lab-test option {
+  font-size: 13px;
+  color: #1f2937 !important;
+  background-color: #ffffff !important;
+  padding: 5px 12px;
+}
+
+/* Reference range bar */
+.hct4-ref-bar {
+  border-radius: 8px;
+  animation: fix5FadeIn 0.2s ease;
+}
+
+/* ----------------------------------------------------------
+   FIX 4 — HIS WARD NAVIGATION CARDS
+   Replaces plain divs with clickable interactive buttons.
+   ---------------------------------------------------------- */
+.hisx-wardgrid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+  gap: 12px !important;
+}
+
+/* Clickable ward button */
+.hisx-ward-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 16px 14px 12px;
+  border: 1.5px solid var(--his-line, #dbe4ef);
+  border-radius: 12px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.15s ease;
+  text-align: left;
+  width: 100%;
+  min-height: 78px;
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
+}
+
+.hisx-ward-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--hct-teal, #43c0c4);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  border-radius: 12px 0 0 12px;
+}
+
+.hisx-ward-btn:hover {
+  border-color: var(--hct-teal, #43c0c4) !important;
+  background: rgba(67, 192, 196, 0.05) !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 24px rgba(67, 192, 196, 0.18) !important;
+}
+
+.hisx-ward-btn:hover::before {
+  opacity: 1;
+}
+
+.hisx-ward-btn:active {
+  transform: translateY(-1px) !important;
+}
+
+.hisx-ward-btn:focus-visible {
+  outline: 2px solid var(--hct-teal, #43c0c4) !important;
+  outline-offset: 2px !important;
+}
+
+.hisx-ward-btn .ward-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #172946;
+  line-height: 1.35;
+}
+
+.hisx-ward-btn .ward-count {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #617085;
+  margin-top: 1px;
+}
+
+.hisx-ward-btn.has-patients .ward-count {
+  color: var(--hct-teal, #43c0c4);
+  font-weight: 700;
+}
+
+.hisx-ward-btn.has-patients {
+  border-color: rgba(67, 192, 196, 0.35);
+}
+
+.hisx-ward-btn.empty {
+  opacity: 0.6;
+}
+
+.hisx-ward-btn.empty:hover {
+  opacity: 0.9;
+}
+
+.hisx-ward-arrow {
+  display: inline-block;
+  font-size: 16px;
+  color: var(--hct-teal, #43c0c4);
+  margin-top: 2px;
+  font-weight: 700;
+  transition: transform 0.15s ease;
+}
+
+.hisx-ward-btn:hover .hisx-ward-arrow {
+  transform: translateX(3px);
+}
+
+/* Keep legacy div-based wards styled (fallback) */
+.hisx-ward {
+  padding: 14px;
+  border: 1px solid var(--his-line, #dbe4ef);
+  border-radius: 10px;
+  background: #fff;
+  cursor: default;
+}
+
+.hisx-ward strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #172946;
+}
+
+.hisx-ward span {
+  display: block;
+  font-size: 11px;
+  color: #617085;
+  margin-top: 3px;
+}
+
+/* ----------------------------------------------------------
+   GENERAL MODERN UI IMPROVEMENTS
+   ---------------------------------------------------------- */
+
+/* Button hover consistency */
+.btn {
+  transition: transform 0.14s ease, box-shadow 0.14s ease, background-color 0.14s ease, border-color 0.14s ease !important;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* Card subtle hover lift */
+.hisx-card:hover,
+.card:hover {
+  box-shadow: 0 6px 22px rgba(23, 41, 70, 0.1) !important;
+}
+
+/* Improved input focus across all forms */
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--hct-teal, #43c0c4) !important;
+  box-shadow: 0 0 0 3px rgba(67, 192, 196, 0.18) !important;
+}
+
+/* HIS nav button improvements */
+.hisx-nav button {
+  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+.hisx-nav button:hover:not(.active) {
+  background: rgba(67, 192, 196, 0.08) !important;
+  color: #172946 !important;
+}
+
+.hisx-nav button.active {
+  background: var(--hct-teal, #43c0c4) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(67, 192, 196, 0.3) !important;
+}
+
+/* ----------------------------------------------------------
+   ANIMATIONS
+   ---------------------------------------------------------- */
+@keyframes fix5FadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
