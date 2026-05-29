@@ -1,0 +1,128 @@
+/* Focused Assessment clinical upgrade: structured findings, severity badges, sticky alerts. */
+.hct-assessment-panel {
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  margin-bottom: 12px;
+}
+.hct-assessment-panel .card {
+  margin-bottom: 10px;
+  border-color: rgba(163,49,49,.35);
+}
+.hct-panel-empty {
+  color: var(--subtle);
+  font-size: 12px;
+}
+.hct-system-toggle {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--hct-navy);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  text-align: left;
+  font-weight: 900;
+}
+.hct-system-toggle:focus-visible {
+  outline: 3px solid rgba(67,192,196,.35);
+  border-radius: 6px;
+}
+.hct-chevron {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.hct-system-title {
+  flex: 1;
+}
+.hct-count {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+.assessment-row.hct-collapsed .assessment-input-group {
+  display: none;
+}
+.hct-finding-list {
+  display: grid;
+  gap: 6px;
+}
+.hct-finding-pill {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+}
+.hct-finding-main {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.hct-finding-meta {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+.hct-finding-actions {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.hct-severity {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+.hct-severity-normal {
+  color: var(--success);
+  background: var(--success-bg);
+}
+.hct-severity-abnormal {
+  color: var(--warning);
+  background: var(--warning-bg);
+}
+.hct-severity-critical {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+.hct-suggestions {
+  margin-top: 8px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.hct-dx-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.hct-assessment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+@media (max-width: 640px) {
+  .hct-finding-pill { grid-template-columns: 1fr; }
+  .hct-finding-actions { justify-content: flex-start; }
+}
