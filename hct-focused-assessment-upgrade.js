@@ -31,7 +31,8 @@
   ];
 
   const criticalRx = /stridor|gcs\s*(<=|<|8)|seizure|non-reactive|central cyanosis|spo.?2\s*<\s*92|anuria|heavy bleeding|suicidal|homicidal|worst possible pain|10\/10|critical/i;
-  const abnormalRx = /abnormal|impaired|sluggish|unequal|weakness|droop|confused|agitated|lethargic|obtunded|hallucination|diminished|crackle|wheez|tachypnea|bradypnea|accessory|retraction|dyspn|irregular|murmur|absent|pale|mottled|clammy|cyanosis|oedema|edema|tender|distended|hypoactive|hyperactive|vomiting|diarr|melena|poor|dry|oliguria|retention|haematuria|bleeding|jaundice|rash|pressure injury|purulent|infiltration|phlebitis|fall risk|unsteady|restraints|elopement|pain|anxious|refuses|non-compliance|positive/i;
+  const abnormalRx = /abnormal|impaired|sluggish|unequal|weakness|droop|confused|agitated|lethargic|obtunded|hallucination|diminished|crackle|wheez|tachypnea|bradypnea|accessory|retraction|dyspn|irregular|s3 gallop|s4 gallop|gallop|murmur|bruit|pulse diminished|pulse absent|absent pulse|capillary refill (2|>|greater)|jvd|cold|absent|pale|mottled|clammy|cyanosis|oedema|edema|tender|distended|hypoactive|hyperactive|vomiting|diarr|melena|poor|dry|oliguria|retention|haematuria|bleeding|jaundice|rash|pressure injury|purulent|infiltration|phlebitis|fall risk|unsteady|restraints|elopement|pain|anxious|refuses|non-compliance|positive/i;
+  const DOM_SEVERITY = {};
 
   function escHtml(s){
     return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -57,9 +58,34 @@
     if(typeof window.persist === 'function') window.persist();
     if(doRender !== false && typeof window.render === 'function') window.render();
   }
-  function severityFor(label, fallback){
+  function mapKey(label){
+    return String(label || '').trim().toLowerCase();
+  }
+  function refreshDomSeverityMap(system){
+    const sel = document.getElementById(`as-dd-${system}`);
+    if(!sel) return;
+    DOM_SEVERITY[system] = DOM_SEVERITY[system] || {};
+    Array.from(sel.options).forEach(opt => {
+      if(!opt.value) return;
+      const group = opt.parentElement?.tagName === 'OPTGROUP' ? opt.parentElement.label : '';
+      const optionText = opt.textContent || '';
+      const groupedAbnormal = /abnormal|critical/i.test(group) || /^(⚠|!)/.test(optionText.trim());
+      DOM_SEVERITY[system][mapKey(opt.value)] = groupedAbnormal ? 'Abnormal' : 'Normal';
+    });
+  }
+  function selectedOptionSeverity(option){
+    if(!option) return '';
+    const group = option.parentElement?.tagName === 'OPTGROUP' ? option.parentElement.label : '';
+    const optionText = option.textContent || '';
+    if(/abnormal|critical/i.test(group) || /^(⚠|!)/.test(optionText.trim())) return 'Abnormal';
+    if(/normal/i.test(group)) return 'Normal';
+    return '';
+  }
+  function severityFor(label, fallback, system){
     if(fallback) return fallback;
     if(criticalRx.test(label)) return 'Critical';
+    const mapped = DOM_SEVERITY[system]?.[mapKey(label)];
+    if(mapped) return mapped;
     if(abnormalRx.test(label)) return 'Abnormal';
     return 'Normal';
   }
@@ -79,6 +105,14 @@
     if(!a.structuredFindings || typeof a.structuredFindings !== 'object') a.structuredFindings = {};
     SYSTEM_KEYS.forEach(k => {
       if(!Array.isArray(a.structuredFindings[k])) a.structuredFindings[k] = [];
+      a.structuredFindings[k].forEach(f => {
+        if(!f || !f.label) return;
+        const recalculated = severityFor(f.label, '', k);
+        if(recalculated !== 'Normal' && f.severity === 'Normal') f.severity = recalculated;
+        const meta = actionMeta(f.label);
+        if((!f.suggestedActions || !f.suggestedActions.length) && meta.actions.length) f.suggestedActions = meta.actions;
+        if((!f.nursingDiagnoses || !f.nursingDiagnoses.length) && meta.diagnoses.length) f.nursingDiagnoses = meta.diagnoses;
+      });
       const existing = new Set(a.structuredFindings[k].map(f => String(f.label || '').toLowerCase()));
       lineItems(a[k]).forEach(label => {
         if(existing.has(label.toLowerCase())) return;
@@ -87,7 +121,7 @@
           id: makeId('asf'),
           system: k,
           label,
-          severity: severityFor(label),
+          severity: severityFor(label, '', k),
           timestamp: '',
           suggestedActions: meta.actions,
           nursingDiagnoses: meta.diagnoses,
@@ -115,7 +149,7 @@
       id: makeId('asf'),
       system,
       label: String(label).trim(),
-      severity: severityFor(label, severity),
+      severity: severityFor(label, severity, system),
       timestamp: nowIso(),
       suggestedActions: meta.actions,
       nursingDiagnoses: meta.diagnoses
@@ -257,6 +291,7 @@
     const p = patient();
     if(!p || !p.assessment) return;
     const a = p.assessment;
+    SYSTEM_KEYS.forEach(refreshDomSeverityMap);
     ensureStructured(a);
 
     const firstRow = document.querySelector('.assessment-row');
@@ -292,7 +327,10 @@
       if(dd){
         dd.onchange = function(){
           if(!this.value) return;
-          addFinding(a, k, this.value);
+          const severity = criticalRx.test(this.value)
+            ? 'Critical'
+            : selectedOptionSeverity(this.options[this.selectedIndex]);
+          addFinding(a, k, this.value, severity);
           this.value = '';
           saveAndRender(true);
         };
