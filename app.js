@@ -1444,6 +1444,7 @@ function renderNav(){
     `<button class="nav-btn ${t===tab?'active':''}" data-tab="${tab}"><span class="nav-ic">${ic}</span>${label}</button>`;
   return `<nav class="nav">
     <div class="group">Patient Details</div>
+    ${nb('patient-details','Patient Details')}
     ${nb('visit-history','Visit History')}
     ${nb('summary','Visit Summary')}
     ${ns('sec-allergy','Allergies &amp; Immunizations',nb('allergy-list','Allergies',true)+nb('immunization-list','Immunizations',true),['allergy-list','immunization-list'])}
@@ -1469,11 +1470,11 @@ function renderNav(){
   </nav>`;
 }
 function toolbarButtons(){return`<button class="btn small primary" id="save-local-btn">Save</button><button class="btn small" id="print-report-btn">${tr('printReport')}</button><button class="btn small danger" id="reset-btn">Reset local</button>`;}
-function tabTitle(){const t={his:'Hospital information system',summary:'Visit Summary',orders:'Orders','visit-history':'Visit History','allergy-list':'Allergies','immunization-list':'Immunizations',labs:'Labs','lab-panels':'Lab Panels','blood-bank':'Blood Bank Panels',microbiology:'Microbiology Cultures',imaging:'Imaging & Diagnostics','admission-info':'Admission Information',hpi:'History of Present Illness (HPI)','past-history':'Past Medical & Surgical History','family-history':'Family & Social History','home-meds':'Home Medications',ros:'Review of Systems','physical-exam':'Physical Exam',notes:'Notes',meds:'MAR',vitals:'Vital Signs','patient-registration':'Patient Registration',assessment:'Assessment',io:'Intake & Output','pain-mgmt':'Pain Management','daily-care':'Daily Care-Safety','iv-site':'IV Site',behavioral:'Behavioral Assessment',interventions:'Interventions','pre-post-op':'Pre & Post-Op Checklists',intraoperative:'Intraoperative','critical-care':'Critical Care','diabetic-monitoring':'Diabetic Monitoring','wound-care':'Wound Care','physical-therapy':'Physical Therapy','occupational-therapy':'Occupational Therapy','code-blue':'Code Blue Form',nutrition:'Nutrition Assessment','pediatric-assessment':'Pediatric Assessment',education:'Patient Education',discharge:'Discharge',glasgow:'Glasgow Coma Scale','morse-fall':'Morse Fall Scale',braden:'Braden Scale','be-fast':'BE-FAST Stroke Screening',nihss:'NIH Stroke Scale (NIHSS)',ciwa:'CIWA Protocol','cage-aid':'CAGE-AID Questionnaire',cows:'Clinical Opiate Withdrawal Scale (COWS)',katz:'Katz Index of Independence in Activities of Daily Living',aota:'AOTA Occupational Profile',bmat:'Bedside Mobility Assessment Tool (BMAT)',mews:'Modified Early Warning Score (MEWS)',news2:'National Early Warning Score (NEWS) 2',pews:'Pediatric Early Warning Score (PEWS)',mmse:'Mini-Mental Status Examination (MMSE)','mental-status':'Mental Status Exam',gad7:'Generalized Anxiety Disorder (GAD-7)','ham-a':'Hamilton Anxiety Rating Scale (HAM-A)',hdrs:'Hamilton Depression Rating Scale (HDRS)','geriatric-depression':'Geriatric Depression Scale',rass:'Richmond Agitation-Sedation Scale (RASS)','c-ssrs':'Columbia-Suicide Severity Rating Scale (C-SSRS)',flacc:'FLACC Scale',sbirt:'SBIRT','sbirt-eating':'SBIRT for Eating Disorders','vision-screening':'Vision Screenings','covid-screening':'COVID-19 Screening','sirs-sepsis':'SIRS Sepsis Screening Tool',audit:'Alcohol Screening Questionnaire (AUDIT)',dast:'Drug Screening Questionnaire (DAST)',phq9:'Patient Health Questionnaire-9 (PHQ-9)',painad:'Pain Assessment in Advanced Dementia (PAINAD) Scale',bvc:'Brøset Violence Checklist (BVC)',fica:'FICA Spiritual Assessment','wong-baker':'Wong-Baker FACES® Pain Rating Scale','resp-assessment':'Respiratory Assessment','resp-medications':'Respiratory Medications','resp-interventions':'Respiratory Interventions','o2-therapy':'O2 Therapy','airway-management':'Airway Management',ventilator:'Ventilator','prenatal-visit':'Prenatal Visit','ob-admission':'OB Admission','labor-assessment':'Labor Assessment','birth-summary':'Birth Summary',postpartum:'Postpartum','notes-history':'Notes History','orders-history':'Orders History','vitals-history':'Vital Signs History','hpi-history':'HPI History',demographics:'Demographics','prior-auth-form':'Prior Authorization Form','referral-form':'Referral Request Form','release-of-info':'Release of Information','blood-consent-form':'Blood / Blood Products Consent Form','new-patient-intake':'New Patient Medical Intake Form','problem-list':'Problem List','roys-model':"Roy's Adaptation Model",careplan:'Care Plan',sbar:'SBAR',reasoning:'Clinical reasoning prompts',debriefing:'Simulation debriefing',progress:'My progress tracker',scenarios:'Sample scenarios',newpatient:'Add patient from scratch',dashboard:'Analytics dashboard',statusboard:'Submission status board',peerreview:tr('peer'),report:'Printable chart report',modulebuilder:tr('faculty')};return t[state.tab]||'Visit Summary';}
+function tabTitle(){const t={'patient-details':'Patient Details',his:'Hospital information system',summary:'Visit Summary',orders:'Orders','visit-history':'Visit History','allergy-list':'Allergies','immunization-list':'Immunizations',labs:'Labs','lab-panels':'Lab Panels','blood-bank':'Blood Bank Panels',microbiology:'Microbiology Cultures',imaging:'Imaging & Diagnostics','admission-info':'Admission Information',hpi:'History of Present Illness (HPI)','past-history':'Past Medical & Surgical History','family-history':'Family & Social History','home-meds':'Home Medications',ros:'Review of Systems','physical-exam':'Physical Exam',notes:'Notes',meds:'MAR',vitals:'Vital Signs','patient-registration':'Patient Registration',assessment:'Assessment',io:'Intake & Output','pain-mgmt':'Pain Management','daily-care':'Daily Care-Safety','iv-site':'IV Site',behavioral:'Behavioral Assessment',interventions:'Interventions','pre-post-op':'Pre & Post-Op Checklists',intraoperative:'Intraoperative','critical-care':'Critical Care','diabetic-monitoring':'Diabetic Monitoring','wound-care':'Wound Care','physical-therapy':'Physical Therapy','occupational-therapy':'Occupational Therapy','code-blue':'Code Blue Form',nutrition:'Nutrition Assessment','pediatric-assessment':'Pediatric Assessment',education:'Patient Education',discharge:'Discharge',glasgow:'Glasgow Coma Scale','morse-fall':'Morse Fall Scale',braden:'Braden Scale','be-fast':'BE-FAST Stroke Screening',nihss:'NIH Stroke Scale (NIHSS)',ciwa:'CIWA Protocol','cage-aid':'CAGE-AID Questionnaire',cows:'Clinical Opiate Withdrawal Scale (COWS)',katz:'Katz Index of Independence in Activities of Daily Living',aota:'AOTA Occupational Profile',bmat:'Bedside Mobility Assessment Tool (BMAT)',mews:'Modified Early Warning Score (MEWS)',news2:'National Early Warning Score (NEWS) 2',pews:'Pediatric Early Warning Score (PEWS)',mmse:'Mini-Mental Status Examination (MMSE)','mental-status':'Mental Status Exam',gad7:'Generalized Anxiety Disorder (GAD-7)','ham-a':'Hamilton Anxiety Rating Scale (HAM-A)',hdrs:'Hamilton Depression Rating Scale (HDRS)','geriatric-depression':'Geriatric Depression Scale',rass:'Richmond Agitation-Sedation Scale (RASS)','c-ssrs':'Columbia-Suicide Severity Rating Scale (C-SSRS)',flacc:'FLACC Scale',sbirt:'SBIRT','sbirt-eating':'SBIRT for Eating Disorders','vision-screening':'Vision Screenings','covid-screening':'COVID-19 Screening','sirs-sepsis':'SIRS Sepsis Screening Tool',audit:'Alcohol Screening Questionnaire (AUDIT)',dast:'Drug Screening Questionnaire (DAST)',phq9:'Patient Health Questionnaire-9 (PHQ-9)',painad:'Pain Assessment in Advanced Dementia (PAINAD) Scale',bvc:'Brøset Violence Checklist (BVC)',fica:'FICA Spiritual Assessment','wong-baker':'Wong-Baker FACES® Pain Rating Scale','resp-assessment':'Respiratory Assessment','resp-medications':'Respiratory Medications','resp-interventions':'Respiratory Interventions','o2-therapy':'O2 Therapy','airway-management':'Airway Management',ventilator:'Ventilator','prenatal-visit':'Prenatal Visit','ob-admission':'OB Admission','labor-assessment':'Labor Assessment','birth-summary':'Birth Summary',postpartum:'Postpartum','notes-history':'Notes History','orders-history':'Orders History','vitals-history':'Vital Signs History','hpi-history':'HPI History',demographics:'Demographics','prior-auth-form':'Prior Authorization Form','referral-form':'Referral Request Form','release-of-info':'Release of Information','blood-consent-form':'Blood / Blood Products Consent Form','new-patient-intake':'New Patient Medical Intake Form','problem-list':'Problem List','roys-model':"Roy's Adaptation Model",careplan:'Care Plan',sbar:'SBAR',reasoning:'Clinical reasoning prompts',debriefing:'Simulation debriefing',progress:'My progress tracker',scenarios:'Sample scenarios',newpatient:'Add patient from scratch',dashboard:'Analytics dashboard',statusboard:'Submission status board',peerreview:tr('peer'),report:'Printable chart report',modulebuilder:tr('faculty')};return t[state.tab]||'Visit Summary';}
 function rComingSoon(){return section(tabTitle(),'<p class="text-block notice info"><span class="mark">&#9432;</span><span>This section is under development and will be available in a future update.</span></p>');}
 function renderTab(){
   const tab = isFacultyTab(state.tab) ? 'summary' : state.tab;
-  const map={his:rHis,summary:rSummary,orders:rOrders,labs:rLabs,vitals:rVitals,assessment:rAssessment,meds:rMeds,io:rIO,notes:rNotes,careplan:rCarePlan,education:rEducation,sbar:rSbar,reasoning:rReasoning,debriefing:rDebriefing,progress:rProgress,scenarios:rScenarios,newpatient:rNewPatient,dashboard:rDashboard,statusboard:rStatusBoard,peerreview:rPeerReview,report:rReport,modulebuilder:rModuleBuilder,'visit-history':rComingSoon,'allergy-list':rComingSoon,'immunization-list':rComingSoon,'lab-panels':rComingSoon,'blood-bank':rComingSoon,microbiology:rComingSoon,imaging:rComingSoon,'admission-info':rComingSoon,hpi:rComingSoon,'past-history':rComingSoon,'family-history':rComingSoon,'home-meds':rComingSoon,ros:rComingSoon,'physical-exam':rComingSoon,'patient-registration':rComingSoon,'pain-mgmt':rComingSoon,'daily-care':rComingSoon,'iv-site':rComingSoon,behavioral:rComingSoon,interventions:rComingSoon,'pre-post-op':rComingSoon,intraoperative:rComingSoon,'critical-care':rComingSoon,'diabetic-monitoring':rComingSoon,'wound-care':rComingSoon,'physical-therapy':rComingSoon,'occupational-therapy':rComingSoon,'code-blue':rComingSoon,nutrition:rComingSoon,'pediatric-assessment':rComingSoon,discharge:rComingSoon,glasgow:rComingSoon,'morse-fall':rComingSoon,braden:rComingSoon,'be-fast':rComingSoon,nihss:rComingSoon,ciwa:rComingSoon,'cage-aid':rComingSoon,cows:rComingSoon,katz:rComingSoon,aota:rComingSoon,bmat:rComingSoon,mews:rComingSoon,news2:rComingSoon,pews:rComingSoon,mmse:rComingSoon,'mental-status':rComingSoon,gad7:rComingSoon,'ham-a':rComingSoon,hdrs:rComingSoon,'geriatric-depression':rComingSoon,rass:rComingSoon,'c-ssrs':rComingSoon,flacc:rComingSoon,sbirt:rComingSoon,'sbirt-eating':rComingSoon,'vision-screening':rComingSoon,'covid-screening':rComingSoon,'sirs-sepsis':rComingSoon,audit:rComingSoon,dast:rComingSoon,phq9:rComingSoon,painad:rComingSoon,bvc:rComingSoon,fica:rComingSoon,'wong-baker':rComingSoon,'resp-assessment':rComingSoon,'resp-medications':rComingSoon,'resp-interventions':rComingSoon,'o2-therapy':rComingSoon,'airway-management':rComingSoon,ventilator:rComingSoon,'prenatal-visit':rComingSoon,'ob-admission':rComingSoon,'labor-assessment':rComingSoon,'birth-summary':rComingSoon,postpartum:rComingSoon,'notes-history':rComingSoon,'orders-history':rComingSoon,'vitals-history':rComingSoon,'hpi-history':rComingSoon,demographics:rComingSoon,'prior-auth-form':rComingSoon,'referral-form':rComingSoon,'release-of-info':rComingSoon,'blood-consent-form':rComingSoon,'new-patient-intake':rComingSoon,'problem-list':rComingSoon,'roys-model':rComingSoon};
+  const map={'patient-details':rPatientDetails,his:rHis,summary:rSummary,orders:rOrders,labs:rLabs,vitals:rVitals,assessment:rAssessment,meds:rMeds,io:rIO,notes:rNotes,careplan:rCarePlan,education:rEducation,sbar:rSbar,reasoning:rReasoning,debriefing:rDebriefing,progress:rProgress,scenarios:rScenarios,newpatient:rNewPatient,dashboard:rDashboard,statusboard:rStatusBoard,peerreview:rPeerReview,report:rReport,modulebuilder:rModuleBuilder,'visit-history':rComingSoon,'allergy-list':rComingSoon,'immunization-list':rComingSoon,'lab-panels':rComingSoon,'blood-bank':rComingSoon,microbiology:rComingSoon,imaging:rComingSoon,'admission-info':rComingSoon,hpi:rComingSoon,'past-history':rComingSoon,'family-history':rComingSoon,'home-meds':rComingSoon,ros:rComingSoon,'physical-exam':rComingSoon,'patient-registration':rComingSoon,'pain-mgmt':rComingSoon,'daily-care':rComingSoon,'iv-site':rComingSoon,behavioral:rComingSoon,interventions:rComingSoon,'pre-post-op':rComingSoon,intraoperative:rComingSoon,'critical-care':rComingSoon,'diabetic-monitoring':rComingSoon,'wound-care':rComingSoon,'physical-therapy':rComingSoon,'occupational-therapy':rComingSoon,'code-blue':rComingSoon,nutrition:rComingSoon,'pediatric-assessment':rComingSoon,discharge:rComingSoon,glasgow:rComingSoon,'morse-fall':rComingSoon,braden:rComingSoon,'be-fast':rComingSoon,nihss:rComingSoon,ciwa:rComingSoon,'cage-aid':rComingSoon,cows:rComingSoon,katz:rComingSoon,aota:rComingSoon,bmat:rComingSoon,mews:rComingSoon,news2:rComingSoon,pews:rComingSoon,mmse:rComingSoon,'mental-status':rComingSoon,gad7:rComingSoon,'ham-a':rComingSoon,hdrs:rComingSoon,'geriatric-depression':rComingSoon,rass:rComingSoon,'c-ssrs':rComingSoon,flacc:rComingSoon,sbirt:rComingSoon,'sbirt-eating':rComingSoon,'vision-screening':rComingSoon,'covid-screening':rComingSoon,'sirs-sepsis':rComingSoon,audit:rComingSoon,dast:rComingSoon,phq9:rComingSoon,painad:rComingSoon,bvc:rComingSoon,fica:rComingSoon,'wong-baker':rComingSoon,'resp-assessment':rComingSoon,'resp-medications':rComingSoon,'resp-interventions':rComingSoon,'o2-therapy':rComingSoon,'airway-management':rComingSoon,ventilator:rComingSoon,'prenatal-visit':rComingSoon,'ob-admission':rComingSoon,'labor-assessment':rComingSoon,'birth-summary':rComingSoon,postpartum:rComingSoon,'notes-history':rComingSoon,'orders-history':rComingSoon,'vitals-history':rComingSoon,'hpi-history':rComingSoon,demographics:rComingSoon,'prior-auth-form':rComingSoon,'referral-form':rComingSoon,'release-of-info':rComingSoon,'blood-consent-form':rComingSoon,'new-patient-intake':rComingSoon,'problem-list':rComingSoon,'roys-model':rComingSoon};
   return(map[tab]||rSummary)();
 }
 function rHis(){return window.HctHis?.renderPage ? window.HctHis.renderPage() : section('Hospital information system','<p class="text-block">Hospital IS is loading. Please try again in a moment.</p>');}
@@ -1745,6 +1746,81 @@ function buildAllMeds(p){
   const existingNames=new Set((p.meds||[]).map(m=>(m.name||'').toLowerCase().trim()));
   const synced=(p.orders||[]).filter(o=>isMedOrder(o)&&!existingNames.has((o.order||'').toLowerCase().trim())).map((o,i)=>({id:`sync-${i}`,name:o.order,dose:o.details||'—',route:'',freq:o.status,priority:o.category,status:o.nurseCompleted?'given':'pending',time:'',note:'',warn:'',_fromOrder:true}));
   return[...(p.meds||[]),...synced];
+}
+function rPatientDetails(){
+  const p=currentPatient();
+  const sexOpts=['Male','Female','Nonbinary','Other'];
+  function clearSel(id,opts,cur,ph){
+    return `<div class="pd-sel-wrap"><select id="${id}"><option value=""${!cur?' selected':''}>${ph}</option>${opts.map(o=>`<option value="${esc(o)}"${o===cur?' selected':''}>${esc(o)}</option>`).join('')}</select><button type="button" class="pd-clr" data-pdclr="${id}" title="Clear">&#215;</button></div>`;
+  }
+  const legalName=(p.lastName&&p.firstName)?`${esc(p.lastName)}, ${esc(p.firstName)}`:esc(p.firstName||'');
+  return `<div class="card">
+    <div class="card-head"><h3>Patient Details</h3></div>
+    <div class="card-body">
+      <div class="pd-avatar-row">
+        <button type="button" class="pd-avatar">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+          <span>Upload Profile Pic</span>
+        </button>
+      </div>
+      <div class="pd-form">
+        <div class="pd-field">
+          <label class="pd-lbl" for="pd-legal">Legal Name</label>
+          <input id="pd-legal" placeholder="Legal Name" value="${legalName}">
+        </div>
+        <div class="pd-field">
+          <label class="pd-lbl" for="pd-preferred">Preferred Name</label>
+          <input id="pd-preferred" placeholder="Preferred Name" value="${esc(p.preferredName||p.firstName||'')}">
+        </div>
+        <div class="pd-field">
+          <label class="pd-lbl">Date of Birth</label>
+          <div class="dob-wrap">
+            <input id="pd-dob-disp" class="dob-disp" placeholder="Click to select date of birth" value="${esc(p.dob&&p.dob!=='--'?p.dob:'')}" readonly>
+            <div class="dob-cal" id="pd-dob-cal" style="display:none">
+              <div class="dob-cal-hd">
+                <button type="button" class="dob-back" id="pd-dob-back" style="display:none">&#8592; Back</button>
+                <span class="dob-cal-ttl" id="pd-dob-ttl">Select Year</span>
+              </div>
+              <div class="dob-cal-bd" id="pd-dob-bd"></div>
+            </div>
+          </div>
+        </div>
+        <div class="pd-row-2">
+          <div class="pd-field">
+            <label class="pd-lbl" for="pd-age">Age</label>
+            <input id="pd-age" type="number" min="0" max="150" placeholder="Age" value="${esc(String(p.age!=='--'?p.age:''))}">
+          </div>
+          <div class="pd-field">
+            <label class="pd-lbl" for="pd-age-unit">Age Unit</label>
+            <select id="pd-age-unit">
+              <option value="years"${(p.ageUnit||'years')==='years'?' selected':''}>years</option>
+              <option value="months"${p.ageUnit==='months'?' selected':''}>months</option>
+              <option value="days"${p.ageUnit==='days'?' selected':''}>days</option>
+            </select>
+          </div>
+        </div>
+        <div class="pd-field">
+          <label class="pd-lbl">Legal Sex</label>
+          ${clearSel('pd-lsex',sexOpts,p.sex,'Select legal sex')}
+        </div>
+        <div class="pd-field">
+          <label class="pd-lbl">Sex at Birth</label>
+          ${clearSel('pd-bsex',sexOpts,p.sexAtBirth||p.sex,'Select sex at birth')}
+        </div>
+        <div class="pd-field">
+          <label class="pd-lbl" for="pd-gender-id">Gender Identity</label>
+          <input id="pd-gender-id" placeholder="Gender Identity" value="${esc(p.genderIdentity||'')}">
+        </div>
+        <div class="pd-field">
+          <label class="pd-lbl" for="pd-code">Code Status</label>
+          <input id="pd-code" placeholder="e.g. Full Code, DNR" value="${esc(p.codeStatus||'')}">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="pd-save">Save</button>
+      </div>
+    </div>
+  </div>`;
 }
 function rSummary(){
   const p=currentPatient();
@@ -4305,6 +4381,76 @@ function importJsonBackup(e){
 }
 function bindTabEvents(){
   const p=currentPatient();
+  // Patient Details tab
+  if(state.tab==='patient-details'){
+    document.getElementById('pd-save')?.addEventListener('click',()=>{
+      const legal=(document.getElementById('pd-legal')?.value||'').trim();
+      let first=p.firstName,last=p.lastName;
+      if(legal){const parts=legal.split(',').map(s=>s.trim());if(parts.length>=2){last=parts[0];first=parts.slice(1).join(' ');}else{first=parts[0];last='';}}
+      p.firstName=first;p.lastName=last;
+      p.preferredName=(document.getElementById('pd-preferred')?.value||'').trim();
+      const dob=(document.getElementById('pd-dob-disp')?.value||'').trim();if(dob)p.dob=dob;
+      const age=(document.getElementById('pd-age')?.value||'').trim();if(age)p.age=age;
+      p.ageUnit=document.getElementById('pd-age-unit')?.value||'years';
+      const lsex=document.getElementById('pd-lsex')?.value||'';if(lsex)p.sex=lsex;
+      p.sexAtBirth=document.getElementById('pd-bsex')?.value||'';
+      p.genderIdentity=(document.getElementById('pd-gender-id')?.value||'').trim();
+      const code=(document.getElementById('pd-code')?.value||'').trim();if(code)p.codeStatus=code;
+      persist();render();toast('Patient details saved');
+    });
+    document.querySelectorAll('[data-pdclr]').forEach(btn=>{
+      btn.onclick=()=>{const el=document.getElementById(btn.dataset.pdclr);if(el)el.value='';};
+    });
+    const dobDisp=document.getElementById('pd-dob-disp');
+    const dobCal=document.getElementById('pd-dob-cal');
+    const dobBd=document.getElementById('pd-dob-bd');
+    const dobTtl=document.getElementById('pd-dob-ttl');
+    const dobBack=document.getElementById('pd-dob-back');
+    if(dobDisp&&dobCal){
+      let dobStep=0,selY=null,selM=null;
+      const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const MSHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      function showDobStep(s){
+        dobStep=s;
+        dobBack.style.display=s>0?'inline-block':'none';
+        const yr=new Date().getFullYear();
+        if(s===0){
+          dobTtl.textContent='Select Year';
+          const years=[];for(let y=yr;y>=yr-120;y--)years.push(y);
+          dobBd.innerHTML=`<div class="dob-grid years">${years.map(y=>`<button type="button" class="dob-btn${y===selY?' sel':''}" data-y="${y}">${y}</button>`).join('')}</div>`;
+          dobBd.querySelectorAll('[data-y]').forEach(b=>b.onclick=()=>{selY=Number(b.dataset.y);showDobStep(1);});
+        }else if(s===1){
+          dobTtl.textContent=String(selY);
+          dobBd.innerHTML=`<div class="dob-grid months">${MONTHS.map((m,i)=>`<button type="button" class="dob-btn${i===selM?' sel':''}" data-m="${i}">${m}</button>`).join('')}</div>`;
+          dobBd.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{selM=Number(b.dataset.m);showDobStep(2);});
+        }else{
+          dobTtl.textContent=`${MONTHS[selM]} ${selY}`;
+          const dm=new Date(selY,selM+1,0).getDate();
+          dobBd.innerHTML=`<div class="dob-grid days">${Array.from({length:dm},(_,i)=>i+1).map(d=>`<button type="button" class="dob-btn" data-d="${d}">${d}</button>`).join('')}</div>`;
+          dobBd.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{
+            const d=Number(b.dataset.d);
+            dobDisp.value=`${String(d).padStart(2,'0')} ${MSHORT[selM]} ${selY}`;
+            dobCal.style.display='none';
+          });
+        }
+      }
+      dobDisp.addEventListener('click',e=>{
+        e.stopPropagation();
+        if(dobCal.style.display==='none'){
+          dobCal.style.display='block';showDobStep(0);
+          setTimeout(()=>{
+            document.addEventListener('click',function pdCalClose(e){
+              if(!dobDisp.contains(e.target)&&!dobCal.contains(e.target)){
+                dobCal.style.display='none';
+                document.removeEventListener('click',pdCalClose);
+              }
+            });
+          },0);
+        }else{dobCal.style.display='none';}
+      });
+      dobBack?.addEventListener('click',e=>{e.stopPropagation();showDobStep(dobStep-1);});
+    }
+  }
   if(state.tab === 'his') window.HctHis?.bindPage?.();
   document.getElementById('show-patient-band')?.addEventListener('click', showPatientBand);
   document.getElementById('add-order')?.addEventListener('click',()=>{
