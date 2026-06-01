@@ -1323,7 +1323,7 @@ function render() {
         <aside class="sidebar">
           ${renderPatientCard(p)}
           ${renderPatientTools()}
-          ${renderNav()}
+          ${(()=>{const t=state.tab;const btn=`<button class="nav-btn${t==='patient-details'?' active':''}" data-tab="patient-details">Edit Details</button>`;const nav=renderNav();return nav.includes('data-tab="patient-details"')?nav:nav.replace('<div class="group">Patient Details</div>',`<div class="group">Patient Details</div>${btn}`);})()}
           <div class="sidebar-foot">
             ${cloud.profile
               ? `${esc(cloud.profile.role)} | ${esc(cloud.profile.section || 'No section')}`
