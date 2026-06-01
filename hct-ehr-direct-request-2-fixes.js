@@ -143,17 +143,42 @@
   function patchNav(){
     const canUseFacultyTools = g('canUseFacultyTools');
     expose('renderNav', function(){
-      const state = stateObj();
+      const st = stateObj();
+      const t = st.tab;
       const hasAnalytics = typeof canUseFacultyTools === 'function' ? canUseFacultyTools() : false;
-      const groups = [
-        ['Hospital', [['his','HIS','Hospital IS']]],
-        ['Chart review', [['summary','PS','Patient summary'],['orders','PO','Provider orders'],['labs','LR','Labs / diagnostics']]],
-        ['Documentation', [['vitals','VS','Vital signs'],['assessment','FA','Focused assessment'],['meds','MR','MAR'],['io','IO','Intake / output'],['notes','NN','Nursing notes'],['careplan','CP','Care plan'],['education','ED','Education'],['sbar','SB','SBAR / handoff']]],
-        ['Learning tools', [['reasoning','CR','Clinical reasoning'],['peerreview','PR','Peer review mode'],['medcalc','MC','Medication calculator'],['debriefing','DB','Debriefing'],['progress','PT','My progress'],['report','RP','Print report'],['scenarios','SC','Sample scenarios'],['newpatient','NP','Add patient']]],
-        ...(hasAnalytics ? [['Faculty tools', [['modulebuilder','MB','Faculty module builder'],['dashboard','AD','Analytics dashboard'],['statusboard','SB','Status board']]]] : [])
-      ];
-      const seen = new Set();
-      return `<nav class="nav">${groups.map(([group, items]) => `<div class="group">${esc(group)}</div>${items.filter(([tab]) => { if (seen.has(tab)) return false; seen.add(tab); return true; }).map(([tab, icon, label]) => `<button class="nav-btn ${state.tab===tab?'active':''}" data-tab="${tab}"><span class="nav-ic">${esc(icon)}</span>${esc(label)}</button>`).join('')}`).join('')}</nav>`;
+      const nb = (tab, label, child=false) =>
+        `<button class="nav-btn${child?' nav-child':''} ${t===tab?'active':''}" data-tab="${tab}">${label}</button>`;
+      const ns = (id, label, inner, childTabs=[]) => {
+        const open = !!(window.navOpen||{})[id] || childTabs.includes(t);
+        return `<div class="nav-group${open?' open':''}" data-nav-section="${id}"><button class="nav-group-toggle" data-nav-toggle="${id}">${label}<span class="nav-chev">&#8250;</span></button><div class="nav-group-body">${inner}</div></div>`;
+      };
+      const icBtn = (tab, ic, label) =>
+        `<button class="nav-btn ${t===tab?'active':''}" data-tab="${tab}"><span class="nav-ic">${ic}</span>${label}</button>`;
+      return `<nav class="nav">
+        <div class="group">Patient Details</div>
+        ${nb('visit-history','Visit History')}
+        ${nb('summary','Visit Summary')}
+        ${ns('sec-allergy','Allergies &amp; Immunizations',nb('allergy-list','Allergies',true)+nb('immunization-list','Immunizations',true),['allergy-list','immunization-list'])}
+        ${ns('sec-results','Results',nb('labs','Labs',true)+nb('lab-panels','Lab Panels',true)+nb('blood-bank','Blood Bank Panels',true)+nb('microbiology','Microbiology Cultures',true)+nb('imaging','Imaging &amp; Diagnostics',true),['labs','lab-panels','blood-bank','microbiology','imaging'])}
+        ${ns('sec-provider','Provider',nb('admission-info','Admission Information',true)+nb('hpi','History of Present Illness (HPI)',true)+nb('past-history','Past Medical &amp; Surgical History',true)+nb('family-history','Family &amp; Social History',true)+nb('home-meds','Home Medications',true)+nb('ros','Review of Systems',true)+nb('physical-exam','Physical Exam',true),['admission-info','hpi','past-history','family-history','home-meds','ros','physical-exam'])}
+        ${nb('notes','Notes')}
+        ${nb('orders','Orders')}
+        ${nb('meds','MAR')}
+        ${nb('vitals','Vital Signs')}
+        ${ns('sec-flowsheets','Flowsheets',nb('patient-registration','Patient Registration',true)+nb('assessment','Assessment',true)+nb('clinicaldocs','Clinical Docs',true)+nb('io','Intake &amp; Output',true)+nb('pain-mgmt','Pain Management',true)+nb('daily-care','Daily Care-Safety',true)+nb('iv-site','IV Site',true)+nb('behavioral','Behavioral Assessment',true)+nb('interventions','Interventions',true)+nb('pre-post-op','Pre &amp; Post-Op Checklists',true)+nb('intraoperative','Intraoperative',true)+nb('critical-care','Critical Care',true)+nb('diabetic-monitoring','Diabetic Monitoring',true)+nb('wound-care','Wound Care',true)+nb('physical-therapy','Physical Therapy',true)+nb('occupational-therapy','Occupational Therapy',true)+nb('code-blue','Code Blue Form',true)+nb('nutrition','Nutrition Assessment',true)+nb('pediatric-assessment','Pediatric Assessment',true)+nb('education','Patient Education',true)+nb('discharge','Discharge',true),['patient-registration','assessment','clinicaldocs','io','pain-mgmt','daily-care','iv-site','behavioral','interventions','pre-post-op','intraoperative','critical-care','diabetic-monitoring','wound-care','physical-therapy','occupational-therapy','code-blue','nutrition','pediatric-assessment','education','discharge'])}
+        ${ns('sec-screenings','Screenings &amp; Scales',nb('glasgow','Glasgow Coma Scale',true)+nb('morse-fall','Morse Fall Scale',true)+nb('braden','Braden Scale',true)+nb('be-fast','BE-FAST Stroke Screening',true)+nb('nihss','NIH Stroke Scale (NIHSS)',true)+nb('ciwa','CIWA Protocol',true)+nb('cage-aid','CAGE-AID Questionnaire',true)+nb('cows','Clinical Opiate Withdrawal Scale (COWS)',true)+nb('katz','Katz Index of Independence in Activities of Daily Living',true)+nb('aota','AOTA Occupational Profile',true)+nb('bmat','Bedside Mobility Assessment Tool (BMAT)',true)+nb('mews','Modified Early Warning Score (MEWS)',true)+nb('news2','National Early Warning Score (NEWS) 2',true)+nb('pews','Pediatric Early Warning Score (PEWS)',true)+nb('mmse','Mini-Mental Status Examination (MMSE)',true)+nb('mental-status','Mental Status Exam',true)+nb('gad7','Generalized Anxiety Disorder (GAD-7)',true)+nb('ham-a','Hamilton Anxiety Rating Scale (HAM-A)',true)+nb('hdrs','Hamilton Depression Rating Scale (HDRS)',true)+nb('geriatric-depression','Geriatric Depression Scale',true)+nb('rass','Richmond Agitation-Sedation Scale (RASS)',true)+nb('c-ssrs','Columbia-Suicide Severity Rating Scale (C-SSRS)',true)+nb('flacc','FLACC Scale',true)+nb('sbirt','SBIRT',true)+nb('sbirt-eating','SBIRT for Eating Disorders',true)+nb('vision-screening','Vision Screenings',true)+nb('covid-screening','COVID-19 Screening',true)+nb('sirs-sepsis','SIRS Sepsis Screening Tool',true)+nb('audit','Alcohol Screening Questionnaire (AUDIT)',true)+nb('dast','Drug Screening Questionnaire (DAST)',true)+nb('phq9','Patient Health Questionnaire-9 (PHQ-9)',true)+nb('painad','Pain Assessment in Advanced Dementia (PAINAD) Scale',true)+nb('bvc','Br\xf8set Violence Checklist (BVC)',true)+nb('fica','FICA Spiritual Assessment',true)+nb('wong-baker','Wong-Baker FACES\xae Pain Rating Scale',true),['glasgow','morse-fall','braden','be-fast','nihss','ciwa','cage-aid','cows','katz','aota','bmat','mews','news2','pews','mmse','mental-status','gad7','ham-a','hdrs','geriatric-depression','rass','c-ssrs','flacc','sbirt','sbirt-eating','vision-screening','covid-screening','sirs-sepsis','audit','dast','phq9','painad','bvc','fica','wong-baker'])}
+        ${ns('sec-respiratory','Respiratory',nb('resp-assessment','Respiratory Assessment',true)+nb('resp-medications','Respiratory Medications',true)+nb('resp-interventions','Respiratory Interventions',true)+nb('o2-therapy','O2 Therapy',true)+nb('airway-management','Airway Management',true)+nb('ventilator','Ventilator',true),['resp-assessment','resp-medications','resp-interventions','o2-therapy','airway-management','ventilator'])}
+        ${ns('sec-obstetrics','Obstetrics',nb('prenatal-visit','Prenatal Visit',true)+nb('ob-admission','OB Admission',true)+nb('labor-assessment','Labor Assessment',true)+nb('birth-summary','Birth Summary',true)+nb('postpartum','Postpartum',true),['prenatal-visit','ob-admission','labor-assessment','birth-summary','postpartum'])}
+        ${nb('problem-list','Problem List')}
+        ${ns('sec-patient-history','Patient History',nb('past-history','Past Medical &amp; Surgical History',true)+nb('family-history','Family &amp; Social History',true)+nb('notes-history','Notes History',true)+nb('orders-history','Orders History',true)+nb('vitals-history','Vital Signs History',true)+nb('hpi-history','HPI History',true)+nb('demographics','Demographics',true),['past-history','family-history','notes-history','orders-history','vitals-history','hpi-history','demographics'])}
+        ${nb('sbar','SBAR')}
+        ${nb('careplan','Care Plan')}
+        ${nb('roys-model',"Roy's Adaptation Model")}
+        ${ns('sec-patient-forms','Patient Forms',nb('prior-auth-form','Prior Authorization Form',true)+nb('referral-form','Referral Request Form',true)+nb('release-of-info','Release of Information',true)+nb('blood-consent-form','Blood / Blood Products Consent Form',true)+nb('new-patient-intake','New Patient Medical Intake Form',true),['prior-auth-form','referral-form','release-of-info','blood-consent-form','new-patient-intake'])}
+        <div class="group">Learning tools</div>
+        ${[['reasoning','CR','Clinical reasoning'],['peerreview','PR','Peer review mode'],['medcalc','MC','Medication calculator'],['debriefing','DB','Debriefing'],['progress','PT','My progress'],['report','RP','Print report'],['scenarios','SC','Sample scenarios'],['newpatient','NP','Add patient']].map(([tab,ic,label])=>icBtn(tab,ic,label)).join('')}
+        ${hasAnalytics?`<div class="group">Faculty tools</div>${[['modulebuilder','MB','Faculty module builder'],['dashboard','AD','Analytics dashboard'],['statusboard','SB','Status board']].map(([tab,ic,label])=>icBtn(tab,ic,label)).join('')}`:''}
+      </nav>`;
     });
   }
 
