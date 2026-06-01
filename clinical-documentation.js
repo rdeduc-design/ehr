@@ -642,6 +642,7 @@
         `<button class="nav-btn ${t===tab?'active':''}" data-tab="${tab}"><span class="nav-ic">${ic}</span>${label}</button>`;
       return `<nav class="nav">
         <div class="group">Patient Details</div>
+        ${nb('patient-details','Edit Details')}
         ${nb('visit-history','Visit History')}
         ${nb('summary','Visit Summary')}
         ${ns('sec-allergy','Allergies &amp; Immunizations',nb('allergy-list','Allergies',true)+nb('immunization-list','Immunizations',true),['allergy-list','immunization-list'])}
